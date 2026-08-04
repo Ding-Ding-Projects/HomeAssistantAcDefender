@@ -92,7 +92,11 @@
     }
 
     [JSInvokable]
-    public Task OpenFromShortcut() => InvokeAsync(Open);
+    public Task OpenFromShortcut() => InvokeAsync(() =>
+    {
+        Open();
+        StateHasChanged();
+    });
 
     private void Open()
     {
