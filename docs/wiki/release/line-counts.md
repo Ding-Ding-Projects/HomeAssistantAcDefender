@@ -38,8 +38,8 @@ The committed `scripts/count_lines.py` script is the sole source for the table
 shown in release notes. It reads tracked files, reports total and non-blank
 lines, and breaks the project into application source, tests, styles/markup,
 documentation, and configuration/other text. It also reports surviving lines
-attributed by `git blame` to automation identities and states the exclusion
-rules.
+attributed by `git blame` to automation identities (the author identity or an
+explicit `Co-Authored-By` trailer) and states the exclusion rules.
 
 Run it from a clean checkout:
 
