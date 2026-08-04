@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, safeStorage, session, autoUpdater } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
+const { normalizeUpdateFeedUrl, probeSquirrelFeed } = require("./update-contract.cjs");
 
 const DEFAULT_BASE_URL = "http://127.0.0.1:8888";
 const CONFIG_VERSION = 1;
@@ -227,12 +228,11 @@ function sendUpdateEvent(channel, payload) {
 }
 
 function configureUpdater(feedUrl) {
-  updateFeedUrl = String(feedUrl || "").trim();
+  const normalized = normalizeUpdateFeedUrl(feedUrl);
+  if (normalized !== updateFeedUrl) updateReady = false;
+  updateFeedUrl = normalized;
   if (updateTimer) { clearInterval(updateTimer); updateTimer = undefined; }
   if (!updateFeedUrl) return { configured: false, platform: process.platform };
-  let parsed;
-  try { parsed = new URL(updateFeedUrl); } catch { throw new Error("Update feed URL must be a valid HTTPS URL."); }
-  if (parsed.protocol !== "https:") throw new Error("Update feeds must use HTTPS so Squirrel signatures and metadata cannot be replaced in transit.");
   if (process.platform !== "win32") return { configured: false, platform: process.platform };
   // Squirrel.Windows verifies the signed RELEASES package. We never download or execute an
   // installer ourselves; autoUpdater owns that verified transaction and only reports ready.
@@ -248,7 +248,13 @@ app.whenReady().then(() => {
     callback({ responseHeaders: { ...details.responseHeaders, "Content-Security-Policy": ["default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'"] } });
   });
   ipcMain.handle("config:load", () => readConfig());
-  ipcMain.handle("config:save", (_event, values) => { saveConfig(values || {}); configureUpdater(values?.updateFeedUrl ?? readConfig().updateFeedUrl); return readConfig(); });
+  ipcMain.handle("config:save", (_event, values) => {
+    const nextValues = values || {};
+    const feedUrl = normalizeUpdateFeedUrl(nextValues.updateFeedUrl ?? readConfig().updateFeedUrl);
+    saveConfig({ ...nextValues, updateFeedUrl: feedUrl });
+    configureUpdater(feedUrl);
+    return readConfig();
+  });
   ipcMain.handle("auth:connect", (_event, values) => login(values));
   ipcMain.handle("api:status", () => request("/api/status"));
   ipcMain.handle("api:notifications", (_event, query) => request(`/api/notifications?limit=${encodeURIComponent(query?.limit || 30)}&includeDismissed=${query?.includeDismissed ? "true" : "false"}`));
@@ -284,11 +290,21 @@ app.whenReady().then(() => {
   ipcMain.handle("update:check", async () => {
     if (!updateFeedUrl) return { status: "disabled" };
     if (process.platform !== "win32") return { status: "windows-only" };
-    try { await autoUpdater.checkForUpdates(); return { status: "checking" }; }
-    catch (error) { throw new Error(`Update check failed: ${error instanceof Error ? error.message : String(error)}`); }
+    try {
+      // Probe the direct RELEASES manifest first. Squirrel still owns package
+      // signature verification; this gives the operator a precise, actionable
+      // error when a website URL or incomplete feed was configured by mistake.
+      const manifest = await probeSquirrelFeed(updateFeedUrl);
+      await autoUpdater.checkForUpdates();
+      return { status: "checking", manifestEntries: manifest.entries.length };
+    } catch (error) {
+      updateReady = false;
+      throw new Error(`Update check failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   });
   ipcMain.handle("update:install", () => {
     if (!updateReady) throw new Error("No verified update is ready to install.");
+    updateReady = false;
     autoUpdater.quitAndInstall(false, true);
     return true;
   });
@@ -296,7 +312,10 @@ app.whenReady().then(() => {
     updateReady = true;
     sendUpdateEvent("update-ready", { releaseName: releaseName || "new version", releaseNotes: typeof releaseNotes === "string" ? releaseNotes : "" });
   });
-  autoUpdater.on("error", (error) => sendUpdateEvent("update-error", { message: error instanceof Error ? error.message : String(error) }));
+  autoUpdater.on("error", (error) => {
+    updateReady = false;
+    sendUpdateEvent("update-error", { message: error instanceof Error ? error.message : String(error) });
+  });
   createWindow();
   const saved = readConfig();
   if (saved.updateFeedUrl) {
