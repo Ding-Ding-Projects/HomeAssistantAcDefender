@@ -13,6 +13,9 @@ interface ControllerConfig {
   theme: "dark" | "light";
   density: "compact" | "comfortable";
   updateFeedUrl: string;
+  activeTab: "dashboard" | "notifications" | "settings";
+  tabOrder: Array<"dashboard" | "notifications" | "settings">;
+  tabAppearance: Record<string, { foreground: string; background: string; fontSize: number }>;
 }
 
 interface ControllerBridge {

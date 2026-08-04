@@ -8,7 +8,12 @@ type Copy = { en: string; yue: string };
 
 const DEFAULT_CONFIG: ControllerConfig = {
   baseUrl: "http://127.0.0.1:8888", username: "", password: "", remember: false,
-  language: "en", funnyEnglish: 2, funnyCantonese: 3, theme: "dark", density: "compact", updateFeedUrl: ""
+  language: "en", funnyEnglish: 2, funnyCantonese: 3, theme: "dark", density: "compact", updateFeedUrl: "",
+  activeTab: "dashboard", tabOrder: ["dashboard", "notifications", "settings"], tabAppearance: {
+    dashboard: { foreground: "#e6f1eb", background: "#16221e", fontSize: 14 },
+    notifications: { foreground: "#e6f1eb", background: "#16221e", fontSize: 14 },
+    settings: { foreground: "#e6f1eb", background: "#16221e", fontSize: 14 }
+  }
 };
 
 const copy = (language: Language, value: Copy) => {
@@ -58,6 +63,9 @@ function App() {
   const [notifications, setNotifications] = useState<NotificationSnapshot | null>(null);
   const [tab, setTab] = useState<Tab>("dashboard");
   const [settingsFocus, setSettingsFocus] = useState<string | null>(null);
+  const [appearanceTab, setAppearanceTab] = useState<Tab | null>(null);
+  const [appearanceDraft, setAppearanceDraft] = useState({ foreground: "#e6f1eb", background: "#16221e", fontSize: 14 });
+  const [draggedTab, setDraggedTab] = useState<Tab | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [targetDraft, setTargetDraft] = useState<number | null>(null);
@@ -79,6 +87,7 @@ function App() {
     const stopUpdateError = window.controller.onUpdateError((payload) => setError(payload.message || "The update feed reported an error."));
     window.controller.loadConfig().then((saved) => {
       setConfig((current) => ({ ...current, ...saved }));
+      setTab(saved.activeTab || "dashboard");
       if (saved.updateFeedUrl) return window.controller.configureUpdater(saved.updateFeedUrl);
       return undefined;
     }).catch((e) => setError(errorText(e)));
@@ -135,6 +144,28 @@ function App() {
   const eventRows = Array.isArray(snapshot?.events) ? snapshot.events.slice(0, 12) : [];
   const online = Boolean(snapshot && (snapshot.connectionState === "connected" || thermostat));
   const themeClass = `${config.theme === "light" ? "theme-light" : "theme-dark"} density-${config.density}`;
+  const tabOrder = (config.tabOrder?.filter((value, index, all) => ["dashboard", "notifications", "settings"].includes(value) && all.indexOf(value) === index) || ["dashboard", "notifications", "settings"]) as Tab[];
+  const tabLabels: Record<Tab, Copy> = { dashboard: labels.dashboard, notifications: labels.notifications, settings: labels.settings };
+  const defaultTabAppearance = { foreground: "#e6f1eb", background: "#16221e", fontSize: 14 };
+  function persistTabs(patch: Partial<ControllerConfig>) {
+    setConfig({ ...config, ...patch });
+    void window.controller.saveConfig(patch).catch((e) => setError(errorText(e)));
+  }
+  function selectTab(next: Tab) { setTab(next); setSettingsFocus(null); persistTabs({ activeTab: next }); if (next === "notifications") void loadNotifications(); }
+  function reorderTabs(source: Tab, target: Tab) {
+    if (source === target) return;
+    const next = [...tabOrder];
+    const sourceIndex = next.indexOf(source); const targetIndex = next.indexOf(target);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+    next.splice(sourceIndex, 1); next.splice(targetIndex, 0, source); persistTabs({ tabOrder: next });
+  }
+  function openAppearance(id: Tab) { setAppearanceTab(id); setAppearanceDraft({ ...(config.tabAppearance?.[id] || defaultTabAppearance) }); }
+  function saveAppearance() {
+    if (!appearanceTab) return;
+    const tabAppearance = { ...(config.tabAppearance || {}), [appearanceTab]: appearanceDraft };
+    persistTabs({ tabAppearance }); setAppearanceTab(null);
+  }
+  function resetAppearance() { setAppearanceDraft({ ...defaultTabAppearance }); }
 
   if (phase !== "live") {
     return <main className={`login-shell ${themeClass}`}>
@@ -155,7 +186,6 @@ function App() {
     </main>;
   }
 
-  const tabs: { id: Tab; label: Copy }[] = [{ id: "dashboard", label: labels.dashboard }, { id: "notifications", label: labels.notifications }, { id: "settings", label: labels.settings }];
   return <main className={`app-shell ${themeClass}`}>
     <WindowTitleBar />
     <header className="top-app-bar">
@@ -166,13 +196,17 @@ function App() {
       <button className="icon-button" title="Open command palette (Ctrl+Shift+F)" aria-label="Open command palette" onClick={() => setPaletteOpen(true)}>⌘</button>
       <button className="button button-tonal" onClick={() => refresh()} disabled={busy}>{t(labels.refresh)}</button>
     </header>
-    <nav className="tab-strip" role="tablist" aria-label="Controller pages">
-      {tabs.map((item) => <button key={item.id} role="tab" aria-selected={tab === item.id} className={tab === item.id ? "tab active" : "tab"} onClick={() => { setTab(item.id); if (item.id === "notifications") loadNotifications(); }}>{t(item.label)}</button>)}
-    </nav>
+    <div className="tab-strip-shell">
+      <nav className="tab-scroll" role="tablist" aria-label="Controller pages">
+        {tabOrder.map((id) => { const appearance = config.tabAppearance?.[id] || defaultTabAppearance; return <button key={id} id={`tab-${id}`} role="tab" aria-selected={tab === id} aria-controls={`tabpanel-${id}`} onClick={() => selectTab(id)} draggable onDragStart={() => setDraggedTab(id)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (draggedTab) reorderTabs(draggedTab, id); setDraggedTab(null); }} onContextMenu={(event) => { event.preventDefault(); openAppearance(id); }} onKeyDown={(event) => { if (event.ctrlKey && event.shiftKey && event.key === "ArrowLeft") { event.preventDefault(); const index = tabOrder.indexOf(id); if (index > 0) reorderTabs(id, tabOrder[index - 1]); } if (event.ctrlKey && event.shiftKey && event.key === "ArrowRight") { event.preventDefault(); const index = tabOrder.indexOf(id); if (index < tabOrder.length - 1) reorderTabs(id, tabOrder[index + 1]); } if (event.key === "F2") { event.preventDefault(); openAppearance(id); } }} className={tab === id ? "tab active" : "tab"} style={{ color: appearance.foreground, backgroundColor: appearance.background, fontSize: `${appearance.fontSize}px` }} title={`${t(tabLabels[id])} · right-click or F2 to edit appearance`}>{t(tabLabels[id])}</button>; })}
+      </nav>
+      <p className="tab-help">Drag to reorder · <kbd>Ctrl+Shift+←/→</kbd> move · <kbd>F2</kbd> edit appearance</p>
+      {appearanceTab && <div className="tab-appearance-popover" role="dialog" aria-label={`Edit ${t(tabLabels[appearanceTab])} tab appearance`}><strong>Edit {t(tabLabels[appearanceTab])} appearance</strong><label>Text color<input type="color" value={appearanceDraft.foreground} onChange={(e) => setAppearanceDraft({ ...appearanceDraft, foreground: e.target.value })} /></label><label>Surface color<input type="color" value={appearanceDraft.background} onChange={(e) => setAppearanceDraft({ ...appearanceDraft, background: e.target.value })} /></label><label>Font size <output>{appearanceDraft.fontSize}px</output><input type="range" min="11" max="28" value={appearanceDraft.fontSize} onChange={(e) => setAppearanceDraft({ ...appearanceDraft, fontSize: Number(e.target.value) })} /></label><div className="button-row"><button className="button button-tonal" onClick={resetAppearance}>Reset</button><button className="button button-filled" onClick={saveAppearance}>Save</button><button className="button button-tonal" onClick={() => setAppearanceTab(null)}>Cancel</button></div></div>}
+    </div>
     {error && <div className="banner banner-error" role="alert">{error}<button className="banner-close" onClick={() => setError(null)} aria-label="Dismiss error">×</button></div>}
     {notice && <div className="banner banner-success" role="status">{notice}<button className="banner-close" onClick={() => setNotice(null)} aria-label="Dismiss message">×</button></div>}
     {updateReady && <div className="update-banner" role="status"><strong>Update ready</strong><span>{updateReady.releaseName || "A verified Windows update is ready."}</span><button className="button button-filled" disabled={updateBusy} onClick={async () => { setUpdateBusy(true); try { await window.controller.installUpdate(); } catch (e) { setError(errorText(e)); setUpdateBusy(false); } }}>Restart to install update</button><button className="banner-close" onClick={() => setUpdateReady(null)} aria-label="Dismiss update reminder">Later</button></div>}
-    <div className="page-content">{tab === "dashboard" && <Dashboard snapshot={snapshot} thermostat={thermostat} runtime={runtime} target={currentTarget} targetDraft={targetDraft} setTargetDraft={setTargetDraft} busy={busy} action={action} setOffConfirm={setOffConfirm} t={t} eventRows={eventRows} />}{tab === "notifications" && <Notifications snapshot={notifications} onLoad={loadNotifications} onAction={async (id, verb) => { try { setNotifications(await window.controller.notificationAction(id, verb)); } catch (e) { setError(errorText(e)); } }} t={t} />}{tab === "settings" && <Settings focusTarget={settingsFocus} config={config} setConfig={setConfig} onSave={async () => { try { setConfig(await window.controller.saveConfig(config)); setNotice(t({ en: "Preferences saved on this Windows profile.", yue: "偏好已經儲存喺呢部 Windows 電腦。" })); } catch (e) { setError(errorText(e)); } }} onUpdateCheck={async () => { try { await window.controller.configureUpdater(config.updateFeedUrl); const result = await window.controller.checkForUpdate(); setNotice(result.status === "disabled" ? "Update feed is not configured." : `Update check: ${result.status}.`); } catch (e) { setError(errorText(e)); } }} t={t} regexOpen={regexOpen} setRegexOpen={setRegexOpen} regexMode={regexMode} setRegexMode={setRegexMode} regexPattern={regexPattern} setRegexPattern={setRegexPattern} regexFlags={regexFlags} setRegexFlags={setRegexFlags} regexError={regexError} setRegexError={setRegexError} />}</div>
+     <section className="page-content" id={`tabpanel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} tabIndex={0}>{tab === "dashboard" && <Dashboard snapshot={snapshot} thermostat={thermostat} runtime={runtime} target={currentTarget} targetDraft={targetDraft} setTargetDraft={setTargetDraft} busy={busy} action={action} setOffConfirm={setOffConfirm} t={t} eventRows={eventRows} />}{tab === "notifications" && <Notifications snapshot={notifications} onLoad={loadNotifications} onAction={async (id, verb) => { try { setNotifications(await window.controller.notificationAction(id, verb)); } catch (e) { setError(errorText(e)); } }} t={t} />}{tab === "settings" && <Settings focusTarget={settingsFocus} config={config} setConfig={setConfig} onSave={async () => { try { setConfig(await window.controller.saveConfig(config)); setNotice(t({ en: "Preferences saved on this Windows profile.", yue: "偏好已經儲存喺呢部 Windows 電腦。" })); } catch (e) { setError(errorText(e)); } }} onUpdateCheck={async () => { try { await window.controller.configureUpdater(config.updateFeedUrl); const result = await window.controller.checkForUpdate(); setNotice(result.status === "disabled" ? "Update feed is not configured." : `Update check: ${result.status}.`); } catch (e) { setError(errorText(e)); } }} t={t} regexOpen={regexOpen} setRegexOpen={setRegexOpen} regexMode={regexMode} setRegexMode={setRegexMode} regexPattern={regexPattern} setRegexPattern={setRegexPattern} regexFlags={regexFlags} setRegexFlags={setRegexFlags} regexError={regexError} setRegexError={setRegexError} />}</section>
     {offConfirm && <div className="modal-scrim" role="presentation"><section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="off-title"><h2 id="off-title">Turn the real thermostat off?</h2><p>This sends <code>POST /api/thermostat/off</code> to Home Assistant through the hosted defender. It changes a real device; no simulated state is used.</p><div className="dialog-actions"><button className="button button-tonal" onClick={() => setOffConfirm(false)}>Cancel</button><button className="button button-danger" disabled={busy} onClick={() => { setOffConfirm(false); void action(() => window.controller.command("thermostatOff"), { en: "Thermostat OFF command sent.", yue: "已經發出關閉溫控器指令。" }); }}>Turn off real thermostat</button></div></section></div>}
     {paletteOpen && <CommandPalette query={paletteQuery} setQuery={setPaletteQuery} onClose={() => setPaletteOpen(false)} onNavigate={(destination, focus) => { setTab(destination); setSettingsFocus(focus || null); setPaletteOpen(false); if (destination === "notifications") loadNotifications(); }} t={t} />}
   </main>;
