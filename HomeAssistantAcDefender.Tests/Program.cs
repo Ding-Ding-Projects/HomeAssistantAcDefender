@@ -26,6 +26,8 @@ changelogDateRangeTests.CalendarGridIsSixWeeksAndMondayFirst();
 var appearanceTests = new AppearancePreferencesRegressionTests();
 appearanceTests.NormalizesAndBoundsBrowserPresentationValues();
 appearanceTests.PreservesAllowedValuesAndLowercasesAccent();
+appearanceTests.ColorTranslatorConvertsHexRgbHslAndAlpha();
+appearanceTests.ElementAccentsAreAllowListedAndContrastIsDeterministic();
 var destructiveActionTests = new DestructiveActionSuperConfirmationRegressionTests();
 destructiveActionTests.ControlsAndDashboardUseTheNativeThermostatOffGate();
 destructiveActionTests.GateRequiresBothKeysAndFocusReturn();

@@ -35,13 +35,51 @@
                     <MudSelectItem T="string" Value="@("spacious")">Spacious</MudSelectItem>
                 </MudSelect>
             </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudTextField T="string" @bind-Value="_appearance.Accent" Label="Accent / seed color" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="Six-digit HEX, for example #3ddc97." />
-            </MudItem>
-            <MudItem xs="12" sm="6" Class="appearance-color-control">
-                <label for="appearance-accent-picker">Accent color picker</label>
-                <input id="appearance-accent-picker" type="color" value="@_appearance.Accent" @onchange="OnAppearanceAccentPickerChanged" aria-describedby="appearance-accent-help" />
-                <span id="appearance-accent-help" class="helper-text">Current value: @_appearance.Accent</span>
+            <MudItem xs="12">
+                <div class="appearance-color-translator" role="group" aria-labelledby="appearance-color-title">
+                    <div class="appearance-color-translator__heading">
+                        <strong id="appearance-color-title">Infinite color picker &amp; translator</strong>
+                        <span>HEX, RGB, HSL, alpha, and contrast stay synchronized locally.</span>
+                    </div>
+                    <div class="appearance-color-translator__target-row">
+                        <label for="appearance-target">Appearance target</label>
+                        <select id="appearance-target" class="ops-input" value="@_appearanceTarget" @onchange="OnAppearanceTargetChanged" aria-describedby="appearance-target-help">
+                            <option value="shell">Whole shell accent</option>
+                            @foreach (var target in AppearancePreferences.AppearanceTargets)
+                            {
+                                <option value="@target">@target accent</option>
+                            }
+                        </select>
+                        <span id="appearance-target-help" class="helper-text">Overrides apply only to the selected visible shell surface.</span>
+                    </div>
+                    <div class="appearance-color-translator__controls">
+                        <label class="appearance-color-translator__spectrum" for="appearance-accent-picker">
+                            <span>Continuous spectrum</span>
+                            <input id="appearance-accent-picker" type="color" value="@AppearanceWorkingHex" @oninput="OnAppearanceAccentPickerChanged" aria-describedby="appearance-accent-help" />
+                            <span id="appearance-accent-help" class="helper-text">Current: @AppearanceWorkingHex</span>
+                        </label>
+                        <label for="appearance-accent-alpha">Alpha <strong>@(AppearanceWorkingAlpha * 100):0%</strong></label>
+                        <input id="appearance-accent-alpha" class="settings-tone-control__slider" type="range" min="0" max="1" step="0.01" value="@AppearanceWorkingAlpha.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnAppearanceAccentAlphaInput" aria-valuemin="0" aria-valuemax="1" aria-valuenow="@AppearanceWorkingAlpha" aria-label="Appearance accent alpha" />
+                    </div>
+                    <div class="appearance-color-translator__grid">
+                        <label for="appearance-accent-hex">HEX<input id="appearance-accent-hex" class="ops-input" value="@_appearanceHexInput" @oninput="OnAppearanceHexInput" inputmode="text" maxlength="7" aria-describedby="appearance-color-error" /></label>
+                        <label for="appearance-accent-red">R<input id="appearance-accent-red" class="ops-input" value="@AppearanceWorkingR" @oninput="OnAppearanceRedInput" inputmode="numeric" maxlength="3" /></label>
+                        <label for="appearance-accent-green">G<input id="appearance-accent-green" class="ops-input" value="@AppearanceWorkingG" @oninput="OnAppearanceGreenInput" inputmode="numeric" maxlength="3" /></label>
+                        <label for="appearance-accent-blue">B<input id="appearance-accent-blue" class="ops-input" value="@AppearanceWorkingB" @oninput="OnAppearanceBlueInput" inputmode="numeric" maxlength="3" /></label>
+                        <label for="appearance-accent-hue">H°<input id="appearance-accent-hue" class="ops-input" value="@AppearanceWorkingHue.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnAppearanceHueInput" inputmode="decimal" /></label>
+                        <label for="appearance-accent-saturation">S%<input id="appearance-accent-saturation" class="ops-input" value="@AppearanceWorkingSaturation.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnAppearanceSaturationInput" inputmode="decimal" /></label>
+                        <label for="appearance-accent-lightness">L%<input id="appearance-accent-lightness" class="ops-input" value="@AppearanceWorkingLightness.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnAppearanceLightnessInput" inputmode="decimal" /></label>
+                    </div>
+                    <div class="appearance-color-translator__readout" aria-live="polite">
+                        <span>RGB: @AppearanceWorkingRgbText</span>
+                        <span>HSL: @AppearanceWorkingHslText</span>
+                        <span>Contrast on dark: @AppearanceContrastDark:0.00:1 · light: @AppearanceContrastLight:0.00:1</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(_appearanceColorError))
+                    {
+                        <div id="appearance-color-error" class="appearance-color-translator__error" role="status">@_appearanceColorError</div>
+                    }
+                </div>
             </MudItem>
             <MudItem xs="12" sm="6">
                 <MudSelect T="string" @bind-Value="_appearance.FontFamily" Label="UI font family" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="Installed or bundled family; CJK fallback is retained.">
@@ -950,6 +988,39 @@
     private int _cantoneseFunnyLevel = 1;
     private bool _uiPreferencesLoaded;
     private AppearancePreferences _appearance = AppearancePreferences.Defaults();
+    private string _appearanceTarget = "shell";
+    private string _appearanceHexInput = AppearancePreferences.DefaultAccent;
+    private string _appearanceColorError = "";
+
+    private string AppearanceWorkingHex
+    {
+        get
+        {
+            if (_appearanceTarget == "shell")
+            {
+                return _appearance.Accent;
+            }
+
+            return _appearance.ElementAccents.TryGetValue(_appearanceTarget, out var value)
+                ? value
+                : _appearance.Accent;
+        }
+    }
+
+    private AppearanceRgba AppearanceWorkingColor => AppearanceColor.TryParseHex(AppearanceWorkingHex, out var parsed)
+        ? parsed with { Alpha = AppearanceWorkingAlpha }
+        : new AppearanceRgba(61, 220, 151, AppearanceWorkingAlpha);
+    private double AppearanceWorkingAlpha => Math.Clamp(_appearance.AccentAlpha, 0, 1);
+    private int AppearanceWorkingR => AppearanceWorkingColor.Red;
+    private int AppearanceWorkingG => AppearanceWorkingColor.Green;
+    private int AppearanceWorkingB => AppearanceWorkingColor.Blue;
+    private double AppearanceWorkingHue => AppearanceColor.ToHsl(AppearanceWorkingColor).Hue;
+    private double AppearanceWorkingSaturation => AppearanceColor.ToHsl(AppearanceWorkingColor).Saturation;
+    private double AppearanceWorkingLightness => AppearanceColor.ToHsl(AppearanceWorkingColor).Lightness;
+    private string AppearanceWorkingRgbText => AppearanceColor.RgbText(AppearanceWorkingColor);
+    private string AppearanceWorkingHslText => AppearanceColor.HslText(AppearanceWorkingColor);
+    private double AppearanceContrastDark => AppearanceColor.ContrastRatio(AppearanceWorkingColor, new AppearanceRgba(7, 9, 12));
+    private double AppearanceContrastLight => AppearanceColor.ContrastRatio(AppearanceWorkingColor, new AppearanceRgba(247, 249, 251));
 
     private string TonePreviewEnglish => FunnyTone.English("The defender is watching.", _englishFunnyLevel);
     private string TonePreviewCantonese => FunnyTone.Cantonese("衛兵睇緊。", _cantoneseFunnyLevel);
@@ -1373,6 +1444,7 @@
             _englishFunnyLevel = ParseFunnyLevel(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-funny-en"));
             _cantoneseFunnyLevel = ParseFunnyLevel(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-funny-yue"));
             _appearance = AppearancePreferences.Normalize(await JS.InvokeAsync<AppearancePreferences?>("acAppearance.read"));
+            SyncAppearanceColorInputs();
             await InvokeAsync(StateHasChanged);
         }
         catch (JSException)
@@ -1409,13 +1481,96 @@
         await PersistUiPreference("ac-defender-funny-yue", _cantoneseFunnyLevel.ToString(System.Globalization.CultureInfo.InvariantCulture));
     }
 
-    private void OnAppearanceAccentPickerChanged(ChangeEventArgs args)
+    private void OnAppearanceTargetChanged(ChangeEventArgs args)
     {
-        var value = args.Value?.ToString();
-        if (!string.IsNullOrWhiteSpace(value))
+        var target = args.Value?.ToString();
+        _appearanceTarget = target is "shell" or "header" or "rail" or "main" ? target : "shell";
+        SyncAppearanceColorInputs();
+    }
+
+    private void OnAppearanceAccentPickerChanged(ChangeEventArgs args) => SetAppearanceWorkingHex(args.Value?.ToString());
+
+    private void OnAppearanceHexInput(ChangeEventArgs args)
+    {
+        _appearanceHexInput = args.Value?.ToString() ?? "";
+        SetAppearanceWorkingHex(_appearanceHexInput);
+    }
+
+    private void OnAppearanceAccentAlphaInput(ChangeEventArgs args)
+    {
+        if (double.TryParse(args.Value?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value))
+        {
+            _appearance.AccentAlpha = Math.Clamp(value, 0, 1);
+            _appearanceColorError = "";
+        }
+    }
+
+    private void OnAppearanceRedInput(ChangeEventArgs args) => SetAppearanceRgb(args.Value?.ToString(), channel: 0);
+    private void OnAppearanceGreenInput(ChangeEventArgs args) => SetAppearanceRgb(args.Value?.ToString(), channel: 1);
+    private void OnAppearanceBlueInput(ChangeEventArgs args) => SetAppearanceRgb(args.Value?.ToString(), channel: 2);
+    private void OnAppearanceHueInput(ChangeEventArgs args) => SetAppearanceHsl(args.Value?.ToString(), channel: 0);
+    private void OnAppearanceSaturationInput(ChangeEventArgs args) => SetAppearanceHsl(args.Value?.ToString(), channel: 1);
+    private void OnAppearanceLightnessInput(ChangeEventArgs args) => SetAppearanceHsl(args.Value?.ToString(), channel: 2);
+
+    private void SetAppearanceWorkingHex(string? value)
+    {
+        if (!AppearanceColor.TryParseHex(value, out var color))
+        {
+            _appearanceColorError = "Use a six-digit HEX value such as #3ddc97.";
+            return;
+        }
+
+        _appearanceColorError = "";
+        var hex = AppearanceColor.ToHex(color);
+        SetAppearanceTargetHex(hex);
+        _appearanceHexInput = hex;
+    }
+
+    private void SetAppearanceRgb(string? value, int channel)
+    {
+        if (!int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var channelValue))
+        {
+            return;
+        }
+
+        var color = AppearanceWorkingColor;
+        var channels = new[] { color.Red, color.Green, color.Blue };
+        channels[channel] = (byte)Math.Clamp(channelValue, 0, 255);
+        SetAppearanceTargetHex(AppearanceColor.ToHex(new AppearanceRgba(channels[0], channels[1], channels[2], color.Alpha)));
+        SyncAppearanceColorInputs();
+    }
+
+    private void SetAppearanceHsl(string? value, int channel)
+    {
+        if (!double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var channelValue))
+        {
+            return;
+        }
+
+        var hsl = AppearanceColor.ToHsl(AppearanceWorkingColor);
+        var hue = channel == 0 ? channelValue : hsl.Hue;
+        var saturation = channel == 1 ? channelValue : hsl.Saturation;
+        var lightness = channel == 2 ? channelValue : hsl.Lightness;
+        SetAppearanceTargetHex(AppearanceColor.ToHex(AppearanceColor.FromHsl(hue, saturation, lightness, AppearanceWorkingAlpha)));
+        SyncAppearanceColorInputs();
+    }
+
+    private void SetAppearanceTargetHex(string value)
+    {
+        if (_appearanceTarget == "shell")
         {
             _appearance.Accent = value;
         }
+        else
+        {
+            _appearance.ElementAccents[_appearanceTarget] = value;
+        }
+    }
+
+    private void SyncAppearanceColorInputs()
+    {
+        _appearanceHexInput = AppearanceWorkingHex;
+        _appearanceColorError = "";
     }
 
     private void OnAppearanceFontScaleInput(ChangeEventArgs args)
@@ -1429,6 +1584,7 @@
     private async Task SaveAppearance()
     {
         _appearance = AppearancePreferences.Normalize(_appearance);
+        SyncAppearanceColorInputs();
         try
         {
             await JS.InvokeVoidAsync("acAppearance.save", _appearance);
@@ -1443,6 +1599,8 @@
     private async Task ResetAppearance()
     {
         _appearance = AppearancePreferences.Defaults();
+        _appearanceTarget = "shell";
+        SyncAppearanceColorInputs();
         try
         {
             await JS.InvokeVoidAsync("acAppearance.reset");

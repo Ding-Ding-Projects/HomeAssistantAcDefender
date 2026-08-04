@@ -11,12 +11,22 @@ public sealed class AppearancePreferences
     public const string DefaultAccent = "#3ddc97";
     public const string DefaultFontFamily = "Segoe UI";
     public const double DefaultFontScale = 1.0;
+    public const double DefaultAccentAlpha = 1.0;
 
     public string Theme { get; set; } = DefaultTheme;
     public string Density { get; set; } = DefaultDensity;
     public string Accent { get; set; } = DefaultAccent;
     public string FontFamily { get; set; } = DefaultFontFamily;
     public double FontScale { get; set; } = DefaultFontScale;
+    public double AccentAlpha { get; set; } = DefaultAccentAlpha;
+
+    /// <summary>
+    /// Optional accent overrides for real shell surfaces. Keys are deliberately bounded
+    /// so a browser value can never become an arbitrary CSS selector or property name.
+    /// </summary>
+    public Dictionary<string, string> ElementAccents { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public static IReadOnlyList<string> AppearanceTargets { get; } = ["header", "rail", "main"];
 
     public static AppearancePreferences Defaults() => new();
 
@@ -30,7 +40,9 @@ public sealed class AppearancePreferences
             Density = value.Density is "compact" or "comfortable" or "spacious" ? value.Density : DefaultDensity,
             Accent = IsHexColor(value.Accent) ? value.Accent.ToLowerInvariant() : DefaultAccent,
             FontFamily = AllowedFontFamilies.Contains(value.FontFamily, StringComparer.Ordinal) ? value.FontFamily : DefaultFontFamily,
-            FontScale = double.IsFinite(value.FontScale) ? Math.Clamp(value.FontScale, 0.85, 1.35) : DefaultFontScale
+            FontScale = double.IsFinite(value.FontScale) ? Math.Clamp(value.FontScale, 0.85, 1.35) : DefaultFontScale,
+            AccentAlpha = double.IsFinite(value.AccentAlpha) ? Math.Clamp(value.AccentAlpha, 0, 1) : DefaultAccentAlpha,
+            ElementAccents = NormalizeElementAccents(value.ElementAccents)
         };
     }
 
@@ -51,5 +63,24 @@ public sealed class AppearancePreferences
         }
 
         return value[1..].All(Uri.IsHexDigit);
+    }
+
+    private static Dictionary<string, string> NormalizeElementAccents(IReadOnlyDictionary<string, string>? values)
+    {
+        var normalized = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (values is null)
+        {
+            return normalized;
+        }
+
+        foreach (var target in AppearanceTargets)
+        {
+            if (values.TryGetValue(target, out var value) && IsHexColor(value))
+            {
+                normalized[target] = value.ToLowerInvariant();
+            }
+        }
+
+        return normalized;
     }
 }
