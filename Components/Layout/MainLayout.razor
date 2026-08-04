@@ -106,6 +106,171 @@
         <span class="ops-app-tabs__count" aria-live="polite">@OpenStations.Count</span>
     </nav>
 
+    @* ═════════ TAB SEARCH + BULK CLOSE (all scopes stay independent) ═════════ *@
+    <details class="ops-app-tab-tools">
+        <summary class="ops-app-tab-tools__summary">
+            <span>@L("Tab search and bulk close")</span>
+            <span class="ops-app-tab-tools__summary-count" aria-live="polite">@OpenStations.Count @L("open tabs")</span>
+        </summary>
+        <div class="ops-app-tab-tools__body">
+            <p class="ops-app-tab-tools__help">@L("Search visible tab labels only. Plain text is the default; each field has its own full regex builder.")</p>
+            <div class="ops-app-tab-search-grid">
+                <fieldset class="ops-app-tab-search-card">
+                    <legend>@L("Current tab strip search")</legend>
+                    <input class="ops-input" value="@_tabStripQuery" @oninput="OnTabStripQueryChanged"
+                           placeholder="@L("Search this strip…")" aria-label="@L("Current tab strip search")" />
+                    <RegexSearchBuilder Id="app-tab-strip-search" Value="@_tabStripQuery" ValueChanged="SetTabStripQuery"
+                                        Mode="@_tabStripMode" ModeChanged="SetTabStripMode"
+                                        Flags="@_tabStripFlags" FlagsChanged="SetTabStripFlags" />
+                    @if (TabStripSearch.Error is { Length: > 0 } stripError)
+                    {
+                        <div class="ops-app-tab-tools__error" role="alert">@stripError</div>
+                    }
+                    <div class="ops-app-tab-tools__result-count" role="status">@TabStripSearch.Matches.Count @L("matches")</div>
+                    <ul class="ops-app-tab-tools__results" aria-label="@L("Current strip matches")">
+                        @foreach (var item in TabStripSearch.Matches)
+                        {
+                            <li><a href="@item.Href">@item.Label</a>@TabMeta(item)</li>
+                        }
+                    </ul>
+                </fieldset>
+
+                <fieldset class="ops-app-tab-search-card">
+                    <legend>@L("Tab group search")</legend>
+                    <label class="ops-app-tab-tools__scope-label">@L("Group scope")
+                        <select class="ops-input" value="@(_tabGroupScope ?? "")" @onchange="OnTabGroupScopeChanged" aria-label="@L("Tab group scope")">
+                            <option value="">@L("All groups")</option>
+                            @foreach (var group in TabGroups)
+                            {
+                                <option value="@group">@group</option>
+                            }
+                        </select>
+                    </label>
+                    <input class="ops-input" value="@_tabGroupQuery" @oninput="OnTabGroupQueryChanged"
+                           placeholder="@L("Search tabs in this group…")" aria-label="@L("Tab group search")" />
+                    <RegexSearchBuilder Id="app-tab-group-search" Value="@_tabGroupQuery" ValueChanged="SetTabGroupQuery"
+                                        Mode="@_tabGroupMode" ModeChanged="SetTabGroupMode"
+                                        Flags="@_tabGroupFlags" FlagsChanged="SetTabGroupFlags" />
+                    @if (TabGroupSearch.Error is { Length: > 0 } groupError)
+                    {
+                        <div class="ops-app-tab-tools__error" role="alert">@groupError</div>
+                    }
+                    <div class="ops-app-tab-tools__result-count" role="status">@TabGroupSearch.Matches.Count @L("matches")</div>
+                    <ul class="ops-app-tab-tools__results" aria-label="@L("Tab group matches")">
+                        @foreach (var item in TabGroupSearch.Matches)
+                        {
+                            <li><a href="@item.Href">@item.Label</a>@TabMeta(item)</li>
+                        }
+                    </ul>
+                </fieldset>
+
+                <fieldset class="ops-app-tab-search-card">
+                    <legend>@L("Tab group names search")</legend>
+                    <input class="ops-input" value="@_tabGroupNameQuery" @oninput="OnTabGroupNameQueryChanged"
+                           placeholder="@L("Search group names…")" aria-label="@L("Tab group names search")" />
+                    <RegexSearchBuilder Id="app-tab-group-name-search" Value="@_tabGroupNameQuery" ValueChanged="SetTabGroupNameQuery"
+                                        Mode="@_tabGroupNameMode" ModeChanged="SetTabGroupNameMode"
+                                        Flags="@_tabGroupNameFlags" FlagsChanged="SetTabGroupNameFlags" />
+                    @if (TabGroupNameError is { Length: > 0 } groupNameError)
+                    {
+                        <div class="ops-app-tab-tools__error" role="alert">@groupNameError</div>
+                    }
+                    <div class="ops-app-tab-tools__result-count" role="status">@TabGroupNameMatches.Count @L("groups")</div>
+                    <ul class="ops-app-tab-tools__results" aria-label="@L("Tab group name matches")">
+                        @foreach (var group in TabGroupNameMatches)
+                        {
+                            <li><button type="button" class="ops-app-tab-tools__group-result" @onclick="@(() => FocusGroup(group))">@group</button></li>
+                        }
+                    </ul>
+                </fieldset>
+
+                <fieldset class="ops-app-tab-search-card">
+                    <legend>@L("Master tab search")</legend>
+                    <input class="ops-input" value="@_masterTabQuery" @oninput="OnMasterTabQueryChanged"
+                           placeholder="@L("Search every open tab…")" aria-label="@L("Master tab search")" />
+                    <RegexSearchBuilder Id="app-tab-master-search" Value="@_masterTabQuery" ValueChanged="SetMasterTabQuery"
+                                        Mode="@_masterTabMode" ModeChanged="SetMasterTabMode"
+                                        Flags="@_masterTabFlags" FlagsChanged="SetMasterTabFlags" />
+                    @if (MasterTabSearch.Error is { Length: > 0 } error)
+                    {
+                        <div class="ops-app-tab-tools__error" role="alert">@error</div>
+                    }
+                    <div class="ops-app-tab-tools__result-count" role="status">@MasterTabSearch.Matches.Count @L("matches across all open tabs")</div>
+                    <ul class="ops-app-tab-tools__results" aria-label="@L("Master tab matches")">
+                        @foreach (var item in MasterTabSearch.Matches)
+                        {
+                            <li><a href="@item.Href">@item.Label</a>@TabMeta(item)</li>
+                        }
+                    </ul>
+                </fieldset>
+            </div>
+
+            <div class="ops-app-tab-bulk-grid">
+                <fieldset class="ops-app-tab-bulk-card">
+                    <legend>@L("Close tabs containing text")</legend>
+                    <input class="ops-input" value="@_bulkContainsQuery" @oninput="OnBulkContainsQueryChanged"
+                           placeholder="@L("Text or pattern…")" aria-label="@L("Close tabs containing text")" />
+                    <RegexSearchBuilder Id="app-tab-close-containing" Value="@_bulkContainsQuery" ValueChanged="SetBulkContainsQuery"
+                                        Mode="@_bulkContainsMode" ModeChanged="SetBulkContainsMode"
+                                        Flags="@_bulkContainsFlags" FlagsChanged="SetBulkContainsFlags" />
+                    <label class="ops-app-tab-tools__check"><input type="checkbox" checked="@_bulkContainsIncludePinned" @onchange="OnBulkContainsIncludePinnedChanged" /> @L("Include pinned")</label>
+                    <button type="button" class="ops-btn ops-btn--outline" @onclick="PreviewBulkContains">@L("Preview close")</button>
+                </fieldset>
+                <fieldset class="ops-app-tab-bulk-card">
+                    <legend>@L("Close tabs not containing text")</legend>
+                    <input class="ops-input" value="@_bulkNotContainsQuery" @oninput="OnBulkNotContainsQueryChanged"
+                           placeholder="@L("Text or pattern…")" aria-label="@L("Close tabs not containing text")" />
+                    <RegexSearchBuilder Id="app-tab-close-not-containing" Value="@_bulkNotContainsQuery" ValueChanged="SetBulkNotContainsQuery"
+                                        Mode="@_bulkNotContainsMode" ModeChanged="SetBulkNotContainsMode"
+                                        Flags="@_bulkNotContainsFlags" FlagsChanged="SetBulkNotContainsFlags" />
+                    <label class="ops-app-tab-tools__check"><input type="checkbox" checked="@_bulkNotContainsIncludePinned" @onchange="OnBulkNotContainsIncludePinnedChanged" /> @L("Include pinned")</label>
+                    <button type="button" class="ops-btn ops-btn--outline" @onclick="PreviewBulkNotContains">@L("Preview close")</button>
+                </fieldset>
+            </div>
+
+            @if (_bulkClosePreview is not null)
+            {
+                <section class="ops-app-tab-confirm" role="dialog" aria-modal="true" aria-labelledby="app-tab-close-title" tabindex="-1">
+                    <h2 id="app-tab-close-title">@BulkCloseTitle(_bulkClosePreview.Direction)</h2>
+                    @if (_bulkClosePreview.IsEmptyQuery)
+                    {
+                        <p class="ops-app-tab-tools__error" role="alert">@L("Enter a non-empty query before previewing a close.")</p>
+                    }
+                    else if (!_bulkClosePreview.IsValid)
+                    {
+                        <p class="ops-app-tab-tools__error" role="alert">@_bulkClosePreview.Error</p>
+                    }
+                    else
+                    {
+                        <p role="status">@_bulkClosePreview.Matches.Count @L("tabs will close") · @_bulkClosePreview.Excluded.Count @L("protected or excluded")</p>
+                        @if (_bulkClosePreview.Excluded.Count > 0)
+                        {
+                            <ul class="ops-app-tab-tools__excluded">
+                                @foreach (var excluded in _bulkClosePreview.Excluded)
+                                {
+                                    <li><strong>@excluded.Item.Label</strong> — @excluded.Reason</li>
+                                }
+                            </ul>
+                        }
+                        @if (_bulkClosePreview.Matches.Count > 0)
+                        {
+                            <ul class="ops-app-tab-tools__preview-list">
+                                @foreach (var item in _bulkClosePreview.Matches.Take(20))
+                                {
+                                    <li><strong>@item.Label</strong>@TabMeta(item)</li>
+                                }
+                            </ul>
+                        }
+                    }
+                    <div class="ops-app-tab-confirm__actions">
+                        <button type="button" class="ops-btn ops-btn--outline" @onclick="CancelBulkClose">@L("Emergency exit")</button>
+                        <button type="button" class="ops-btn ops-btn--danger" disabled="@(!_bulkClosePreview.CanConfirm)" @onclick="ConfirmBulkClose">@L("Confirm close")</button>
+                    </div>
+                </section>
+            }
+        </div>
+    </details>
+
     <div class="ops-body">
 
         @* ═════════ NAV RAIL ═════════ *@
@@ -487,6 +652,142 @@
     private string ActiveTabGroup => _appTabs?.GroupFor(CurrentStationHref) ?? string.Empty;
 
     private string ActiveAppTabId => AppTabId(CurrentStationHref);
+
+    // ---------- independent tab searches and reviewable bulk close ----------
+
+    private string _tabStripQuery = "";
+    private string _tabStripMode = "plain";
+    private string _tabStripFlags = "im";
+    private string _tabGroupQuery = "";
+    private string _tabGroupMode = "plain";
+    private string _tabGroupFlags = "im";
+    private string? _tabGroupScope;
+    private string _tabGroupNameQuery = "";
+    private string _tabGroupNameMode = "plain";
+    private string _tabGroupNameFlags = "im";
+    private string _masterTabQuery = "";
+    private string _masterTabMode = "plain";
+    private string _masterTabFlags = "im";
+    private string _bulkContainsQuery = "";
+    private string _bulkContainsMode = "plain";
+    private string _bulkContainsFlags = "im";
+    private bool _bulkContainsIncludePinned;
+    private string _bulkNotContainsQuery = "";
+    private string _bulkNotContainsMode = "plain";
+    private string _bulkNotContainsFlags = "im";
+    private bool _bulkNotContainsIncludePinned;
+    private AppTabSearchService.BulkClosePreview? _bulkClosePreview;
+
+    private IReadOnlyList<AppTabSearchService.SearchItem> TabSearchItems => OpenStations
+        .Select(station => new AppTabSearchService.SearchItem(station.Href, Lang.TInline(_langMode, station.Label), IsPinned(station.Href), GroupFor(station.Href)))
+        .ToArray();
+
+    private IReadOnlyList<string> TabGroups => _appTabs?.Groups ?? [];
+
+    private AppTabSearchService.SearchResult TabStripSearch =>
+        AppTabSearchService.Search(TabSearchItems, new(_tabStripQuery, _tabStripMode, _tabStripFlags));
+
+    private AppTabSearchService.SearchResult TabGroupSearch =>
+        AppTabSearchService.Search(TabSearchItems, new(_tabGroupQuery, _tabGroupMode, _tabGroupFlags, _tabGroupScope));
+
+    private IReadOnlyList<string> TabGroupNameMatches
+    {
+        get
+        {
+            var groups = AppTabSearchService.SearchGroups(TabGroups, new(_tabGroupNameQuery, _tabGroupNameMode, _tabGroupNameFlags), out var error);
+            TabGroupNameError = error;
+            return groups;
+        }
+    }
+
+    private string? TabGroupNameError { get; set; }
+
+    private AppTabSearchService.SearchResult MasterTabSearch =>
+        AppTabSearchService.Search(TabSearchItems, new(_masterTabQuery, _masterTabMode, _masterTabFlags));
+
+    private string TabMeta(AppTabSearchService.SearchItem item)
+    {
+        var metadata = item.Pinned ? $" · {L("pinned")}" : "";
+        return string.IsNullOrWhiteSpace(item.Group) ? metadata : $"{metadata} · {item.Group}";
+    }
+
+    private void FocusGroup(string group)
+    {
+        _tabGroupScope = group;
+        StateHasChanged();
+    }
+
+    private void OnTabStripQueryChanged(ChangeEventArgs args) => _tabStripQuery = args.Value?.ToString() ?? "";
+    private Task SetTabStripQuery(string value) { _tabStripQuery = value; return Task.CompletedTask; }
+    private Task SetTabStripMode(string value) { _tabStripMode = value; return Task.CompletedTask; }
+    private Task SetTabStripFlags(string value) { _tabStripFlags = value; return Task.CompletedTask; }
+    private void OnTabGroupQueryChanged(ChangeEventArgs args) => _tabGroupQuery = args.Value?.ToString() ?? "";
+    private Task SetTabGroupQuery(string value) { _tabGroupQuery = value; return Task.CompletedTask; }
+    private Task SetTabGroupMode(string value) { _tabGroupMode = value; return Task.CompletedTask; }
+    private Task SetTabGroupFlags(string value) { _tabGroupFlags = value; return Task.CompletedTask; }
+    private void OnTabGroupScopeChanged(ChangeEventArgs args) => _tabGroupScope = string.IsNullOrWhiteSpace(args.Value?.ToString()) ? null : args.Value?.ToString();
+    private void OnTabGroupNameQueryChanged(ChangeEventArgs args) => _tabGroupNameQuery = args.Value?.ToString() ?? "";
+    private Task SetTabGroupNameQuery(string value) { _tabGroupNameQuery = value; return Task.CompletedTask; }
+    private Task SetTabGroupNameMode(string value) { _tabGroupNameMode = value; return Task.CompletedTask; }
+    private Task SetTabGroupNameFlags(string value) { _tabGroupNameFlags = value; return Task.CompletedTask; }
+    private void OnMasterTabQueryChanged(ChangeEventArgs args) => _masterTabQuery = args.Value?.ToString() ?? "";
+    private Task SetMasterTabQuery(string value) { _masterTabQuery = value; return Task.CompletedTask; }
+    private Task SetMasterTabMode(string value) { _masterTabMode = value; return Task.CompletedTask; }
+    private Task SetMasterTabFlags(string value) { _masterTabFlags = value; return Task.CompletedTask; }
+    private void OnBulkContainsQueryChanged(ChangeEventArgs args) => _bulkContainsQuery = args.Value?.ToString() ?? "";
+    private Task SetBulkContainsQuery(string value) { _bulkContainsQuery = value; return Task.CompletedTask; }
+    private Task SetBulkContainsMode(string value) { _bulkContainsMode = value; return Task.CompletedTask; }
+    private Task SetBulkContainsFlags(string value) { _bulkContainsFlags = value; return Task.CompletedTask; }
+    private void OnBulkContainsIncludePinnedChanged(ChangeEventArgs args) => _bulkContainsIncludePinned = args.Value is bool value && value;
+    private void OnBulkNotContainsQueryChanged(ChangeEventArgs args) => _bulkNotContainsQuery = args.Value?.ToString() ?? "";
+    private Task SetBulkNotContainsQuery(string value) { _bulkNotContainsQuery = value; return Task.CompletedTask; }
+    private Task SetBulkNotContainsMode(string value) { _bulkNotContainsMode = value; return Task.CompletedTask; }
+    private Task SetBulkNotContainsFlags(string value) { _bulkNotContainsFlags = value; return Task.CompletedTask; }
+    private void OnBulkNotContainsIncludePinnedChanged(ChangeEventArgs args) => _bulkNotContainsIncludePinned = args.Value is bool value && value;
+
+    private void PreviewBulkContains() => _bulkClosePreview = AppTabSearchService.PreviewBulkClose(
+        TabSearchItems,
+        new(_bulkContainsQuery, _bulkContainsMode, _bulkContainsFlags),
+        AppTabSearchService.BulkCloseDirection.Containing,
+        CurrentStationHref,
+        _bulkContainsIncludePinned);
+
+    private void PreviewBulkNotContains() => _bulkClosePreview = AppTabSearchService.PreviewBulkClose(
+        TabSearchItems,
+        new(_bulkNotContainsQuery, _bulkNotContainsMode, _bulkNotContainsFlags),
+        AppTabSearchService.BulkCloseDirection.NotContaining,
+        CurrentStationHref,
+        _bulkNotContainsIncludePinned);
+
+    private string BulkCloseTitle(AppTabSearchService.BulkCloseDirection direction) => direction == AppTabSearchService.BulkCloseDirection.Containing
+        ? L("Review tabs containing text")
+        : L("Review tabs not containing text");
+
+    private void CancelBulkClose() => _bulkClosePreview = null;
+
+    private async Task ConfirmBulkClose()
+    {
+        var preview = _bulkClosePreview;
+        if (preview is null || !preview.CanConfirm || _appTabs is null)
+        {
+            return;
+        }
+
+        var closed = 0;
+        foreach (var item in preview.Matches)
+        {
+            if (_appTabs.Close(item.Href))
+            {
+                closed++;
+            }
+        }
+
+        EnsureCurrentAppTab();
+        _bulkClosePreview = null;
+        await PersistAppTabsAsync();
+        Snackbar.Add($"{closed} tab(s) closed. Pinned and active tabs remained protected.", Severity.Info);
+        await InvokeAsync(StateHasChanged);
+    }
 
     private static string AppTabId(string href)
     {

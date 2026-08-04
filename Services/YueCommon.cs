@@ -23,6 +23,41 @@ public static class YueCommon
         map["Open pages"] = "開啟頁面";
         map["CHANGELOG"] = "版本紀錄";
 
+        // ── Browser-style tab discovery ──
+        map["Tab search and bulk close"] = "分頁搜尋同批量關閉";
+        map["open tabs"] = "個開啟分頁";
+        map["Search visible tab labels only. Plain text is the default; each field has its own full regex builder."] = "只搜尋分頁顯示名稱。預設係純文字；每個欄位都有自己完整正則建構器。";
+        map["Current tab strip search"] = "目前分頁列搜尋";
+        map["Search this strip…"] = "搜尋呢條分頁列…";
+        map["Current strip matches"] = "目前分頁列結果";
+        map["Tab group search"] = "分頁群組搜尋";
+        map["Group scope"] = "群組範圍";
+        map["All groups"] = "全部群組";
+        map["Search tabs in this group…"] = "搜尋呢個群組嘅分頁…";
+        map["Tab group matches"] = "分頁群組結果";
+        map["Tab group names search"] = "分頁群組名稱搜尋";
+        map["Search group names…"] = "搜尋群組名稱…";
+        map["Tab group name matches"] = "分頁群組名稱結果";
+        map["Master tab search"] = "總分頁搜尋";
+        map["Search every open tab…"] = "搜尋所有開啟分頁…";
+        map["Master tab matches"] = "總分頁結果";
+        map["matches"] = "個結果";
+        map["groups"] = "個群組";
+        map["matches across all open tabs"] = "個結果（所有開啟分頁）";
+        map["Close tabs containing text"] = "關閉包含文字嘅分頁";
+        map["Close tabs not containing text"] = "關閉唔包含文字嘅分頁";
+        map["Text or pattern…"] = "文字或模式…";
+        map["Include pinned"] = "包括釘選分頁";
+        map["Preview close"] = "預覽關閉";
+        map["Review tabs containing text"] = "檢查包含文字嘅分頁";
+        map["Review tabs not containing text"] = "檢查唔包含文字嘅分頁";
+        map["Enter a non-empty query before previewing a close."] = "預覽關閉之前，要先輸入唔可以留空嘅搜尋。";
+        map["tabs will close"] = "個分頁會關閉";
+        map["protected or excluded"] = "個受保護或排除";
+        map["Emergency exit"] = "緊急退出";
+        map["Confirm close"] = "確認關閉";
+        map["pinned"] = "已釘選";
+
         // ── Page titles ──
         map["Command Center"] = "指揮中心";
         map["Defense Roster"] = "防衛名冊";
