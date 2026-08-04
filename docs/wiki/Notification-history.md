@@ -27,6 +27,21 @@ and includes dismissed records on demand. The Windows Electron controller reads 
 - Journal or disk failures never block a real Home Assistant command or a background poll. The event
   remains visible in the live snapshot and the failure is logged for recovery.
 
+## Local exports
+
+The notification centre can export the current filtered view with **Export JSON** or **Export Markdown**.
+The browser creates the download locally from the already-filtered records; no export request, message,
+credential, Home Assistant token, or thermostat state is sent to a server. Both formats are UTF-8 and carry
+the schema identifier `ac-defender.notification-history.v1`, the UTC export time, the active search query,
+plain/regex mode and flags, level filter, dismissed-record choice, and exported count. JSON keeps the complete
+record fields for machine processing. Markdown renders a reviewable table, escapes pipes and line breaks,
+and writes an explicit no-match message for an empty filtered view.
+
+If browser download or serialization fails, the page keeps the notification centre open and shows a persistent
+error toast; the journal and real defender command pipeline are unchanged. Treat exported files as local
+user data: notification messages may contain operational details, so store or share them only with the same
+care as the app's state directory.
+
 ## Configuration and security
 
 The journal path follows `Defender:StateFilePath`; no new secret, token, thermostat state, or Home
@@ -35,9 +50,13 @@ the four supported values. The API remains inside the authenticated `/api` route
 
 ## Verification
 
-`HomeAssistantAcDefender.Tests` runs `NotificationHistoryStoreTests.JournalSurvivesRestartAndReviewActions`.
-The test appends, reads, dismisses, restores, restarts, and replays a journal with a malformed final line;
-it proves the valid prefix survives without inventing thermostat state.
+`HomeAssistantAcDefender.Tests` runs `NotificationHistoryStoreTests.JournalSurvivesRestartAndReviewActions`
+and `NotificationExportServiceTests.JsonAndMarkdownExportsPreserveFiltersAndUtf8`. The export checks prove
+UTF-8 Cantonese text, schema/filter metadata, Markdown escaping, and an explicit empty-result state; a static
+contract check also proves both buttons and the local download bridge are wired into `/notifications`.
+The journal test appends, reads, dismisses, restores, restarts, and replays a malformed final line; it proves
+the valid prefix survives without inventing thermostat state. Browser verification uses the real signed-in
+`/notifications` page and captures the two export controls in the built app.
 
 ## Suggested articles
 
