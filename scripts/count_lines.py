@@ -21,13 +21,20 @@ TEXT_EXTENSIONS = {
     ".css",
     ".dockerfile",
     ".html",
+    ".js",
+    ".jsx",
     ".json",
+    ".less",
     ".md",
+    ".mjs",
     ".ps1",
     ".py",
     ".razor",
+    ".scss",
     ".sh",
     ".svg",
+    ".ts",
+    ".tsx",
     ".toml",
     ".txt",
     ".yml",
@@ -95,7 +102,7 @@ def category(path: Path) -> str:
         return "Styles/markup"
     if normalized.startswith("docs/") or suffix == ".md":
         return "Documentation"
-    if suffix in {".cs", ".csproj", ".py", ".ps1", ".sh"}:
+    if suffix in {".cs", ".csproj", ".js", ".jsx", ".mjs", ".py", ".ps1", ".sh", ".ts", ".tsx"}:
         return "Application source"
     return "Configuration/other text"
 
