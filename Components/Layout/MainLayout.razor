@@ -146,6 +146,33 @@
         </main>
     </div>
 
+    @if (_dimSumSurprise is not null && !_dimSumImageFailed)
+    {
+        <aside class="dim-sum-surprise" role="status" aria-live="polite" aria-label="@DimSumStatusLabel">
+            <div class="dim-sum-surprise__eyebrow">@DimSumEyebrow</div>
+            <div class="dim-sum-surprise__body">
+                <img class="dim-sum-surprise__image"
+                     src="@_dimSumSurprise.ImageUrl"
+                     alt="@DimSumAltText"
+                     loading="eager"
+                     @onerror="HandleDimSumImageError" />
+                <div class="dim-sum-surprise__copy">
+                    <div class="dim-sum-surprise__title">@DimSumTitle</div>
+                    <div class="dim-sum-surprise__sub">@DimSumSubTitle</div>
+                    <a class="dim-sum-surprise__source"
+                       href="@_dimSumSurprise.ImageUrl"
+                       target="_blank"
+                       rel="noopener noreferrer">@DimSumSourceLabel</a>
+                </div>
+                <button class="dim-sum-surprise__close"
+                        type="button"
+                        @onclick="DismissDimSumSurprise"
+                        aria-label="@DimSumDismissLabel"
+                        title="@DimSumDismissLabel">×</button>
+            </div>
+        </aside>
+    }
+
     @* ═════════ MOBILE BOTTOM NAV ═════════ *@
     <nav class="ops-mobile-nav" aria-label="Primary mobile">
         @foreach (var item in Stations.Where(s => s.Mobile))
@@ -202,14 +229,74 @@
     private int _bootStep;
     private bool _bootStarted;
     private string _langMode = Lang.English;
+    private int _englishFunnyLevel = 1;
+    private int _cantoneseFunnyLevel = 1;
     private AppTabState? _appTabs;
     private bool _appTabsHydrated;
+    private DimSumDish? _dimSumSurprise;
+    private CancellationTokenSource? _dimSumDismissCancellation;
+    private bool _dimSumDrawAttempted;
+    private bool _dimSumImageFailed;
 
     private const string AppTabsStorageKey = "ac-defender-open-tabs";
+    private static readonly TimeSpan DimSumVisibleDuration = TimeSpan.FromSeconds(12);
 
     // ---------- language (EN / 粵 / EN+粵) ----------
 
     private string L(string? english) => Lang.T(_langMode, english);
+
+    private string DimSumTitle => _dimSumSurprise is null
+        ? ""
+        : _langMode switch
+        {
+            Lang.Cantonese => _dimSumSurprise.TraditionalName,
+            Lang.Both => $"{_dimSumSurprise.EnglishName} · {_dimSumSurprise.TraditionalName}",
+            _ => _dimSumSurprise.EnglishName
+        };
+
+    private string DimSumSubTitle => _langMode switch
+    {
+        Lang.Cantonese => FunnyTone.Cantonese("開機有 10% 機會遇到一碟小驚喜。", _cantoneseFunnyLevel),
+        Lang.Both => $"{FunnyTone.English("A tiny startup surprise — drawn once after boot.", _englishFunnyLevel)}\n{FunnyTone.Cantonese("開機有 10% 機會遇到一碟小驚喜。", _cantoneseFunnyLevel)}",
+        _ => FunnyTone.English("A tiny startup surprise — drawn once after boot.", _englishFunnyLevel)
+    };
+
+    private string DimSumEyebrow => _langMode switch
+    {
+        Lang.Cantonese => "點心驚喜",
+        Lang.Both => "DIM-SUM SURPRISE · 點心驚喜",
+        _ => "DIM-SUM SURPRISE"
+    };
+
+    private string DimSumSourceLabel => _langMode switch
+    {
+        Lang.Cantonese => "開啟公開相片",
+        Lang.Both => "Open public photo · 開啟公開相片",
+        _ => "Open public photo"
+    };
+
+    private string DimSumDismissLabel => _langMode switch
+    {
+        Lang.Cantonese => "關閉點心驚喜",
+        Lang.Both => "Dismiss dim-sum surprise · 關閉點心驚喜",
+        _ => "Dismiss dim-sum surprise"
+    };
+
+    private string DimSumStatusLabel => _langMode switch
+    {
+        Lang.Cantonese => "點心驚喜：" + DimSumTitle,
+        Lang.Both => "Dim-sum surprise · 點心驚喜：" + DimSumTitle,
+        _ => "Dim-sum surprise: " + DimSumTitle
+    };
+
+    private string DimSumAltText => _dimSumSurprise is null
+        ? ""
+        : _langMode switch
+        {
+            Lang.Cantonese => _dimSumSurprise.CantoneseAlt,
+            Lang.Both => $"{_dimSumSurprise.EnglishAlt} · {_dimSumSurprise.CantoneseAlt}",
+            _ => _dimSumSurprise.EnglishAlt
+        };
 
     private string LangBtnClass(string mode) =>
         _langMode == mode ? "ops-lang__btn ops-lang__btn--active" : "ops-lang__btn";
@@ -685,6 +772,9 @@
                 _langMode = Lang.NormalizeMode(savedLang);
             }
 
+            _englishFunnyLevel = ParseFunnyLevel(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-funny-en"));
+            _cantoneseFunnyLevel = ParseFunnyLevel(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-funny-yue"));
+
             await UpdateDocumentLanguageAsync();
 
             await LoadAppTabsAsync();
@@ -707,6 +797,11 @@
                 _bootStarted = true;
                 StateHasChanged();
                 _ = RunBootSequenceAsync();
+            }
+            else
+            {
+                _bootStep = BootDoneStep;
+                await TryShowDimSumSurpriseAsync();
             }
         }
         catch
@@ -735,6 +830,79 @@
             _bootStep++;
             await InvokeAsync(StateHasChanged);
         }
+
+        await TryShowDimSumSurpriseAsync();
+    }
+
+    private static int ParseFunnyLevel(string? value) =>
+        int.TryParse(value, out var parsed) ? Math.Clamp(parsed, 1, 5) : 1;
+
+    private async Task TryShowDimSumSurpriseAsync()
+    {
+        if (_dimSumDrawAttempted)
+        {
+            return;
+        }
+
+        _dimSumDrawAttempted = true;
+
+        // The surprise is deliberately confined to the usable command page. Login/first-run,
+        // update/error surfaces, active cooling-failure alerts, and other routes never get a
+        // startup interruption. A dismissed or unavailable image cannot trigger a second draw.
+        if (_bootStep < BootDoneStep || CurrentPath != "/" || BannerVisible || IsAlertMood)
+        {
+            return;
+        }
+
+        var dish = DimSumSurpriseService.TryDraw();
+        if (dish is null)
+        {
+            return;
+        }
+
+        _dimSumImageFailed = false;
+        _dimSumSurprise = dish;
+        _dimSumDismissCancellation?.Cancel();
+        _dimSumDismissCancellation?.Dispose();
+        _dimSumDismissCancellation = new CancellationTokenSource();
+        await InvokeAsync(StateHasChanged);
+        _ = AutoDismissDimSumSurpriseAsync(_dimSumDismissCancellation.Token);
+    }
+
+    private async Task AutoDismissDimSumSurpriseAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(DimSumVisibleDuration, cancellationToken);
+            await InvokeAsync(DismissDimSumSurprise);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private void DismissDimSumSurprise()
+    {
+        _dimSumDismissCancellation?.Cancel();
+        _dimSumSurprise = null;
+        _dimSumImageFailed = false;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleDimSumImageError()
+    {
+        _dimSumDismissCancellation?.Cancel();
+        _dimSumSurprise = null;
+        _dimSumImageFailed = true;
+        Snackbar.Add(
+            _langMode switch
+            {
+                Lang.Cantonese => "點心相片未能載入；今次驚喜已收起，未使用本地替代相片。",
+                Lang.Both => "Dim-sum photo unavailable; the surprise was dismissed with no local fallback.\n點心相片未能載入；今次驚喜已收起，未使用本地替代相片。",
+                _ => "Dim-sum photo unavailable; the surprise was dismissed with no local fallback."
+            },
+            Severity.Info);
+        _ = InvokeAsync(StateHasChanged);
     }
 
     // ---------- cooling-failure snackbar (kept from previous shell) ----------
@@ -790,5 +958,7 @@
         }
 
         _appearanceReference?.Dispose();
+        _dimSumDismissCancellation?.Cancel();
+        _dimSumDismissCancellation?.Dispose();
     }
 }
