@@ -8,7 +8,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  # Serialize all refs so release tags and one-time dim-sum names cannot race.
+  group: release-${{ github.repository }}
   cancel-in-progress: false
 
 env:
