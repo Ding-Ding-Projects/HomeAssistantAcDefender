@@ -9,7 +9,7 @@ input:focus, select:focus, button:focus-visible { outline: 3px solid #9de7c0; ou
 select { appearance: auto; }
 .theme-light { --bg: #f4faf6; --surface: #ffffff; --surface2: #eaf4ee; --surface3: #dcebe2; --ink: #16231e; --muted: #4d6358; --line: #b9cfc2; --primary: #176c53; --on-primary: #fff; --danger: #b42318; --success: #1b6b43; }
 .theme-dark { --bg: #101a17; --surface: #16221e; --surface2: #1b2924; --surface3: #24362f; --ink: #e6f1eb; --muted: #a5b8ae; --line: #52655c; --primary: #9de7c0; --on-primary: #06291d; --danger: #ffb4ab; --success: #9de7c0; }
-.app-shell, .login-shell { min-height: 100vh; background: var(--bg); color: var(--ink); }
+.app-shell, .login-shell { min-height: 100vh; background: var(--bg); color: var(--ink); font-family: var(--font-family, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif); font-size: calc(1rem * var(--font-scale, 1)); }
 .login-shell { display: grid; place-items: center; padding: 28px; }
 .login-card { width: min(510px, 100%); display: flex; flex-direction: column; gap: 13px; padding: 32px; background: var(--surface); border: 1px solid var(--line); border-radius: 28px; box-shadow: 0 18px 42px rgba(0,0,0,.28); }
 .brand-mark { width: 66px; height: 66px; align-self: center; }
@@ -54,6 +54,9 @@ label { color: var(--muted); font-size: 13px; display: flex; flex-direction: col
 .tab-help { margin: 0 0 6px auto; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .tab-appearance-popover { position: absolute; right: 22px; top: calc(100% + 8px); z-index: 5; width: min(320px, calc(100vw - 44px)); display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 15px 40px rgba(0,0,0,.35); }
 .tab-appearance-popover input[type="color"] { min-height: 36px; padding: 2px; }
+.color-editor { display: grid; grid-template-columns: 52px 1fr; gap: 8px; align-items: center; }
+.color-editor input[type="color"] { min-height: 42px; padding: 3px; }
+.appearance-preview { border: 1px solid var(--line); border-radius: 12px; background: var(--surface2); padding: 14px; font-weight: 700; }
 .page-content { padding: 22px; max-width: 1500px; margin: auto; }
 .dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,.11); display: flex; flex-direction: column; gap: 14px; }

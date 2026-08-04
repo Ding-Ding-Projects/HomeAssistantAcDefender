@@ -7,8 +7,8 @@ type Tab = "dashboard" | "notifications" | "settings";
 type Copy = { en: string; yue: string };
 
 const DEFAULT_CONFIG: ControllerConfig = {
-  baseUrl: "http://192.168.50.242:8888", username: "", password: "", remember: false,
-  language: "en", funnyEnglish: 2, funnyCantonese: 3, theme: "dark", density: "compact", updateFeedUrl: "",
+  baseUrl: "http://127.0.0.1:8888", username: "", password: "", remember: false,
+  language: "en", funnyEnglish: 2, funnyCantonese: 3, theme: "dark", density: "compact", accent: "#9de7c0", fontFamily: "Segoe UI Variable", fontScale: 1, updateFeedUrl: "",
   activeTab: "dashboard", tabOrder: ["dashboard", "notifications", "settings"], tabAppearance: {
     dashboard: { foreground: "#e6f1eb", background: "#16221e", fontSize: 14 },
     notifications: { foreground: "#e6f1eb", background: "#16221e", fontSize: 14 },
@@ -144,6 +144,7 @@ function App() {
   const eventRows = Array.isArray(snapshot?.events) ? snapshot.events.slice(0, 12) : [];
   const online = Boolean(snapshot && (snapshot.connectionState === "connected" || thermostat));
   const themeClass = `${config.theme === "light" ? "theme-light" : "theme-dark"} density-${config.density}`;
+  const appearanceStyle = { "--primary": config.accent, "--font-family": `"${config.fontFamily}", "Segoe UI", system-ui, sans-serif`, "--font-scale": String(config.fontScale) } as React.CSSProperties;
   const tabOrder = (config.tabOrder?.filter((value, index, all) => ["dashboard", "notifications", "settings"].includes(value) && all.indexOf(value) === index) || ["dashboard", "notifications", "settings"]) as Tab[];
   const tabLabels: Record<Tab, Copy> = { dashboard: labels.dashboard, notifications: labels.notifications, settings: labels.settings };
   const defaultTabAppearance = { foreground: "#e6f1eb", background: "#16221e", fontSize: 14 };
@@ -168,13 +169,13 @@ function App() {
   function resetAppearance() { setAppearanceDraft({ ...defaultTabAppearance }); }
 
   if (phase !== "live") {
-    return <main className={`login-shell ${themeClass}`}>
+    return <main className={`login-shell ${themeClass}`} style={appearanceStyle}>
       <section className="login-card" aria-labelledby="login-title">
         <img src="./shield.svg" className="brand-mark" alt="AC Defender shield" />
         <h1 id="login-title">{t(labels.app)}</h1>
         <p className="supporting">{t(labels.subtitle)}</p>
-        <label>Defender address<input value={config.baseUrl} onChange={(e) => setConfig({ ...config, baseUrl: e.target.value })} placeholder="http://192.168.50.242:8888" /></label>
-        <p className="field-help">The Docker host default is editable. Use HTTPS for a non-local network.</p>
+        <label>Defender address<input value={config.baseUrl} onChange={(e) => setConfig({ ...config, baseUrl: e.target.value })} placeholder="http://127.0.0.1:8888" /></label>
+        <p className="field-help">The loopback default is editable. Enter the approved hosted address and use HTTPS for a non-local network.</p>
         <label>Username<input value={config.username} onChange={(e) => setConfig({ ...config, username: e.target.value })} autoComplete="username" /></label>
         <label>Password<input type="password" value={config.password} onChange={(e) => setConfig({ ...config, password: e.target.value })} onKeyDown={(e) => e.key === "Enter" && connect()} autoComplete="current-password" /></label>
         <label className="check-row"><input type="checkbox" checked={config.remember} onChange={(e) => setConfig({ ...config, remember: e.target.checked })} /> Remember securely on this computer</label>
@@ -185,7 +186,7 @@ function App() {
     </main>;
   }
 
-  return <main className={`app-shell ${themeClass}`}>
+  return <main className={`app-shell ${themeClass}`} style={appearanceStyle}>
     <header className="top-app-bar">
       <div className="brand"><img src="./shield.svg" alt="" /><div><strong>{t(labels.app)}</strong><small>Windows controller · real API only</small></div></div>
       <span className={`status-chip ${online ? "chip-ok" : "chip-warn"}`}>{online ? "● ONLINE" : "○ OFFLINE"}</span>
@@ -300,9 +301,9 @@ function Settings({ focusTarget, config, setConfig, onSave, onUpdateCheck, t, re
   return <section className="stack-page">
     <div className="page-heading"><div><h2>{t(labels.settings)}</h2><p className="supporting">Preferences belong to this Windows controller, not to defender logic.</p></div><button className="button button-filled" onClick={() => void onSave()}>{t(labels.save)}</button></div>
     <div className="settings-grid">
-      <article className="card"><div className="eyebrow">CONNECTION</div><label>Defender address<input id="settings-base-url" value={config.baseUrl} onChange={(e) => update("baseUrl", e.target.value)} /></label><p className="field-help">Default: <code>http://192.168.50.242:8888</code>. The address is editable for another hosted deployment.</p><label>Account<input id="settings-account" value={config.username} onChange={(e) => update("username", e.target.value)} autoComplete="username" /></label><label className="check-row"><input type="checkbox" checked={config.remember} onChange={(e) => update("remember", e.target.checked)} /> Remember the password using encrypted Windows storage</label></article>
+      <article className="card"><div className="eyebrow">CONNECTION</div><label>Defender address<input id="settings-base-url" value={config.baseUrl} onChange={(e) => update("baseUrl", e.target.value)} /></label><p className="field-help">Default: <code>http://127.0.0.1:8888</code>. Enter the approved hosted deployment address when needed.</p><label>Account<input id="settings-account" value={config.username} onChange={(e) => update("username", e.target.value)} autoComplete="username" /></label><label className="check-row"><input type="checkbox" checked={config.remember} onChange={(e) => update("remember", e.target.checked)} /> Remember the password using encrypted Windows storage</label></article>
       <article className="card"><div className="eyebrow">LANGUAGE & TONE</div><label>Language mode<select id="settings-language" value={config.language} onChange={(e) => update("language", e.target.value as Language)}><option value="en">English</option><option value="yue">Playful Hong Kong Cantonese</option><option value="bilingual">English + Cantonese</option></select></label><label>English funny level <output className="range-output">{config.funnyEnglish}</output><input id="settings-funny-en" type="range" min="1" max="5" value={config.funnyEnglish} onChange={(e) => update("funnyEnglish", Number(e.target.value))} /></label><label>Cantonese funny level <output className="range-output">{config.funnyCantonese}</output><input id="settings-funny-yue" type="range" min="1" max="5" value={config.funnyCantonese} onChange={(e) => update("funnyCantonese", Number(e.target.value))} /></label><p className="field-help">Funny level changes voice only. Temperatures, errors, commands, and safety facts stay exact.</p></article>
-      <article className="card"><div className="eyebrow">APPEARANCE</div><label>Theme<select id="settings-theme" value={config.theme} onChange={(e) => update("theme", e.target.value as "dark" | "light")}><option value="dark">Dark</option><option value="light">Light</option></select></label><label>Density<select id="settings-density" value={config.density} onChange={(e) => update("density", e.target.value as "compact" | "comfortable")}><option value="compact">Compact</option><option value="comfortable">Comfortable</option></select></label><p className="field-help">The controller paints its own Material-inspired surface; it never changes the hosted defender's theme.</p></article>
+      <article className="card"><div className="eyebrow">APPEARANCE</div><label>Theme<select id="settings-theme" value={config.theme} onChange={(e) => update("theme", e.target.value as "dark" | "light")}><option value="dark">Dark</option><option value="light">Light</option></select></label><label>Density<select id="settings-density" value={config.density} onChange={(e) => update("density", e.target.value as "compact" | "comfortable")}><option value="compact">Compact</option><option value="comfortable">Comfortable</option></select></label><label>Accent / seed color <span className="color-editor"><input id="settings-accent" type="color" value={config.accent} onChange={(e) => update("accent", e.target.value)} /><input aria-label="Accent color HEX" value={config.accent} pattern="^#[0-9a-fA-F]{6}$" onChange={(e) => { const value = e.target.value; if (/^#[0-9a-fA-F]{0,6}$/.test(value)) update("accent", value); }} onBlur={() => { if (!/^#[0-9a-fA-F]{6}$/.test(config.accent)) update("accent", "#9de7c0"); }} /></span></label><label>UI font family<select id="settings-font-family" value={config.fontFamily} onChange={(e) => update("fontFamily", e.target.value)}>{["Segoe UI Variable", "Segoe UI", "Arial", "Cascadia Code", "Consolas", "system-ui"].map((font) => <option key={font} value={font}>{font}</option>)}</select></label><label>UI size scale <output className="range-output">{Math.round(config.fontScale * 100)}%</output><input id="settings-font-scale" type="range" min="0.85" max="1.35" step="0.05" value={config.fontScale} onChange={(e) => update("fontScale", Number(e.target.value))} /></label><div className="appearance-preview" style={{ color: config.accent, fontFamily: config.fontFamily }}>Live preview · AC Defender Controller</div><p className="field-help">Theme, density, accent, font family, and scale apply live to this Windows controller and persist in its profile. They never change defender logic.</p></article>
       <article className="card"><div className="eyebrow">SIGNED UPDATE FEED</div><label>HTTPS feed URL (optional)<input id="settings-update-feed" value={config.updateFeedUrl} onChange={(e) => update("updateFeedUrl", e.target.value)} placeholder="https://updates.example.invalid/ac-defender/" /></label><p className="field-help">On Windows, Squirrel verifies the signed RELEASES feed and downloads in the background. This controller never fabricates an installer or executes an unverified file. The restart prompt appears only after Electron reports a verified update.</p><button className="button button-tonal" onClick={() => void onUpdateCheck()}>Check for updates</button></article>
       <article className="card"><div className="eyebrow">SEARCH / REGEX BUILDER</div><div className="search-row"><input id="settings-search" aria-label="Search settings" value={settingsQuery} onChange={(e) => { setSettingsQuery(e.target.value); setRegexMode(false); }} placeholder="Search this settings surface" /><RegexBuilder open={regexOpen} onOpenChange={setRegexOpen} pattern={regexPattern} flags={regexFlags} mode={regexMode} onModeChange={setRegexMode} onPatternChange={(value) => { setRegexPattern(value); try { if (value) new RegExp(value, regexFlags); setRegexError(null); } catch (e) { setRegexError(errorText(e)); } }} onFlagsChange={(value) => { setRegexFlags(value); try { if (regexPattern) new RegExp(regexPattern, value); setRegexError(null); } catch (e) { setRegexError(errorText(e)); } }} onUse={(pattern) => { setRegexMode(true); setSettingsQuery(pattern); }} title="Settings search regex builder" /></div><p className="field-help">{matchingSettings.length} setting{matchingSettings.length === 1 ? "" : "s"} match. Plain text is default; the anchored builder supports guided blocks, captures, and copy.</p><div className="settings-matches">{matchingSettings.map((name) => <span key={name} className="match-chip">{name}</span>)}</div></article>
     </div>
@@ -320,6 +321,9 @@ function CommandPalette({ query, setQuery, onClose, onNavigate, t }: { query: st
     { name: { en: "Cantonese funny level", yue: "廣東話搞笑程度" }, hint: { en: "Settings · independent level 1–5", yue: "設定 · 獨立 1–5 級" }, destination: "settings", focus: "settings-funny-yue" },
     { name: { en: "Theme", yue: "主題" }, hint: { en: "Settings · light or dark", yue: "設定 · 光亮或深色" }, destination: "settings", focus: "settings-theme" },
     { name: { en: "Density", yue: "密度" }, hint: { en: "Settings · compact or comfortable", yue: "設定 · 緊湊或舒適" }, destination: "settings", focus: "settings-density" },
+    { name: { en: "Accent color", yue: "主色" }, hint: { en: "Settings · live seed color", yue: "設定 · 即時主色" }, destination: "settings", focus: "settings-accent" },
+    { name: { en: "UI font family", yue: "介面字體", }, hint: { en: "Settings · installed font fallback", yue: "設定 · 已安裝字體 fallback" }, destination: "settings", focus: "settings-font-family" },
+    { name: { en: "UI size scale", yue: "介面字體比例" }, hint: { en: "Settings · 85% to 135%", yue: "設定 · 85% 至 135%" }, destination: "settings", focus: "settings-font-scale" },
     { name: { en: "Signed update feed", yue: "簽名更新 feed" }, hint: { en: "Settings · HTTPS Squirrel feed", yue: "設定 · HTTPS Squirrel feed" }, destination: "settings", focus: "settings-update-feed" },
     { name: { en: "Settings search regex builder", yue: "設定搜尋 regex 工具箱" }, hint: { en: "Settings · guided blocks and captures", yue: "設定 · 引導方塊同 capture" }, destination: "settings", focus: "settings-search" }
   ];

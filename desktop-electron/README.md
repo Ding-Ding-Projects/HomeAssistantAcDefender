@@ -8,8 +8,8 @@ hosted service.
 
 ## Connect to the hosted site
 
-The first-run address is **`http://192.168.50.242:8888`**, the Docker host and port used by this
-repository. It is editable in the sign-in screen and Settings tab for another deployment. Use
+The first-run address is the loopback default **`http://127.0.0.1:8888`**. It is editable in the
+sign-in screen and Settings tab for the approved hosted deployment or another environment. Use
 HTTPS when the address crosses an untrusted network; the controller does not weaken certificate
 validation or put credentials in a URL. The app signs in through `/login`, preserves the server's
 cookie and antiforgery token, and then calls the authenticated API from Electron's main process,
@@ -26,7 +26,8 @@ does not log request bodies, tokens, or passwords.
 - Thermostat-off has an explicit confirmation naming the real API action and device impact.
 - Notification history can be read, dismissed, and restored through the hosted API.
 - Connection URL, English/Cantonese/bilingual language mode, independent funny levels (1–5),
-  theme, density, and a settings-local regex builder are persisted per Windows profile.
+  theme, density, accent/seed color, installed-font choice, UI scale, and a settings-local regex
+  builder are persisted per Windows profile. Appearance changes apply live to the controller only.
 - `Ctrl+Shift+F` opens the command palette and navigates to every controller page.
 - Optional Windows update feed: configure an HTTPS Squirrel.Windows feed in Settings. Electron's
   `autoUpdater` performs the signed background check/download; this app never invents an update,
