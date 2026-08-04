@@ -2,9 +2,42 @@ window.acAccessibility = {
     previousFocus: null,
     modalTrap: null,
     modalBackgrounds: [],
+    commandPaletteHandler: null,
+    commandPaletteTarget: null,
+    commandPalettePreviousFocus: null,
 
     setDocumentLanguage(language) {
         document.documentElement.lang = language || "en";
+    },
+
+    installCommandPalette(target) {
+        this.uninstallCommandPalette();
+        this.commandPaletteTarget = target;
+        this.commandPalettePreviousFocus = null;
+        this.commandPaletteHandler = event => {
+            if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "k") return;
+            event.preventDefault();
+            this.commandPalettePreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            target.invokeMethodAsync("OpenFromShortcut");
+        };
+        window.addEventListener("keydown", this.commandPaletteHandler);
+    },
+
+    uninstallCommandPalette() {
+        if (this.commandPaletteHandler) window.removeEventListener("keydown", this.commandPaletteHandler);
+        this.commandPaletteHandler = null;
+        this.commandPaletteTarget = null;
+    },
+
+    focusElement(element) {
+        if (element instanceof HTMLElement) element.focus({ preventScroll: true });
+    },
+
+    restoreFocus() {
+        if (this.commandPalettePreviousFocus instanceof HTMLElement && document.contains(this.commandPalettePreviousFocus)) {
+            this.commandPalettePreviousFocus.focus({ preventScroll: true });
+        }
+        this.commandPalettePreviousFocus = null;
     },
 
     captureFocus() {

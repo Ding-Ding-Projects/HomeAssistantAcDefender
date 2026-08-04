@@ -46,6 +46,8 @@
             <div class="ops-clock__label">SITE CLOCK · TORONTO</div>
         </div>
 
+        <CommandPalette />
+
         <div class="ops-lang" role="group" aria-label="Language">
             <button class="@LangBtnClass(Lang.English)" @onclick="@(() => SetLangMode(Lang.English))" aria-label="English" aria-pressed="@(_langMode == Lang.English ? "true" : "false")" title="English">EN</button>
             <button class="@LangBtnClass(Lang.Cantonese)" @onclick="@(() => SetLangMode(Lang.Cantonese))" aria-label="Cantonese" aria-pressed="@(_langMode == Lang.Cantonese ? "true" : "false")" title="口語廣東話">粵</button>

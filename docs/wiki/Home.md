@@ -26,6 +26,7 @@ Assistant climate entity or returns a real error.
 | **[Defender Logic](Defender-Logic.html)** | The full decision cycle and every guard's exact rules |
 | **[Settings](Settings.html)** | Every knob on the Settings page |
 | **[Notification history](Notification-history.html)** | Reviewable activity notices that survive the live log tail |
+| **[Command palette](Command-palette.html)** | Keyboard-first navigation from every signed-in page |
 | **[API](API.html)** | The JSON endpoints and SSE stream |
 | **[Architecture](Architecture.html)** | How the code is put together |
 | **[Deployment](Deployment.html)** | Docker hosting |
