@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+"""Print the reproducible line-count table used by release notes.
+
+The counter reads only tracked files, ignores build/runtime/vendor trees, and
+uses ``git blame`` for surviving-line attribution.  It intentionally has no
+third-party dependencies so CI and local verification use the same arithmetic.
+"""
+
+from __future__ import annotations
+
+import re
+import subprocess
+import sys
+from collections import OrderedDict, defaultdict
+from pathlib import Path
+
+
+TEXT_EXTENSIONS = {
+    ".cs",
+    ".csproj",
+    ".css",
+    ".dockerfile",
+    ".html",
+    ".json",
+    ".md",
+    ".ps1",
+    ".py",
+    ".razor",
+    ".sh",
+    ".svg",
+    ".toml",
+    ".txt",
+    ".yml",
+    ".yaml",
+}
+
+EXCLUDED_PARTS = {
+    ".git",
+    "App_Data",
+    "bin",
+    "node_modules",
+    "obj",
+}
+
+
+def run_git(*args: str) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    return result.stdout
+
+
+def tracked_paths() -> list[Path]:
+    raw = subprocess.run(
+        ["git", "ls-files", "-z"],
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ).stdout
+    paths: list[Path] = []
+    for item in raw.split(b"\0"):
+        if not item:
+            continue
+        path = Path(item.decode("utf-8", errors="surrogateescape"))
+        if any(part in EXCLUDED_PARTS for part in path.parts):
+            continue
+        paths.append(path)
+    return paths
+
+
+def is_text(path: Path, data: bytes) -> bool:
+    if b"\0" in data:
+        return False
+    if path.suffix.lower() in TEXT_EXTENSIONS:
+        return True
+    try:
+        data.decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+    return path.suffix == "" and len(data) < 2_000_000
+
+
+def category(path: Path) -> str:
+    normalized = path.as_posix().lower()
+    suffix = path.suffix.lower()
+    if "homeassistantacdefender.tests/" in normalized or normalized.endswith(".tests.cs"):
+        return "Tests"
+    if suffix in {".css", ".scss", ".html", ".razor", ".svg"}:
+        return "Styles/markup"
+    if normalized.startswith("docs/") or suffix == ".md":
+        return "Documentation"
+    if suffix in {".cs", ".csproj", ".py", ".ps1", ".sh"}:
+        return "Application source"
+    return "Configuration/other text"
+
+
+_agent_commit_cache: dict[str, bool] = {}
+
+
+def blame_agent_lines(path: Path) -> int:
+    """Count surviving lines whose commit is authored by an automation agent."""
+    try:
+        output = run_git("blame", "--line-porcelain", "--", str(path))
+    except subprocess.CalledProcessError:
+        return 0
+
+    commit_lines: dict[str, int] = defaultdict(int)
+    current_sha: str | None = None
+    for line in output.splitlines():
+        header = re.match(r"^([0-9a-f]{40}) ", line)
+        if header:
+            current_sha = header.group(1)
+        elif line.startswith("\t") and current_sha:
+            commit_lines[current_sha] += 1
+
+    agent_lines = 0
+    for sha, lines in commit_lines.items():
+        # ``git blame`` uses an all-zero pseudo-commit for an uncommitted file;
+        # there is no surviving commit to attribute until the file is committed.
+        if sha == "0" * 40:
+            continue
+        is_agent = _agent_commit_cache.get(sha)
+        if is_agent is None:
+            metadata = run_git("show", "-s", "--format=%an%n%ae%n%B", sha)
+            author, email, *body = metadata.splitlines()
+            text = "\n".join((author, email, *body)).lower()
+            is_agent = bool(re.search(r"\b(agent|automation|bot|codex|claude)\b", text))
+            _agent_commit_cache[sha] = is_agent
+        if is_agent:
+            agent_lines += lines
+    return agent_lines
+
+
+def main() -> int:
+    rows: OrderedDict[str, list[int]] = OrderedDict()
+    agent_by_category: defaultdict[str, int] = defaultdict(int)
+    excluded_binary = 0
+
+    for path in tracked_paths():
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            print(f"count-lines: cannot read {path}: {exc}", file=sys.stderr)
+            return 1
+        if not is_text(path, data):
+            excluded_binary += 1
+            continue
+        lines = data.decode("utf-8", errors="replace").splitlines()
+        key = category(path)
+        if key not in rows:
+            rows[key] = [0, 0, 0]
+        rows[key][0] += len(lines)
+        rows[key][1] += sum(bool(line.strip()) for line in lines)
+        rows[key][2] += 1
+        agent_by_category[key] += blame_agent_lines(path)
+
+    total = [sum(values[index] for values in rows.values()) for index in range(3)]
+    total_agent = sum(agent_by_category.values())
+
+    print("# Reproducible line-count report")
+    print()
+    print("Generated by `python scripts/count_lines.py` at the checked-out commit.")
+    print()
+    print("| Area | Files | Total lines | Non-blank lines | Agent-attributed lines |")
+    print("| --- | ---: | ---: | ---: | ---: |")
+    for key, values in rows.items():
+        print(f"| {key} | {values[2]} | {values[0]} | {values[1]} | {agent_by_category[key]} |")
+    print(f"| **Project total** | **{total[2]}** | **{total[0]}** | **{total[1]}** | **{total_agent}** |")
+    print(f"| Excluded binary/non-text | {excluded_binary} | — | — | — |")
+    print(f"| **Grand total (tracked files)** | **{total[2] + excluded_binary}** | **{total[0]} text + binary** | **{total[1]} text + binary** | — |")
+    print()
+    print(f"- **Grand total of counted text:** {total[0]} lines ({total[1]} non-blank).")
+    print(f"- **Agent attribution rule:** surviving `git blame` lines are agent-written when the commit author or `Co-Authored-By` trailer names an automation identity (`agent`, `automation`, `bot`, `codex`, or `claude`).")
+    print(f"- **Excluded:** {excluded_binary} tracked binary/non-text files plus build/runtime/vendor trees (`.git`, `bin`, `obj`, `App_Data`, and `node_modules`). Binary files are excluded because they have no portable source-line meaning.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
