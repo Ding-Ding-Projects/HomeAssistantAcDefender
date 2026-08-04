@@ -30,6 +30,7 @@ Assistant climate entity or returns a real error.
 | **[Command palette](Command-palette.html)** | Keyboard-first navigation from every signed-in page |
 | **[App tabs](App-tabs.html)** | Persisted browser-style route tabs with keyboard navigation and overflow-safe scrolling |
 | **[Dim-sum startup surprise](Dim-sum-surprise.html)** | A bounded, 10% post-boot delight using public catalog metadata and immutable release photos |
+| **[Thermostat OFF super-confirmation](Super-confirmation.html)** | Native two-key, full-slider safety gate for the real destructive OFF command |
 | **[Windows Electron controller](Windows-Electron-controller.html)** | Separate Windows client for the hosted service |
 | **[API](API.html)** | The JSON endpoints and SSE stream |
 | **[Architecture](Architecture.html)** | How the code is put together |

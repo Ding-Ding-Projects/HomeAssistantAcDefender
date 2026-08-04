@@ -33,6 +33,20 @@ window.acAccessibility = {
         if (element instanceof HTMLElement) element.focus({ preventScroll: true });
     },
 
+    focusElementById(id) {
+        if (!id) return;
+        const focus = () => {
+            const element = document.getElementById(id);
+            if (element instanceof HTMLElement && !element.matches(':disabled, [aria-disabled="true"]')) {
+                element.focus({ preventScroll: true });
+            }
+        };
+        focus();
+        // Blazor may finish the parent render one frame after the callback returns.
+        // Re-apply focus then so the originating destructive control remains the keyboard route.
+        window.requestAnimationFrame(focus);
+    },
+
     revealActiveAppTab() {
         const active = document.querySelector('[data-active-app-tab="true"]');
         if (active instanceof HTMLElement) {

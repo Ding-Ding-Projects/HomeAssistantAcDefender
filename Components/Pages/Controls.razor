@@ -35,9 +35,22 @@
             <div class="ops-ctl-quick">
                 <button class="ops-btn ops-btn--outline" @onclick="GenerateTarget">✦ GENERATE</button>
                 <button class="ops-btn" @onclick="ForceBoost">❆ FORCE COOL</button>
-                <button class="ops-btn ops-btn--danger" @onclick="TurnOffFromControls">⏻ OFF</button>
+                <button id="controls-thermostat-off" class="ops-btn ops-btn--danger" @onclick="BeginThermostatOffFromControls" disabled="@_thermostatOffGateOpen">⏻ OFF</button>
             </div>
             <div class="ops-ctl-note">Files the directive with the defender state, then the worker walks the wall unit there politely. Never a rude direct thermostat command.</div>
+            @if (_thermostatOffGateOpen)
+            {
+                <DestructiveActionSuperConfirmation
+                    ActionTitle="Turn off the real thermostat?"
+                    CantoneseActionTitle="關閉真正溫控器？"
+                    Description="This authorizes one real Home Assistant OFF command for the dining-room thermostat. No command is sent until both keys and the full slider are complete."
+                    CantoneseDescription="呢道閘門只會授權飯廳溫控器一次真正 Home Assistant 關機指令。兩把鎖匙同全程滑桿未完成之前，唔會發送指令。"
+                    AffectedDevice="climate.dining_room"
+                    CommandSummary="climate.set_hvac_mode → off"
+                    ReturnFocusId="controls-thermostat-off"
+                    OnConfirmed="ConfirmThermostatOffGate"
+                    OnCancelled="CancelThermostatOffGate" />
+            }
         </div>
 
         @* ── B · fan mode ── *@
@@ -150,6 +163,10 @@
     private double _targetInput = 22.0;
     private bool _targetDirty;
     private string _emergencyProtocol = "suspicion";
+    private bool _thermostatOffGateOpen;
+    private bool _thermostatOffStandDownAlreadyApplied;
+    private bool _thermostatOffCommandAlreadyReserved;
+    private string _thermostatOffSuccessMessage = "Thermostat turned off.";
 
     private static readonly (string Value, string Label, string Name, string Help)[] EmergencyProtocols =
     [
@@ -297,7 +314,10 @@
 
         if (turnOff == true)
         {
-            await TurnThermostatOffAfterGate();
+            BeginThermostatOffGate(
+                standDownAlreadyApplied: true,
+                commandAlreadyReserved: true,
+                successMessage: "Thermostat turned off.");
             return;
         }
 
@@ -377,27 +397,82 @@
     private Task TurnThermostatOffAfterGate(string successMessage = "Thermostat turned off.") =>
         RunThermostatActionAfterGate(() => Defender.TurnThermostatOffAsync(CancellationToken.None), successMessage);
 
-    private async Task TurnOffFromControls()
+    private void BeginThermostatOffFromControls()
     {
-        if (!TryBeginWebsiteCommand("stand down defender and turn thermostat off", bypassDebounce: true))
+        BeginThermostatOffGate(
+            standDownAlreadyApplied: false,
+            commandAlreadyReserved: false,
+            successMessage: "Defender stood down and thermostat turned off.");
+    }
+
+    private void BeginThermostatOffGate(bool standDownAlreadyApplied, bool commandAlreadyReserved, string successMessage)
+    {
+        if (_thermostatOffGateOpen)
+        {
+            return;
+        }
+
+        _thermostatOffStandDownAlreadyApplied = standDownAlreadyApplied;
+        _thermostatOffCommandAlreadyReserved = commandAlreadyReserved;
+        _thermostatOffSuccessMessage = successMessage;
+        _thermostatOffGateOpen = true;
+    }
+
+    private async Task ConfirmThermostatOffGate()
+    {
+        _thermostatOffGateOpen = false;
+        StateHasChanged();
+
+        if (!_thermostatOffCommandAlreadyReserved
+            && !TryBeginWebsiteCommand("stand down defender and turn thermostat off", bypassDebounce: true))
         {
             return;
         }
 
         // Persist the stand-down before the real off command. Otherwise the worker can see HVAC off
         // while containment is still enabled and Cool Mode Restore can immediately put it back in cool.
-        try
+        if (!_thermostatOffStandDownAlreadyApplied)
         {
-            await Defender.SetDefenderEnabledAsync(false, CancellationToken.None);
+            try
+            {
+                await Defender.SetDefenderEnabledAsync(false, CancellationToken.None);
+            }
+            catch (ThermostatOperationSupersededException)
+            {
+                State.Refresh();
+                Snackbar.Add("A newer defender switch action won; no thermostat OFF command was sent.", Severity.Info);
+                return;
+            }
         }
-        catch (ThermostatOperationSupersededException)
+
+        await TurnThermostatOffAfterGate(_thermostatOffSuccessMessage);
+    }
+
+    private async Task CancelThermostatOffGate()
+    {
+        var standDownAlreadyApplied = _thermostatOffStandDownAlreadyApplied;
+        _thermostatOffGateOpen = false;
+        StateHasChanged();
+
+        if (!standDownAlreadyApplied)
         {
-            State.Refresh();
-            Snackbar.Add("A newer defender switch action won; refreshed the live state.", Severity.Info);
+            Snackbar.Add("Thermostat OFF authorization cancelled; no Home Assistant command was sent.", Severity.Info);
             return;
         }
-        State.Refresh();
-        await TurnThermostatOffAfterGate("Defender stood down and thermostat turned off.");
+
+        try
+        {
+            if (await Defender.ParkThermostatForStandDownAsync(CancellationToken.None) is { } parked)
+            {
+                State.Refresh();
+                Snackbar.Add(parked, Severity.Info);
+            }
+        }
+        catch
+        {
+            // Parking is best-effort; the defender remains paused after a cancelled OFF gate.
+            Snackbar.Add("Thermostat OFF authorization cancelled; the defender remains paused.", Severity.Warning);
+        }
     }
 
     private bool _learningHistory;
