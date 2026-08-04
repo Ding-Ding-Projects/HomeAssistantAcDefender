@@ -63,6 +63,17 @@ public static class YueCommon
         map["Real thermostat actions"] = "真溫控器操作";
         map["SUMMON AI REACTOR OPERATOR — 1 ration / hour"] = "召喚 AI 反應堆操作員 — 每個鐘 1 份口糧";
 
+        // ── Presentation preferences ──
+        map["Language & tone"] = "語言同語氣";
+        map["Choose how this website speaks"] = "揀呢個網站點樣講嘢";
+        map["Language mode"] = "語言模式";
+        map["English"] = "英文";
+        map["Playful Hong Kong Cantonese · 口語廣東話"] = "玩味香港廣東話 · 口語廣東話";
+        map["Bilingual · English + 粵"] = "雙語 · English + 粵";
+        map["English funny level"] = "英文玩味程度";
+        map["Cantonese funny level"] = "廣東話玩味程度";
+        map["Preview · 預覽"] = "預覽 · Preview";
+
         // ── Field kitchen metrics ──
         map["Pantry balance"] = "口糧倉結餘";
         map["Earned today"] = "今日賺到";

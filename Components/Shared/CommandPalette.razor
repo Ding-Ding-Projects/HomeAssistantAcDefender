@@ -1,0 +1,151 @@
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<button class="ops-command-trigger" type="button" @onclick="Open" aria-haspopup="dialog" aria-expanded="@_open" title="Open command palette (Ctrl+Shift+F)">
+    <span aria-hidden="true">⌘</span>
+    <span>COMMANDS</span>
+    <kbd>Ctrl ⇧ F</kbd>
+</button>
+
+@if (_open)
+{
+    <div class="ops-command-backdrop" role="presentation" @onclick="Close">
+        <section class="ops-command-palette" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" @onclick:stopPropagation @onkeydown="HandleKeyDown" tabindex="-1">
+            <div class="ops-command-palette__head">
+                <div>
+                    <div id="command-palette-title" class="ops-command-palette__title">Command palette</div>
+                    <div class="ops-command-palette__hint">Jump to any app area or action. Search is local and plain-text-first.</div>
+                </div>
+                <button class="ops-command-palette__close" type="button" @onclick="Close" aria-label="Close command palette">×</button>
+            </div>
+            <input class="ops-input ops-command-palette__search" @bind="_query" @bind:event="oninput" @ref="_search" placeholder="Search commands…" aria-label="Search commands" autocomplete="off" />
+            <div class="ops-command-palette__list" role="listbox" aria-label="Commands">
+                @if (FilteredCommands.Count == 0)
+                {
+                    <div class="ops-command-palette__empty">No commands match “@_query”.</div>
+                }
+                else
+                {
+                    @for (var index = 0; index < FilteredCommands.Count; index++)
+                    {
+                        var command = FilteredCommands[index];
+                        <button class="@(index == _selectedIndex ? "ops-command-item ops-command-item--selected" : "ops-command-item")" type="button" role="option" aria-selected="@(index == _selectedIndex)" @onclick="@(() => Execute(command))">
+                            <span class="ops-command-item__icon" aria-hidden="true">@command.Icon</span>
+                            <span class="ops-command-item__body"><strong>@command.Label</strong><small>@command.Description</small></span>
+                            @if (!string.IsNullOrWhiteSpace(command.Shortcut))
+                            {
+                                <kbd>@command.Shortcut</kbd>
+                            }
+                        </button>
+                    }
+                }
+            </div>
+            <div class="ops-command-palette__foot"><kbd>↑</kbd><kbd>↓</kbd> move <kbd>Enter</kbd> open <kbd>Esc</kbd> close</div>
+        </section>
+    </div>
+}
+
+@code {
+    private sealed record Command(string Label, string Description, string Icon, string? Href = null, string? Shortcut = null, Func<Task>? Action = null);
+
+    private readonly IReadOnlyList<Command> _commands =
+    [
+        new("Site command", "Dashboard and live defender state", "⌖", "/"),
+        new("Defense roster", "Guard status, triggers, and evidence", "⛨", "/defense"),
+        new("Comfort watch", "Room and upstairs comfort", "☼", "/comfort"),
+        new("Energy intel", "Alectra Hui usage and cost history", "↯", "/energy"),
+        new("Field reports", "Events, recorder history, and audit log", "≣", "/logs"),
+        new("Direct controls", "Real Home Assistant thermostat commands", "⌘", "/controls"),
+        new("Standing orders", "Search and edit defender settings", "⚙", "/settings"),
+        new("Settings repository", "Local Git-backed snapshots and restore", "⇄", "/repository"),
+        new("Field manual", "Guard algorithms and safety explanations", "✦", "/guide"),
+        new("Site wiki", "Searchable operational documentation", "⎘", "/wiki"),
+        new("API documentation", "Authenticated endpoint reference", "{}", "/api-docs"),
+    ];
+
+    private bool _open;
+    private string _query = "";
+    private int _selectedIndex;
+    private ElementReference _search;
+    private DotNetObjectReference<CommandPalette>? _self;
+
+    private IReadOnlyList<Command> FilteredCommands =>
+        string.IsNullOrWhiteSpace(_query)
+            ? _commands
+            : _commands.Where(command =>
+                command.Label.Contains(_query, StringComparison.OrdinalIgnoreCase)
+                || command.Description.Contains(_query, StringComparison.OrdinalIgnoreCase)).ToArray();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _self = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("acAccessibility.installCommandPalette", _self);
+        }
+
+        if (_open)
+        {
+            await JS.InvokeVoidAsync("acAccessibility.focusElement", _search);
+        }
+    }
+
+    [JSInvokable]
+    public Task OpenFromShortcut() => InvokeAsync(Open);
+
+    private void Open()
+    {
+        _open = true;
+        _query = "";
+        _selectedIndex = 0;
+    }
+
+    private async Task Close()
+    {
+        _open = false;
+        await JS.InvokeVoidAsync("acAccessibility.restoreFocus");
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key is "Escape")
+        {
+            _ = Close();
+            return;
+        }
+
+        if (args.Key is "ArrowDown")
+        {
+            _selectedIndex = FilteredCommands.Count == 0 ? 0 : (_selectedIndex + 1) % FilteredCommands.Count;
+        }
+        else if (args.Key is "ArrowUp")
+        {
+            _selectedIndex = FilteredCommands.Count == 0 ? 0 : (_selectedIndex - 1 + FilteredCommands.Count) % FilteredCommands.Count;
+        }
+        else if (args.Key is "Enter" && FilteredCommands.Count > 0)
+        {
+            _ = Execute(FilteredCommands[_selectedIndex]);
+        }
+    }
+
+    private Task Execute(Command command)
+    {
+        if (!string.IsNullOrWhiteSpace(command.Href))
+        {
+            Navigation.NavigateTo(command.Href);
+        }
+
+        _open = false;
+        return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_self is not null)
+        {
+            await JS.InvokeVoidAsync("acAccessibility.uninstallCommandPalette");
+            _self.Dispose();
+        }
+    }
+}

@@ -25,6 +25,7 @@ builder.Services.Configure<HomeAssistantOptions>(builder.Configuration.GetSectio
 builder.Services.Configure<DefenderOptions>(builder.Configuration.GetSection(DefenderOptions.SectionName));
 builder.Services.Configure<KioskOptions>(builder.Configuration.GetSection(KioskOptions.SectionName));
 builder.Services.AddSingleton<SettingsGitRepository>();
+builder.Services.AddSingleton<NotificationHistoryStore>();
 builder.Services.AddSingleton<WikiContentService>();
 builder.Services.AddSingleton<DefenderStateStore>();
 builder.Services.AddSingleton<AcDefenderService>();
@@ -124,6 +125,24 @@ var api = app.MapGroup("/api").RequireAuthorization();
 
 api.MapGet("/status", (DefenderStateStore store) => Results.Ok(store.GetSnapshot()));
 api.MapGet("/settings", (DefenderStateStore store) => Results.Ok(store.GetSnapshot()));
+api.MapGet("/notifications", (
+    int? limit,
+    bool? includeDismissed,
+    string? level,
+    NotificationHistoryStore notifications) =>
+    Results.Ok(notifications.GetSnapshot(limit ?? 100, includeDismissed ?? false, level)));
+api.MapPost("/notifications/{id:guid}/read", (Guid id, NotificationHistoryStore notifications) =>
+    notifications.MarkRead(id)
+        ? Results.Ok(notifications.GetSnapshot(includeDismissed: true))
+        : Results.NotFound(new { error = "Notification was not found or could not be updated." }));
+api.MapPost("/notifications/{id:guid}/dismiss", (Guid id, NotificationHistoryStore notifications) =>
+    notifications.Dismiss(id)
+        ? Results.Ok(notifications.GetSnapshot(includeDismissed: true))
+        : Results.NotFound(new { error = "Notification was not found or could not be dismissed." }));
+api.MapPost("/notifications/{id:guid}/restore", (Guid id, NotificationHistoryStore notifications) =>
+    notifications.Restore(id)
+        ? Results.Ok(notifications.GetSnapshot(includeDismissed: true))
+        : Results.NotFound(new { error = "Notification was not found or could not be restored." }));
 api.MapGet("/usage/live", async (HomeAssistantClient homeAssistantClient, CancellationToken cancellationToken) =>
 {
     try

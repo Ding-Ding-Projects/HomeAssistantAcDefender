@@ -51,6 +51,13 @@ The full documentation lives in the **[wiki](docs/wiki/Home.md)** — start with
 **[Website Tour](docs/wiki/Website-Tour.md)**, a picture-book walk through every page that
 anyone can follow.
 
+The [GitHub Pages landing page](https://ding-ding-projects.github.io/HomeAssistantAcDefender/)
+is built from `docs/` on every documentation change. Verified pushes to `master` also run the
+release workflow: it builds the regression suite and Docker image, publishes an immutable
+release with the image archive and checksum, and records the CI-generated line-count table.
+The archive is the installable artifact for this server application; the [release and line-count
+guide](docs/wiki/release/line-counts.md) explains how to load it and reproduce the report.
+
 | Page | What it covers |
 | --- | --- |
 | [Website Tour](docs/wiki/Website-Tour.md) | Every page, with screenshots, in plain words |
@@ -59,6 +66,8 @@ anyone can follow.
 | [Energy & Costs](docs/wiki/Energy-and-Costs.md) | TOU rates, the sensor-free AC cost estimate, the calendar, the monthly budget |
 | [Defender Logic](docs/wiki/Defender-Logic.md) | The decision cycle and every guard's exact rules |
 | [Settings](docs/wiki/Settings.md) | Every knob on the Settings page |
+| [Command palette](docs/wiki/Command-palette.md) | `Ctrl+Shift+F` keyboard navigation to every real app area |
+| [Notification history](docs/wiki/Notification-history.md) | Review, dismiss, and restore activity notices without losing the audit trail |
 | [API](docs/wiki/API.md) | JSON endpoints and the `/api/status/stream` SSE feed |
 | [Architecture](docs/wiki/Architecture.md) | How the code is put together |
 | [Deployment](docs/wiki/Deployment.md) | Docker, volumes, and the full environment-variable reference |
@@ -118,6 +127,10 @@ snapshot — no refreshing, ever:
 - **Controls** (`/controls`) — target, fan, force, off, and emergency buttons.
 - **Settings** (`/settings`) — every guard's dials, the **Electricity budget** switch, and
   the schedule editor.
+- **Command palette** (`Ctrl+Shift+F`) — keyboard navigation to each real destination without
+  bypassing authentication or thermostat safety gates.
+- **Notification history** (`/api/notifications`) — authenticated review and restore of real
+  activity notices; it never invents thermostat state.
 - **Guide** (`/guide`) — the built-in manual, generated from the guard catalog.
 
 See the [Website Tour](docs/wiki/Website-Tour.md) for all of it with screenshots.
@@ -125,6 +138,8 @@ See the [Website Tour](docs/wiki/Website-Tour.md) for all of it with screenshots
 ## Development notes
 
 - Run `dotnet build` before pushing; run the regression suite for logic changes.
+- Run `python scripts/count_lines.py` when a release or handoff needs a line-count report;
+  CI runs that same committed script at the exact release commit.
 - Do not commit `.env`, `App_Data`, build output, deployment archives, or Home Assistant
   tokens.
 - `AGENTS.md` holds the safety rules every guard must respect (no fake state, my temp is a

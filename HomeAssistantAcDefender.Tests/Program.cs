@@ -11,7 +11,11 @@ using Microsoft.Extensions.Options;
 
 var tests = new DefenderSetPointRegressionTests();
 var settingsRepositoryTests = new SettingsGitRepositoryRegressionTests();
+var uiLanguageTests = new UiLanguageRegressionTests();
+uiLanguageTests.FunnyLevelsAreIndependentAndBounded();
 settingsRepositoryTests.IdenticalSaveRecoversDirtySnapshotAfterGitFailureAndRestart();
+var notificationHistoryTests = new NotificationHistoryStoreTests();
+notificationHistoryTests.JournalSurvivesRestartAndReviewActions();
 tests.ManualTouchWhileWarmRestartsBelowRoomByApproach();
 tests.ManualTouchAfterTargetRestartsBelowRoomByApproach();
 tests.IdleWarmRoomWalksDownByApproachUntilWebsiteTarget();

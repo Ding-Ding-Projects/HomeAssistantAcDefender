@@ -5,6 +5,53 @@
 @inject TwoFactorAuth TwoFactorAuth
 @inject HomeAssistantTokenStore TokenStore
 @inject Microsoft.Extensions.Options.IOptionsMonitor<HomeAssistantAcDefender.Options.HomeAssistantOptions> HaOptions
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+@* Presentation preferences intentionally live in the browser, not DefenderSettings. They change
+   how the website speaks without changing a single real Home Assistant command. *@
+@if (Show("language tone voice english cantonese bilingual funny playful"))
+{
+    <SectionCard Title="Language &amp; tone"
+                 Subtitle="Choose how this website speaks"
+                 Help="Language mode and the two funny-level controls are presentation preferences. Level 1 is professional; higher levels style the surrounding copy, including warnings and errors, without changing facts. These choices stay in this browser and can be changed or reset at any time.">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6">
+                <MudSelect T="string" Value="@_uiLanguage" ValueChanged="SetUiLanguage" Label="Language mode" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="English, playful Hong Kong Cantonese, or both.">
+                    <MudSelectItem T="string" Value="@Lang.English">English</MudSelectItem>
+                    <MudSelectItem T="string" Value="@Lang.Cantonese">Playful Hong Kong Cantonese · 口語廣東話</MudSelectItem>
+                    <MudSelectItem T="string" Value="@Lang.Both">Bilingual · English + 粵</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" Class="d-flex align-center">
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="w-100">
+                    This setting styles all website messages, including warnings and errors. The event facts and thermostat values stay exact.
+                </MudAlert>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <label class="settings-tone-control" for="english-funny-level">
+                    <span class="settings-tone-control__heading">English funny level <strong>@_englishFunnyLevel/5</strong></span>
+                    <span class="settings-tone-control__help">1 = serious · 5 = maximum playful voice</span>
+                    <input id="english-funny-level" class="settings-tone-control__slider" type="range" min="1" max="5" step="1" value="@_englishFunnyLevel" @oninput="OnEnglishFunnyInput" aria-valuemin="1" aria-valuemax="5" aria-valuenow="@_englishFunnyLevel" aria-label="English funny level" />
+                </label>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <label class="settings-tone-control" for="cantonese-funny-level">
+                    <span class="settings-tone-control__heading">Cantonese funny level <strong>@_cantoneseFunnyLevel/5</strong></span>
+                    <span class="settings-tone-control__help">1 = 正經 · 5 = 最玩味</span>
+                    <input id="cantonese-funny-level" class="settings-tone-control__slider" type="range" min="1" max="5" step="1" value="@_cantoneseFunnyLevel" @oninput="OnCantoneseFunnyInput" aria-valuemin="1" aria-valuemax="5" aria-valuenow="@_cantoneseFunnyLevel" aria-label="Cantonese funny level" />
+                </label>
+            </MudItem>
+            <MudItem xs="12">
+                <div class="settings-tone-preview" role="status" aria-live="polite">
+                    <strong>Preview · 預覽</strong>
+                    <span>@TonePreviewEnglish</span>
+                    <span>@TonePreviewCantonese</span>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </SectionCard>
+}
 
 <PageTitle>Settings - AC Defender</PageTitle>
 
@@ -833,6 +880,17 @@
 </MudStack>
 
 @code {
+    [CascadingParameter(Name = "LangMode")]
+    private string CascadingLangMode { get; set; } = Lang.English;
+
+    private string _uiLanguage = Lang.English;
+    private int _englishFunnyLevel = 1;
+    private int _cantoneseFunnyLevel = 1;
+    private bool _uiPreferencesLoaded;
+
+    private string TonePreviewEnglish => FunnyTone.English("The defender is watching.", _englishFunnyLevel);
+    private string TonePreviewCantonese => FunnyTone.Cantonese("衛兵睇緊。", _cantoneseFunnyLevel);
+
     private static readonly string[] Days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     private static readonly (string Value, string Label)[] WeatherOptions =
     [
@@ -1182,8 +1240,87 @@
 
     protected override void OnInitialized()
     {
+        _uiLanguage = Lang.NormalizeMode(CascadingLangMode);
         LoadFromSnapshot(StateStore.GetSnapshot());
     }
+
+    protected override void OnParametersSet()
+    {
+        // Keep the selector in step with the top-bar switch when this page is clean. A
+        // pending thermostat edit owns the local form state until the user saves it.
+        if (!_dirty)
+        {
+            _uiLanguage = Lang.NormalizeMode(CascadingLangMode);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _uiPreferencesLoaded)
+        {
+            return;
+        }
+
+        _uiPreferencesLoaded = true;
+        try
+        {
+            _uiLanguage = Lang.NormalizeMode(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-lang"));
+            _englishFunnyLevel = ParseFunnyLevel(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-funny-en"));
+            _cantoneseFunnyLevel = ParseFunnyLevel(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-funny-yue"));
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (JSException)
+        {
+            // Browser storage is optional; the defaults remain useful for this circuit.
+        }
+    }
+
+    private async Task SetUiLanguage(string? mode)
+    {
+        _uiLanguage = Lang.NormalizeMode(mode);
+        await PersistUiPreference("ac-defender-lang", _uiLanguage);
+        Snackbar.Add("Language preference saved for this browser.", Severity.Info);
+
+        // MainLayout reads the language preference during its first interactive render. A
+        // clean settings page can safely re-enter that render now; when defender values are
+        // being edited, keep the circuit alive and let the next navigation pick it up instead
+        // of discarding unsaved thermostat settings.
+        if (!_dirty)
+        {
+            Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+        }
+    }
+
+    private async Task OnEnglishFunnyInput(ChangeEventArgs args)
+    {
+        _englishFunnyLevel = ParseFunnyLevel(args.Value?.ToString());
+        await PersistUiPreference("ac-defender-funny-en", _englishFunnyLevel.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    private async Task OnCantoneseFunnyInput(ChangeEventArgs args)
+    {
+        _cantoneseFunnyLevel = ParseFunnyLevel(args.Value?.ToString());
+        await PersistUiPreference("ac-defender-funny-yue", _cantoneseFunnyLevel.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    private async Task PersistUiPreference(string key, string value)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", key, value);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (JSException)
+        {
+            // Storage failures must not make a presentation control unusable.
+        }
+    }
+
+    private static int ParseFunnyLevel(string? value)
+    {
+        return int.TryParse(value, out var level) ? Math.Clamp(level, 1, 5) : 1;
+    }
+
 
     private void SaveRegistrationCode()
     {

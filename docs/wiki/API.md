@@ -14,6 +14,10 @@ GET /api/usage/live
 GET /api/usage/alectra-hui
 GET /api/usage/history
 GET /api/status/stream
+GET /api/notifications?limit=100&includeDismissed=false&level=warning
+POST /api/notifications/{id}/read
+POST /api/notifications/{id}/dismiss
+POST /api/notifications/{id}/restore
 ```
 
 `/api/status/stream` is a Server-Sent Events endpoint that emits the full defender snapshot every second.
@@ -59,6 +63,14 @@ The status snapshot includes:
 - `thermostatChanges`: external thermostat touch audit log, including previous/new setpoint, room/outdoor/weather context, source label, Home Assistant context ID, parent ID, user ID, and the raw JSON details shown by the Logs page.
 - `defenderCommands`: the defender's *own* thermostat commands (newest-first), each with timestamp, source guard label, commanded setpoint/mode/fan, and detail. Distinct from `thermostatChanges` (which is external touches); the dashboard's "last moves" panel shows the top 3.
 - `comfort`: upstairs comfort and presence status.
+
+## Notification centre
+
+`GET /api/notifications` reads the durable notification journal. Results are newest-first and include
+`items`, `unreadCount`, and `activeCount`. Dismissed records are hidden by default; pass
+`includeDismissed=true` to review them. `level` accepts `info`, `success`, `warning`, or `error`.
+The read, dismiss, and restore endpoints append a review action to the same JSONL journal. All four
+routes are authenticated with the rest of `/api` and never issue a Home Assistant command.
 
 ## Usage
 
