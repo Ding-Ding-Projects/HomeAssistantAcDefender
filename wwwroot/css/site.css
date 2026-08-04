@@ -6,6 +6,12 @@
 
 /* ---------- 1. Theme variables (theme × mood) ---------- */
 
+:root {
+    --ac-ui-font-family: 'JetBrains Mono', Consolas, monospace;
+    --ac-ui-font-scale: 1;
+    --ac-ui-accent: #3ddc97;
+}
+
 .ops-root {
     /* dark defaults */
     --bg: #07090c;
@@ -26,7 +32,8 @@
     flex-direction: column;
     background: var(--bg);
     color: var(--ink);
-    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospace);
+    font-size: calc(1rem * var(--ac-ui-font-scale, 1));
 }
 
 .ops-root.theme-dark.mood-standby  { --accent: #7b8794; --accent-soft: rgba(123, 135, 148, 0.12); }
@@ -55,6 +62,22 @@
 .ops-root.theme-light.mood-alert    { --accent: #c22c18; --accent-soft: rgba(194, 44, 24, 0.12); }
 .ops-root.theme-light.mood-omega    { --accent: #a81606; --accent-soft: rgba(168, 22, 6, 0.12); }
 
+/* Browser-scoped appearance overrides are intentionally layered over mood defaults.
+   The mood still describes live state, while a chosen seed color styles the shell chrome. */
+.ops-root[data-ac-appearance="custom"] {
+    --accent: var(--ac-ui-accent);
+    --accent-soft: color-mix(in srgb, var(--ac-ui-accent) 12%, transparent);
+}
+
+.ops-root[data-ac-density="compact"] { --ac-density-gap: 0.82; }
+.ops-root[data-ac-density="comfortable"] { --ac-density-gap: 1; }
+.ops-root[data-ac-density="spacious"] { --ac-density-gap: 1.18; }
+.ops-root[data-ac-density] .ops-main {
+    padding: calc(18px * var(--ac-density-gap, 1))
+        calc(20px * var(--ac-density-gap, 1))
+        calc(40px * var(--ac-density-gap, 1));
+}
+
 /* ---------- 2. Keyframes ---------- */
 
 @keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -81,7 +104,7 @@
 /* ---------- 3. Base ---------- */
 
 html, body { margin: 0; padding: 0; min-height: 100%; }
-body { font-family: 'JetBrains Mono', Consolas, monospace; -webkit-font-smoothing: antialiased; background: #07090c; }
+body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospace); font-size: calc(1rem * var(--ac-ui-font-scale, 1)); -webkit-font-smoothing: antialiased; background: #07090c; }
 
 .ops-root ::selection { background: var(--accent); color: var(--accent-ink); }
 

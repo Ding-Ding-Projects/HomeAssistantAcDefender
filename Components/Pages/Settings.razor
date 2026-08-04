@@ -10,6 +10,61 @@
 
 @* Presentation preferences intentionally live in the browser, not DefenderSettings. They change
    how the website speaks without changing a single real Home Assistant command. *@
+@if (Show("appearance theme light dark density compact comfortable spacious accent seed color font family typeface size scale reset preview"))
+{
+    <SectionCard Title="Appearance"
+                 Subtitle="Tune this website's shell"
+                 Help="Appearance is persisted in this browser and applied live to the website shell. It never changes a Home Assistant entity, a target temperature, or a defender guard decision. Font choices use an installed-family allow-list with CJK-safe fallbacks.">
+        <MudGrid Spacing="2">
+            <MudItem xs="12">
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                    These controls change theme, density, accent, and typography only. They are not thermostat settings, and the browser can reset them at any time.
+                </MudAlert>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="string" @bind-Value="_appearance.Theme" Label="Theme" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="Light or dark shell; press Apply appearance to update it.">
+                    <MudSelectItem T="string" Value="@("light")">Light</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("dark")">Dark</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="string" @bind-Value="_appearance.Density" Label="Density" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="Spacing preset for the shell and controls.">
+                    <MudSelectItem T="string" Value="@("compact")">Compact</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("comfortable")">Comfortable</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("spacious")">Spacious</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" @bind-Value="_appearance.Accent" Label="Accent / seed color" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="Six-digit HEX, for example #3ddc97." />
+            </MudItem>
+            <MudItem xs="12" sm="6" Class="appearance-color-control">
+                <label for="appearance-accent-picker">Accent color picker</label>
+                <input id="appearance-accent-picker" type="color" value="@_appearance.Accent" @onchange="OnAppearanceAccentPickerChanged" aria-describedby="appearance-accent-help" />
+                <span id="appearance-accent-help" class="helper-text">Current value: @_appearance.Accent</span>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="string" @bind-Value="_appearance.FontFamily" Label="UI font family" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="Installed or bundled family; CJK fallback is retained.">
+                    @foreach (var family in AppearancePreferences.AllowedFontFamilies)
+                    {
+                        <MudSelectItem T="string" Value="@family">@family</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <label class="settings-tone-control" for="appearance-font-scale">
+                    <span class="settings-tone-control__heading">UI font size <strong>@_appearance.FontScale.ToString("0.00")×</strong></span>
+                    <span class="settings-tone-control__help">0.85× to 1.35×; press Apply appearance to update it</span>
+                    <input id="appearance-font-scale" class="settings-tone-control__slider" type="range" min="0.85" max="1.35" step="0.05" value="@_appearance.FontScale.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnAppearanceFontScaleInput" aria-valuemin="0.85" aria-valuemax="1.35" aria-valuenow="@_appearance.FontScale" aria-label="UI font size scale" />
+                </label>
+            </MudItem>
+            <MudItem xs="12" Class="d-flex flex-wrap gap-2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAppearance" StartIcon="@Icons.Material.Filled.Palette">Apply appearance</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="ResetAppearance" StartIcon="@Icons.Material.Filled.RestartAlt">Reset appearance</MudButton>
+            </MudItem>
+        </MudGrid>
+    </SectionCard>
+}
+
 @if (Show("language tone voice english cantonese bilingual funny playful"))
 {
     <SectionCard Title="Language &amp; tone"
@@ -887,6 +942,7 @@
     private int _englishFunnyLevel = 1;
     private int _cantoneseFunnyLevel = 1;
     private bool _uiPreferencesLoaded;
+    private AppearancePreferences _appearance = AppearancePreferences.Defaults();
 
     private string TonePreviewEnglish => FunnyTone.English("The defender is watching.", _englishFunnyLevel);
     private string TonePreviewCantonese => FunnyTone.Cantonese("衛兵睇緊。", _cantoneseFunnyLevel);
@@ -1267,6 +1323,7 @@
             _uiLanguage = Lang.NormalizeMode(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-lang"));
             _englishFunnyLevel = ParseFunnyLevel(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-funny-en"));
             _cantoneseFunnyLevel = ParseFunnyLevel(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-funny-yue"));
+            _appearance = AppearancePreferences.Normalize(await JS.InvokeAsync<AppearancePreferences?>("acAppearance.read"));
             await InvokeAsync(StateHasChanged);
         }
         catch (JSException)
@@ -1301,6 +1358,51 @@
     {
         _cantoneseFunnyLevel = ParseFunnyLevel(args.Value?.ToString());
         await PersistUiPreference("ac-defender-funny-yue", _cantoneseFunnyLevel.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    private void OnAppearanceAccentPickerChanged(ChangeEventArgs args)
+    {
+        var value = args.Value?.ToString();
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            _appearance.Accent = value;
+        }
+    }
+
+    private void OnAppearanceFontScaleInput(ChangeEventArgs args)
+    {
+        if (double.TryParse(args.Value?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value))
+        {
+            _appearance.FontScale = Math.Clamp(value, 0.85, 1.35);
+        }
+    }
+
+    private async Task SaveAppearance()
+    {
+        _appearance = AppearancePreferences.Normalize(_appearance);
+        try
+        {
+            await JS.InvokeVoidAsync("acAppearance.save", _appearance);
+            Snackbar.Add("Appearance applied in this browser. Thermostat orders were not changed.", Severity.Success);
+        }
+        catch (JSException)
+        {
+            Snackbar.Add("Appearance could not be stored by this browser; the live preview may reset after reload.", Severity.Warning);
+        }
+    }
+
+    private async Task ResetAppearance()
+    {
+        _appearance = AppearancePreferences.Defaults();
+        try
+        {
+            await JS.InvokeVoidAsync("acAppearance.reset");
+            Snackbar.Add("Appearance reset to the safe default shell.", Severity.Info);
+        }
+        catch (JSException)
+        {
+            Snackbar.Add("Appearance reset locally, but this browser refused to clear its preference.", Severity.Warning);
+        }
     }
 
     private async Task PersistUiPreference(string key, string value)

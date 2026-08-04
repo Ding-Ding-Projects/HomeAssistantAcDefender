@@ -7,6 +7,16 @@ title: "Settings"
 
 The MudBlazor settings page controls defender behavior without editing configuration files. Each input, button, and action label includes short helper text below it. Times are displayed with a 24-hour clock.
 
+## Appearance editor
+
+The **Appearance** card is a presentation-only editor for the website shell. It persists
+theme (light/dark), density, accent/seed HEX color, bounded UI font scale, and an
+installed-family font choice with CJK-safe fallback in browser `localStorage`. **Apply
+appearance** updates the shell live through `acAppearance`; **Reset appearance** removes
+the browser record and restores the defaults. These controls never alter `DefenderSettings`,
+Home Assistant state, or a defender guard. See the detailed [Appearance editor](Appearance-editor.html)
+article for normalization, failure, security, and verification evidence.
+
 ## Language and tone preferences
 
 The **Language & tone** card is presentation-only. It never changes a Home Assistant
