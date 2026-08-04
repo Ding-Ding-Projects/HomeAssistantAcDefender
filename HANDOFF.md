@@ -79,7 +79,7 @@ From this checkout:
 python scripts/count_lines.py
 ```
 
-The script completed successfully at the `pending documentation refresh` integration boundary and reported 398
+The script completed successfully at the `cf07b8b` integration boundary and reported 398
 counted text files, 74,777 total lines, and 66,810 non-blank lines. The report
 also listed 38 tracked binary/non-text files and the excluded build/runtime/vendor
  directories. The Electron controller's 86,642-byte icon is binary and is not
