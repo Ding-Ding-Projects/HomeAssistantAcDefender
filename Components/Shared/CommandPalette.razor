@@ -20,6 +20,9 @@
                 <button class="ops-command-palette__close" type="button" @onclick="Close" aria-label="Close command palette">×</button>
             </div>
             <input class="ops-input ops-command-palette__search" @bind="_query" @bind:event="oninput" @ref="_search" placeholder="Search commands…" aria-label="Search commands" autocomplete="off" />
+            <RegexSearchBuilder Id="command-palette-search" Value="@_query" ValueChanged="SetQuery"
+                                Mode="@_queryMode" ModeChanged="SetQueryMode"
+                                Flags="@_queryFlags" FlagsChanged="SetQueryFlags" />
             <div class="ops-command-palette__list" role="listbox" aria-label="Commands">
                 @if (FilteredCommands.Count == 0)
                 {
@@ -67,6 +70,8 @@
 
     private bool _open;
     private string _query = "";
+    private string _queryMode = "plain";
+    private string _queryFlags = "im";
     private int _selectedIndex;
     private ElementReference _search;
     private DotNetObjectReference<CommandPalette>? _self;
@@ -74,9 +79,34 @@
     private IReadOnlyList<Command> FilteredCommands =>
         string.IsNullOrWhiteSpace(_query)
             ? _commands
-            : _commands.Where(command =>
-                command.Label.Contains(_query, StringComparison.OrdinalIgnoreCase)
-                || command.Description.Contains(_query, StringComparison.OrdinalIgnoreCase)).ToArray();
+            : _commands.Where(command => RegexSearchMatcher.Matches(
+                _query,
+                _queryMode,
+                _queryFlags,
+                command.Label,
+                command.Description,
+                command.Shortcut)).ToArray();
+
+    private Task SetQuery(string value)
+    {
+        _query = value;
+        _selectedIndex = 0;
+        return Task.CompletedTask;
+    }
+
+    private Task SetQueryMode(string value)
+    {
+        _queryMode = value;
+        _selectedIndex = 0;
+        return Task.CompletedTask;
+    }
+
+    private Task SetQueryFlags(string value)
+    {
+        _queryFlags = value;
+        _selectedIndex = 0;
+        return Task.CompletedTask;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

@@ -106,6 +106,9 @@
 @* ═════════ ROSTER TOOLS ═════════ *@
 <div class="ops-roster-tools ops-roster-tools--sticky">
     <input class="ops-input" value="@_search" @oninput="OnSearchChanged" placeholder="SEARCH ROSTER…" aria-label="Search guards" />
+    <RegexSearchBuilder Id="defense-roster-search" Value="@_search" ValueChanged="SetSearch"
+                        Mode="@_searchMode" ModeChanged="SetSearchMode"
+                        Flags="@_searchFlags" FlagsChanged="SetSearchFlags" />
     @foreach (var (value, label) in Categories)
     {
         <button type="button"
@@ -150,6 +153,8 @@
 
 @code {
     private string _search = "";
+    private string _searchMode = "plain";
+    private string _searchFlags = "im";
     private string _category = "All";
     private System.Threading.Timer? _tick;
 
@@ -175,6 +180,24 @@
     private string ChipClass(string value) => _category == value ? "ops-chip active" : "ops-chip";
 
     private void OnSearchChanged(ChangeEventArgs e) => _search = e.Value?.ToString() ?? "";
+
+    private Task SetSearch(string value)
+    {
+        _search = value;
+        return Task.CompletedTask;
+    }
+
+    private Task SetSearchMode(string value)
+    {
+        _searchMode = value;
+        return Task.CompletedTask;
+    }
+
+    private Task SetSearchFlags(string value)
+    {
+        _searchFlags = value;
+        return Task.CompletedTask;
+    }
 
     // ---------- tactical picture ----------
 
@@ -349,18 +372,15 @@
 
     private bool Matches(GuardInfo guard)
     {
-        if (string.IsNullOrWhiteSpace(_search))
-        {
-            return true;
-        }
-
         if (!HomeAssistantOnline)
         {
-            return Format.MatchesSearch(_search, guard.Name, guard.Summary, guard.Watches, guard.Logic, guard.Output);
+            return RegexSearchMatcher.Matches(_search, _searchMode, _searchFlags,
+                guard.Name, guard.Summary, guard.Watches, guard.Logic, guard.Output);
         }
 
         var view = guard.Project!(Snapshot);
-        return Format.MatchesSearch(_search, guard.Name, guard.Summary, guard.Watches, guard.Logic, guard.Output, view.StatusText, view.StateLabel);
+        return RegexSearchMatcher.Matches(_search, _searchMode, _searchFlags,
+            guard.Name, guard.Summary, guard.Watches, guard.Logic, guard.Output, view.StatusText, view.StateLabel);
     }
 
     protected override void OnInitialized()

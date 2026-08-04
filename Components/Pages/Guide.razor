@@ -6,6 +6,9 @@
 
     <div class="ops-roster-tools ops-roster-tools--sticky">
         <input class="ops-input" value="@_search" @oninput="OnSearchChanged" placeholder="SEARCH THE MANUAL…" aria-label="Search procedures" />
+        <RegexSearchBuilder Id="field-manual-search" Value="@_search" ValueChanged="SetSearch"
+                            Mode="@_searchMode" ModeChanged="SetSearchMode"
+                            Flags="@_searchFlags" FlagsChanged="SetSearchFlags" />
         <a class="ops-chip" href="/wiki">⎘ FULL WIKI</a>
     </div>
 
@@ -52,6 +55,8 @@
 
 @code {
     private string _search = "";
+    private string _searchMode = "plain";
+    private string _searchFlags = "im";
 
     private static readonly (GuardCategory Category, string Title)[] Groups =
     [
@@ -63,11 +68,30 @@
 
     private void OnSearchChanged(ChangeEventArgs e) => _search = e.Value?.ToString() ?? "";
 
+    private Task SetSearch(string value)
+    {
+        _search = value;
+        return Task.CompletedTask;
+    }
+
+    private Task SetSearchMode(string value)
+    {
+        _searchMode = value;
+        return Task.CompletedTask;
+    }
+
+    private Task SetSearchFlags(string value)
+    {
+        _searchFlags = value;
+        return Task.CompletedTask;
+    }
+
     private IEnumerable<GuardInfo> Filtered(GuardCategory category) =>
         GuardCatalog.All.Where(g => g.Category == category && Matches(g));
 
     private bool Matches(GuardInfo guard) =>
-        Format.MatchesSearch(_search, guard.Name, guard.Summary, guard.Output, guard.Watches, guard.Logic);
+        RegexSearchMatcher.Matches(_search, _searchMode, _searchFlags,
+            guard.Name, guard.Summary, guard.Output, guard.Watches, guard.Logic);
 
     private bool AnyShown => Groups.SelectMany(g => Filtered(g.Category)).Any();
 }
