@@ -138,8 +138,8 @@ snapshot — no refreshing, ever:
   route visible through overflow, and expose arrow/Home/End keyboard navigation.
 - **Release changelog** (`/changelog`) — every published version with date and regex filters,
   exact commit links, legacy-metadata warnings, and filtered Markdown export.
-- **Notification history** (`/api/notifications`) — authenticated review and restore of real
-  activity notices; it never invents thermostat state.
+- **Notification history** (`/notifications`, backed by `/api/notifications`) — authenticated
+  review, search, dismiss, and restore of real activity notices; it never invents thermostat state.
 - **Windows Electron controller** (`desktop-electron/`) — a separate Windows client for the
   hosted service. It signs in through the real `/login` flow, reads `/api/status`, and sends
   authenticated commands; defender logic remains on the server.

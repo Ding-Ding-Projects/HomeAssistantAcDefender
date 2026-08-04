@@ -30,6 +30,10 @@ state.
   installer and a signed background update feed plus restart banner are verified.
 - The controller uses a frameless Material title bar with real minimize, maximize,
   and close IPC controls. Headless packaged-app capture verified the branded frame.
+- Dashboard, Notifications, and Settings are persisted browser-style tabs with
+  accessible `tablist`/`tab`/`tabpanel` semantics, overflow-safe scrolling, drag and
+  keyboard reordering, and a bounded per-tab appearance editor. A 390px browser
+  capture verified four opened routes, no document overflow, and Home-key navigation.
 - Settings, schedule rules, settings-repository history, documentation search, and
   changelog search each expose a full anchored regex builder with plain text as the
   default and a bounded .NET/browser engine as documented.
@@ -52,10 +56,10 @@ From this checkout:
 python scripts/count_lines.py
 ```
 
-The script completed successfully at the `f550865` integration boundary and reported 366
-counted text files, 68,761 total lines, and 61,478 non-blank lines. The report
+The script completed successfully at the `6cedbed` integration boundary and reported 370
+counted text files, 69,384 total lines, and 62,028 non-blank lines. The report
 also listed 38 tracked binary/non-text files and the excluded build/runtime/vendor
-directories. The Electron controller's 86,642-byte icon is binary and is not
+ directories. The Electron controller's 86,642-byte icon is binary and is not
 inflated into the source-line total.
 
 ## Integration and deployment notes
