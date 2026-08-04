@@ -12,6 +12,8 @@ using Microsoft.Extensions.Options;
 var tests = new DefenderSetPointRegressionTests();
 var settingsRepositoryTests = new SettingsGitRepositoryRegressionTests();
 settingsRepositoryTests.IdenticalSaveRecoversDirtySnapshotAfterGitFailureAndRestart();
+var notificationHistoryTests = new NotificationHistoryStoreTests();
+notificationHistoryTests.JournalSurvivesRestartAndReviewActions();
 tests.ManualTouchWhileWarmRestartsBelowRoomByApproach();
 tests.ManualTouchAfterTargetRestartsBelowRoomByApproach();
 tests.IdleWarmRoomWalksDownByApproachUntilWebsiteTarget();
