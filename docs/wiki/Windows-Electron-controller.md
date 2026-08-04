@@ -17,14 +17,19 @@ decisions remain in the server and every reading or command comes from the real 
 - Dashboard commands call `/api/status`, `/api/target`, `/api/defender`, and the real thermostat
   command endpoints. Thermostat-off has an explicit confirmation naming the affected device.
 - Notification history reads, marks read, dismisses, and restores records through the hosted API.
-- Settings persist language mode, independent English/Cantonese funny levels, theme, density, and
-  a settings-local plain-text/regex search builder. `Ctrl+Shift+F` opens the command palette.
+- Settings persist language mode, independent English/Cantonese funny levels, theme, density,
+  accent/seed color, installed-font choice, and UI scale (85%–135%), plus a settings-local
+  plain-text/regex search builder. Appearance values apply live to the controller only;
+  `Ctrl+Shift+F` opens the command palette and focuses each appearance control directly.
 
 ## Configuration and security
 
 The optional remembered password is stored with Electron `safeStorage` and is omitted when
 encrypted storage is unavailable. Renderer code does not receive the password or cookie.
 Credentials are never accepted in the base URL, and the client does not weaken TLS validation.
+Appearance values are normalized in the Electron main process to fixed color/font/scale
+allow-lists before the renderer applies CSS variables. The public source keeps a loopback default;
+an approved hosted address is entered explicitly by the operator.
 There are no fake temperatures, fallback thermostat states, analytics, CDN scripts, or remote
 runtime images.
 
@@ -32,8 +37,7 @@ runtime images.
 
 Connection, authentication, HTTP, and API errors are rendered as errors. A disconnected host
 never produces a made-up reading or success result. The Squirrel installer target is configured,
-but packaging remains unverified until a Windows build host supplies the complete Electron
-`locales` payload needed by the Squirrel writer.
+and the local Windows packaging command produces the complete installer/update set.
 
 ## Verification
 
@@ -46,10 +50,11 @@ npm test
 ```
 
 `npm run build`, `npm test`, and `npm run dist` pass in the current checkout. The packaging command
-produces a Setup.exe, a `.nupkg` update package, and a `RELEASES` feed under
+produces a Squirrel Setup.exe, a `.nupkg` update package, and a `RELEASES` feed under
 `dist/squirrel-windows`; the release workflow verifies those files are non-empty before attaching
-them. Opening the installer and enabling a signed background update feed remain separate gates and
-must not be described as passed until verified on Windows.
+them. A Lowlevel headless Windows launch also verified the branded frameless title bar and editable
+loopback sign-in field. Opening the installer and enabling a signed background update feed remain
+separate gates and must not be described as passed until their corresponding evidence exists.
 
 ## Suggested articles
 
