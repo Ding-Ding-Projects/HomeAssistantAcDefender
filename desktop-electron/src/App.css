@@ -32,6 +32,8 @@ label { color: var(--muted); font-size: 13px; display: flex; flex-direction: col
 .banner { margin: 12px 18px 0; padding: 11px 14px; border-radius: 12px; display: flex; align-items: center; gap: 10px; line-height: 1.35; }
 .banner-error { background: color-mix(in srgb, var(--danger) 17%, var(--surface)); border: 1px solid var(--danger); color: var(--danger); }
 .banner-success { background: color-mix(in srgb, var(--success) 17%, var(--surface)); border: 1px solid var(--success); color: var(--success); }
+.update-banner { margin: 12px 18px 0; padding: 12px 14px; border: 1px solid var(--primary); border-radius: 12px; background: color-mix(in srgb, var(--primary) 14%, var(--surface)); color: var(--ink); display: flex; align-items: center; gap: 12px; }
+.update-banner span { color: var(--muted); flex: 1; }
 .banner-close { margin-left: auto; border: none; background: transparent; color: inherit; font-size: 22px; }
 .top-app-bar { min-height: 76px; display: flex; align-items: center; gap: 12px; padding: 12px 22px; background: var(--surface); border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 10px; }

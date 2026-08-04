@@ -28,6 +28,11 @@ does not log request bodies, tokens, or passwords.
 - Connection URL, English/Cantonese/bilingual language mode, independent funny levels (1–5),
   theme, density, and a settings-local regex builder are persisted per Windows profile.
 - `Ctrl+Shift+F` opens the command palette and navigates to every controller page.
+- Optional Windows update feed: configure an HTTPS Squirrel.Windows feed in Settings. Electron's
+  `autoUpdater` performs the signed background check/download; this app never invents an update,
+  downloads an arbitrary URL, or executes an unverified installer. Only the `update-downloaded`
+  event creates the non-blocking **Restart to install update** banner, and installation runs only
+  after the user presses that action.
 
 Errors from the host are shown as errors. A disconnected or unavailable API never produces a
 made-up temperature, HVAC state, success message, or fallback command.
@@ -49,3 +54,16 @@ npm run electron   # run the packaged renderer after npm run build
 `npm run build` emits the Vite renderer to `dist/`. `npm run dist` uses electron-builder's
 Squirrel.Windows target and does not publish releases by itself; publishing remains the parent
 repository's release workflow and must attach a verified installer.
+
+## Signed update-feed contract
+
+The feed URL points to a Squirrel.Windows release directory containing the signed `RELEASES`
+manifest and signed `.nupkg`/setup artifacts produced by the release workflow. The feed must be
+HTTPS and must not be a GitHub Pages HTML page or an unsigned file share. The workflow owns key
+management and signing; private signing keys never enter this repository or the controller.
+
+The main process passes the feed to Electron's Windows `autoUpdater`, which verifies the package
+signature before emitting `update-downloaded`. A failed check is shown as an ordinary, dismissible
+error notification. There is no fake `updateReady` state: the renderer receives it only from the
+real Electron event, and `Restart to install update` calls `quitAndInstall` only after that event.
+On non-Windows development runs, checks report `windows-only` and do not attempt a download.
