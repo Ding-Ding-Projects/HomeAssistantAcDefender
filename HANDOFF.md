@@ -26,9 +26,9 @@ From this checkout:
 python scripts/count_lines.py
 ```
 
-The script completed successfully and reported 321 counted text files, 58,150
-total lines, and 51,350 non-blank lines at the audited baseline. The report also
-listed 45 tracked binary/non-text files and the excluded build/runtime/vendor
+The script completed successfully and reported 337 counted text files, 59,558
+total lines, and 52,587 non-blank lines at the audited baseline. The report also
+listed 35 tracked binary/non-text files and the excluded build/runtime/vendor
 directories. No Docker build or deployment was run from this docs-only branch.
 
 ## Integration and deployment notes
