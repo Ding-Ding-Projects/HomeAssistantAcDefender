@@ -2,7 +2,6 @@ name: Verify and publish release
 
 on:
   push:
-    branches: [master]
   workflow_dispatch:
 
 permissions:
