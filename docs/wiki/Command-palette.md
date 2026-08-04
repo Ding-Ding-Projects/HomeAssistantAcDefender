@@ -23,6 +23,9 @@ plain-text-first; no query leaves the browser or is persisted.
 If a destination is unavailable, the normal route and authorization handling
 remain in force. The feature was verified with `dotnet build
 HomeAssistantAcDefender.csproj --disable-build-servers` (0 warnings, 0 errors).
+When a browser circuit disconnects during navigation, listener cleanup is
+best-effort: the local handle is still disposed and the disconnect is not
+surfaced as a server-side circuit error.
 
 ## Security
 

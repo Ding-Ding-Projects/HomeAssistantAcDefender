@@ -149,8 +149,21 @@
     {
         if (_self is not null)
         {
-            await JS.InvokeVoidAsync("acAccessibility.uninstallCommandPalette");
-            _self.Dispose();
+            try
+            {
+                await JS.InvokeVoidAsync("acAccessibility.uninstallCommandPalette");
+            }
+            catch (JSDisconnectedException)
+            {
+                // A browser circuit can disappear while the component is being torn down.
+                // Cleanup must remain best-effort and must not turn normal navigation into a
+                // server-side circuit error.
+            }
+            finally
+            {
+                _self.Dispose();
+                _self = null;
+            }
         }
     }
 }
