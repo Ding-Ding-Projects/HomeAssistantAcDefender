@@ -25,6 +25,7 @@ Assistant climate entity or returns a real error.
 | **[Energy & Costs](Energy-and-Costs.html)** | How hours become dollars: TOU rates, the AC-only estimate, the usage calendar, the monthly budget |
 | **[Defender Logic](Defender-Logic.html)** | The full decision cycle and every guard's exact rules |
 | **[Settings](Settings.html)** | Every knob on the Settings page |
+| **[Command palette](Command-palette.html)** | Keyboard-first navigation from every signed-in page |
 | **[API](API.html)** | The JSON endpoints and SSE stream |
 | **[Architecture](Architecture.html)** | How the code is put together |
 | **[Deployment](Deployment.html)** | Docker hosting |
