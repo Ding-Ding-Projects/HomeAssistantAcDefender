@@ -7,6 +7,16 @@ title: "Settings"
 
 The MudBlazor settings page controls defender behavior without editing configuration files. Each input, button, and action label includes short helper text below it. Times are displayed with a 24-hour clock.
 
+## Settings repository history
+
+The linked **Settings repository** surface keeps every real settings snapshot in a local append-only
+Git journal. Its history list supports derived action counts (`created`, `updated`, `restored`, and
+`undone`), typed UTC date ranges with Today/7-day/30-day/90-day/This-month presets, and the adjacent
+full regex builder. Date, action, and text filters compose, and the currently filtered rows can be
+downloaded as UTF-8 JSON or Markdown without sending settings or credentials to the server. See the
+detailed [Settings history filters and exports](Settings-history-filters.html) article for failure,
+security, and verification details.
+
 ## Appearance editor
 
 The **Appearance** card is a presentation-only editor for the website shell. It persists
