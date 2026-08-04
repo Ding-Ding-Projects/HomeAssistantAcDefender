@@ -68,22 +68,41 @@
             @foreach (var item in OpenStations)
             {
                 var active = IsActive(item);
-                <a id="@AppTabId(item.Href)"
-                   class="@AppTabClass(item)"
-                   href="@item.Href"
-                   role="tab"
-                   aria-controls="main-content"
-                   aria-selected="@(active ? "true" : "false")"
-                   tabindex="@(active ? "0" : "-1")"
-                   data-app-tab="@item.Href"
-                   data-active-app-tab="@(active ? "true" : "false")"
-                   aria-label="@($"{Lang.TInline(_langMode, item.Label)} tab")"
-                   @onkeydown="@(args => HandleAppTabKeyDown(args, item.Href))">
-                    <span class="ops-app-tab__glyph" aria-hidden="true">@item.Glyph</span>
-                    <span>@Lang.TInline(_langMode, item.Label)</span>
-                </a>
+                <div class="ops-app-tab-shell @(IsPinned(item.Href) ? "ops-app-tab-shell--pinned" : "")" role="presentation">
+                    <a id="@AppTabId(item.Href)"
+                       class="@AppTabClass(item)"
+                       href="@item.Href"
+                       role="tab"
+                       aria-controls="main-content"
+                       aria-selected="@(active ? "true" : "false")"
+                       tabindex="@(active ? "0" : "-1")"
+                       data-app-tab="@item.Href"
+                       data-active-app-tab="@(active ? "true" : "false")"
+                       aria-label="@($"{Lang.TInline(_langMode, item.Label)} tab")"
+                       @onkeydown="@(args => HandleAppTabKeyDown(args, item.Href))">
+                        <span class="ops-app-tab__glyph" aria-hidden="true">@item.Glyph</span>
+                        <span>@Lang.TInline(_langMode, item.Label)</span>
+                        @if (IsPinned(item.Href))
+                        {
+                            <span class="ops-app-tab__pin-mark" aria-label="Pinned">●</span>
+                        }
+                        @if (GroupFor(item.Href) is { } group)
+                        {
+                            <span class="ops-app-tab__group" title="@($"Group: {group}")">@group</span>
+                        }
+                    </a>
+                    <button type="button"
+                            class="ops-app-tab__pin"
+                            @onclick="() => ToggleTabPinned(item.Href)"
+                            aria-label="@(IsPinned(item.Href) ? $"Unpin {item.Label} tab" : $"Pin {item.Label} tab")"
+                            title="@(IsPinned(item.Href) ? "Unpin tab" : "Pin tab")">@(IsPinned(item.Href) ? "📌" : "▫")</button>
+                </div>
             }
         </div>
+        <label class="ops-app-tabs__group-editor">
+            <span>@L("GROUP ACTIVE TAB")</span>
+            <input value="@ActiveTabGroup" maxlength="48" @onchange="SetActiveTabGroup" aria-label="@L("Group active tab")" placeholder="@L("Optional group")" />
+        </label>
         <span class="ops-app-tabs__count" aria-live="polite">@OpenStations.Count</span>
     </nav>
 
@@ -461,6 +480,12 @@
             .Select(static station => station!)
             .ToArray();
 
+    private bool IsPinned(string href) => _appTabs?.IsPinned(href) == true;
+
+    private string? GroupFor(string href) => _appTabs?.GroupFor(href);
+
+    private string ActiveTabGroup => _appTabs?.GroupFor(CurrentStationHref) ?? string.Empty;
+
     private string ActiveAppTabId => AppTabId(CurrentStationHref);
 
     private static string AppTabId(string href)
@@ -494,6 +519,30 @@
     private string MobileMasterClass => DefenderIsEnabled
         ? "ops-mobile-nav__item ops-mobile-nav__master"
         : "ops-mobile-nav__item ops-mobile-nav__master ops-mobile-nav__master--off";
+
+    private async Task ToggleTabPinned(string href)
+    {
+        if (_appTabs is null || !_appTabs.Contains(href))
+        {
+            return;
+        }
+
+        _appTabs.SetPinned(href, !_appTabs.IsPinned(href));
+        await PersistAppTabsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetActiveTabGroup(ChangeEventArgs args)
+    {
+        if (_appTabs is null)
+        {
+            return;
+        }
+
+        _appTabs.SetGroup(CurrentStationHref, args.Value?.ToString());
+        await PersistAppTabsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
 
     // Per-page classification ribbon under the header (SCP flavour + a hint at the page's job).
     private string PageStrip => CurrentPath switch
@@ -703,21 +752,18 @@
 
     private async Task LoadAppTabsAsync()
     {
-        List<string>? saved = null;
+        string? raw = null;
         try
         {
-            var raw = await JS.InvokeAsync<string?>("localStorage.getItem", AppTabsStorageKey);
-            if (!string.IsNullOrWhiteSpace(raw))
-            {
-                saved = System.Text.Json.JsonSerializer.Deserialize<List<string>>(raw);
-            }
+            raw = await JS.InvokeAsync<string?>("localStorage.getItem", AppTabsStorageKey);
         }
         catch
         {
             // Invalid or unavailable browser storage must never affect navigation.
         }
 
-        _appTabs = new AppTabState(Stations.Select(station => station.Href), saved, CurrentStationHref);
+        _appTabs = new AppTabState(Stations.Select(station => station.Href), null, CurrentStationHref);
+        _appTabs.Restore(AppTabState.ParsePersisted(raw), CurrentStationHref);
         _appTabsHydrated = true;
         await PersistAppTabsAsync();
     }
@@ -731,8 +777,7 @@
 
         try
         {
-            var serialized = System.Text.Json.JsonSerializer.Serialize(_appTabs.Tabs);
-            await JS.InvokeVoidAsync("localStorage.setItem", AppTabsStorageKey, serialized);
+            await JS.InvokeVoidAsync("localStorage.setItem", AppTabsStorageKey, _appTabs.Serialize());
         }
         catch
         {

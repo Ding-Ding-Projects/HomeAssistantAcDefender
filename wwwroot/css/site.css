@@ -2584,6 +2584,19 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
     scrollbar-width: thin;
 }
 
+.ops-app-tab-shell {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: stretch;
+    min-width: 0;
+    border-bottom: 1px solid var(--line2);
+}
+
+.ops-app-tab-shell--pinned {
+    border-bottom-color: var(--accent);
+    background: var(--accent-soft);
+}
+
 .ops-app-tab {
     display: inline-flex;
     flex: 0 0 auto;
@@ -2593,7 +2606,7 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
     max-width: min(260px, 42vw);
     padding: 6px 12px;
     border: 1px solid transparent;
-    border-bottom-color: var(--line2);
+    border-bottom-color: transparent;
     color: var(--sub);
     background: transparent;
     font-family: 'JetBrains Mono', monospace;
@@ -2606,6 +2619,28 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
 }
 
 .ops-app-tab__glyph { color: var(--accent); font-size: 12px; }
+.ops-app-tab__pin-mark { color: var(--accent); font-size: 8px; }
+.ops-app-tab__group {
+    max-width: 92px;
+    overflow: hidden;
+    color: var(--sub);
+    font-size: 8px;
+    letter-spacing: 0.04em;
+    text-overflow: ellipsis;
+    text-transform: none;
+}
+.ops-app-tab__pin {
+    flex: 0 0 auto;
+    min-width: 28px;
+    border: 0;
+    border-left: 1px solid var(--line2);
+    color: var(--sub);
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+}
+.ops-app-tab__pin:hover,
+.ops-app-tab__pin:focus-visible { color: var(--accent); background: var(--panel2); }
 .ops-app-tab:hover { color: var(--ink); background: var(--panel2); text-decoration: none; }
 .ops-app-tab--active {
     border-color: var(--line2);
@@ -2614,11 +2649,35 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
     background: var(--accent-soft);
 }
 
+.ops-app-tabs__group-editor {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 5px;
+    color: var(--sub);
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.ops-app-tabs__group-editor input {
+    width: 112px;
+    min-height: 28px;
+    padding: 4px 6px;
+    border: 1px solid var(--line2);
+    border-radius: 3px;
+    color: var(--ink);
+    background: var(--panel2);
+    font: inherit;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
 @media (max-width: 760px) {
     .ops-classified { position: static; letter-spacing: 0.16em; }
     .ops-app-tabs { padding: 5px 8px; }
     .ops-app-tabs__title { display: none; }
     .ops-app-tab { max-width: 58vw; padding-inline: 10px; }
+    .ops-app-tabs__group-editor { display: none; }
 }
 
 /* mobile master toggle appended to the bottom nav */
