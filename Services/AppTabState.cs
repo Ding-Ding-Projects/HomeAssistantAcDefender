@@ -125,6 +125,25 @@ public sealed class AppTabState
         return true;
     }
 
+    /// <summary>Closes one open route tab while keeping the navigation state valid.</summary>
+    public bool Close(string href)
+    {
+        var normalized = NormalizeHref(href);
+        if (!_metadata.Remove(normalized))
+        {
+            return false;
+        }
+
+        _tabs.RemoveAll(tab => string.Equals(tab, normalized, StringComparison.OrdinalIgnoreCase));
+        if (_tabs.Count == 0)
+        {
+            AddIfAllowed("/");
+        }
+
+        NormalizePinnedOrder();
+        return true;
+    }
+
     /// <summary>Serialize a compact, forward-compatible localStorage payload.</summary>
     public string Serialize() => JsonSerializer.Serialize(Records);
 

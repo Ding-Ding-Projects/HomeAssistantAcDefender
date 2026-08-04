@@ -2724,6 +2724,88 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
     text-transform: none;
 }
 
+/* Independent tab discovery and reviewable bulk-close tools.  The details element keeps
+   the filter row out of the way until a user asks for it, while each field owns its builder. */
+.ops-app-tab-tools {
+    margin: 0;
+    border-bottom: 1px solid var(--line2);
+    background: var(--panel);
+}
+.ops-app-tab-tools__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 38px;
+    padding: 7px 12px;
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+.ops-app-tab-tools__summary-count { color: var(--sub); font-size: 9px; font-weight: 600; letter-spacing: .04em; }
+.ops-app-tab-tools__body { display: flex; flex-direction: column; gap: 12px; padding: 0 12px 14px; }
+.ops-app-tab-tools__help { margin: 0; color: var(--sub); font-size: 11px; line-height: 1.45; }
+.ops-app-tab-search-grid,
+.ops-app-tab-bulk-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.ops-app-tab-bulk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ops-app-tab-search-card,
+.ops-app-tab-bulk-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 10px;
+    border: 1px solid var(--line2);
+    border-radius: 7px;
+    background: var(--panel2);
+}
+.ops-app-tab-search-card legend,
+.ops-app-tab-bulk-card legend { padding: 0 4px; color: var(--ink); font-size: 10px; font-weight: 800; letter-spacing: .05em; }
+.ops-app-tab-search-card .regex-search-builder,
+.ops-app-tab-bulk-card .regex-search-builder { margin-top: 0; }
+.ops-app-tab-tools__scope-label { display: flex; flex-direction: column; gap: 4px; color: var(--sub); font-size: 10px; }
+.ops-app-tab-tools__scope-label .ops-input { margin-top: 0; }
+.ops-app-tab-tools__result-count { min-height: 17px; color: var(--sub); font-size: 10px; }
+.ops-app-tab-tools__error { color: var(--bad); font-size: 10px; line-height: 1.35; }
+.ops-app-tab-tools__results,
+.ops-app-tab-tools__excluded,
+.ops-app-tab-tools__preview-list { display: flex; max-height: 126px; flex-direction: column; gap: 5px; margin: 0; overflow: auto; padding: 0 0 0 17px; color: var(--sub); font-size: 10px; }
+.ops-app-tab-tools__results a { color: var(--accent); text-decoration: none; }
+.ops-app-tab-tools__results a:hover { text-decoration: underline; }
+.ops-app-tab-tools__results li::marker { color: var(--accent); }
+.ops-app-tab-tools__group-result { padding: 0; border: 0; color: var(--accent); background: transparent; cursor: pointer; font: inherit; text-align: left; }
+.ops-app-tab-tools__group-result:hover { text-decoration: underline; }
+.ops-app-tab-tools__check { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; color: var(--sub); font-size: 10px; }
+.ops-app-tab-tools__check input { width: 16px; height: 16px; accent-color: var(--accent); }
+.ops-app-tab-confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 12px;
+    border: 1px solid var(--bad);
+    border-left: 3px solid var(--bad);
+    border-radius: 7px;
+    background: var(--panel2);
+    box-shadow: 0 8px 24px rgba(0,0,0,.2);
+}
+.ops-app-tab-confirm h2 { margin: 0; color: var(--ink); font-size: 13px; }
+.ops-app-tab-confirm p { margin: 0; color: var(--sub); font-size: 11px; }
+.ops-app-tab-confirm__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+@media (max-width: 1100px) {
+    .ops-app-tab-search-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+    .ops-app-tab-search-grid,
+    .ops-app-tab-bulk-grid { grid-template-columns: 1fr; }
+    .ops-app-tab-tools__summary { padding-inline: 8px; }
+    .ops-app-tab-tools__body { padding-inline: 8px; }
+}
+
 @media (max-width: 760px) {
     .ops-classified { position: static; letter-spacing: 0.16em; }
     .ops-app-tabs { padding: 5px 8px; }
