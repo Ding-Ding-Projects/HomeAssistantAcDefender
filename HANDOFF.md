@@ -23,10 +23,10 @@ runtime control code was changed here.
 - `desktop-electron/` is a separate Windows-only Electron + React/TypeScript controller. It does
   not contain defender logic or simulated HVAC state.
 - `npm run build` and `npm test` pass from `desktop-electron/` in the current checkout.
-- `npm run dist` reaches Squirrel.Windows packaging but is not an installer proof: the local
-  Squirrel writer failed while writing setup because `dist/win-unpacked/locales` was missing.
-  Keep this verification boundary explicit until a Windows packaging host produces and opens the
-  real installer.
+- `npm run dist` now completes on this Windows checkout and produces a non-empty Setup.exe,
+  `.nupkg`, and `RELEASES` feed under `desktop-electron/dist/squirrel-windows`.
+  Keep this verification boundary explicit until a Windows packaging host opens the real
+  installer and a signed background update feed plus restart banner are verified.
 
 ## Local verification
 
@@ -37,7 +37,7 @@ python scripts/count_lines.py
 ```
 
 The script completed successfully at the current `master` tip and reported 361
-counted text files, 67,092 total lines, and 59,927 non-blank lines. The report
+counted text files, 67,217 total lines, and 60,041 non-blank lines. The report
 also listed 38 tracked binary/non-text files and the excluded build/runtime/vendor
 directories. The Electron controller's 86,642-byte icon is binary and is not
 inflated into the source-line total.

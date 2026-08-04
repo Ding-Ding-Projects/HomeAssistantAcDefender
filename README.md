@@ -55,8 +55,11 @@ The [GitHub Pages landing page](https://ding-ding-projects.github.io/HomeAssista
 is built from `docs/` on every documentation change. Verified pushes to `master` also run the
 release workflow: it builds the regression suite and Docker image, publishes an immutable
 release with the image archive and checksum, and records the CI-generated line-count table.
-The archive is the installable artifact for this server application; the [release and line-count
-guide](docs/wiki/release/line-counts.md) explains how to load it and reproduce the report.
+It also builds the separate Windows controller with Squirrel.Windows and attaches its Setup.exe,
+`.nupkg`, and `RELEASES` update-feed artifacts after static and non-empty-file checks. Release
+notes include measured workflow start, completion, and duration values. The [release and
+line-count guide](docs/wiki/release/line-counts.md) explains the artifact boundaries and how to
+load the server image.
 
 | Page | What it covers |
 | --- | --- |

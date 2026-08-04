@@ -17,8 +17,15 @@ The release includes:
 - `ac-defender-docker-<commit>.tar.gz`, a loadable Docker image archive for this
   server application;
 - a SHA-256 checksum for the archive; and
+- Windows controller assets from the verified Squirrel.Windows job: `Setup.exe`,
+  the `.nupkg` update package, and the `RELEASES` feed. These are attached only
+  after `npm test`, `npm run dist`, and non-empty artifact checks pass on
+  `windows-latest`;
 - a release note with the exact commit, checks, public dim-sum code name (when
-  a published catalog photo is available), and the CI-generated line-count table.
+  a published catalog photo is available), CI-generated line-count table, and
+  measured `Workflow started`, `Workflow completed`, and `Workflow duration`
+  values. The timing starts in the first workflow job and ends after release
+  metadata publication.
 
 The image is a real installable artifact, not a simulator or placeholder. Load
 it on a deployment host with:
@@ -31,6 +38,16 @@ docker load --input ac-defender-docker-<commit>.tar
 The normal Compose deployment remains the supported runtime path; see
 [Deployment](../Deployment.html) for environment variables, state volumes, and
 the required port.
+
+## Windows installer and update feed
+
+The Electron controller's `desktop-electron/package.json` targets
+Squirrel.Windows. A successful release therefore carries the Setup executable,
+the full NuGet package, and `RELEASES`; the latter two are required by Squirrel's
+delta/update flow. The current client does not enable background updates until a
+signed feed and a non-blocking **Restart to install update** surface are wired
+and verified. Treat the attached assets as build artifacts, not proof that an
+unsigned update feed is safe to consume.
 
 ## Reproducing the line-count table
 
