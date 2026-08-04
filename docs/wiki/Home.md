@@ -25,6 +25,7 @@ Assistant climate entity or returns a real error.
 | **[Energy & Costs](Energy-and-Costs.html)** | How hours become dollars: TOU rates, the AC-only estimate, the usage calendar, the monthly budget |
 | **[Defender Logic](Defender-Logic.html)** | The full decision cycle and every guard's exact rules |
 | **[Settings](Settings.html)** | Every knob on the Settings page |
+| **[Changelog](Changelog.html)** | Every published release, date filter, regex search, export, and commit traceability |
 | **[Notification history](Notification-history.html)** | Reviewable activity notices that survive the live log tail |
 | **[Command palette](Command-palette.html)** | Keyboard-first navigation from every signed-in page |
 | **[Windows Electron controller](Windows-Electron-controller.html)** | Separate Windows client for the hosted service |

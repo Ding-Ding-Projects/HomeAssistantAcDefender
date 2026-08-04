@@ -13,6 +13,8 @@ var tests = new DefenderSetPointRegressionTests();
 var settingsRepositoryTests = new SettingsGitRepositoryRegressionTests();
 var uiLanguageTests = new UiLanguageRegressionTests();
 uiLanguageTests.FunnyLevelsAreIndependentAndBounded();
+var changelogCatalogTests = new ChangelogCatalogTests();
+changelogCatalogTests.CatalogEntriesHaveTraceableCommits();
 settingsRepositoryTests.IdenticalSaveRecoversDirtySnapshotAfterGitFailureAndRestart();
 var notificationHistoryTests = new NotificationHistoryStoreTests();
 notificationHistoryTests.JournalSurvivesRestartAndReviewActions();

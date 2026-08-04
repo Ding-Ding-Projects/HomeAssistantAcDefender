@@ -1,0 +1,394 @@
+@page "/changelog"
+@inject IJSRuntime JS
+@using System.Text.RegularExpressions
+
+<PageTitle>Changelog - AC Defender</PageTitle>
+
+<MudStack Spacing="3" Class="changelog-shell">
+    <SectionCard Title="@Text("Changelog", "版本紀錄")"
+                 Subtitle="@Text("Every published release, with a traceable commit", "每個已發布版本，都有可追蹤提交")"
+                 Help="@Text("This offline catalog is generated from non-draft releases. Search and date filters compose; plain text is the default, with an optional local regex builder.", "呢份離線目錄由非草稿發布生成。搜尋同日期篩選會一齊生效；預設普通文字，亦可開本機正則建構器。")">
+        <ChildContent>
+            <div class="changelog-toolbar" role="search" aria-label="@Text("Search changelog", "搜尋版本紀錄")">
+                <div class="changelog-search-row">
+                    <input class="ops-input changelog-search" value="@_searchQuery" @oninput="OnSearchInput" placeholder="@Text("Search releases, commits, or code names…", "搜尋版本、提交或點心代號…")" aria-label="@Text("Search changelog text", "搜尋版本紀錄文字")" />
+                    <button class="ops-btn ops-btn--ghost" type="button" @onclick="ToggleRegexBuilder" aria-expanded="@_regexBuilderOpen" aria-controls="changelog-regex-builder">@( _regexMode ? Text("Regex on", "正則開啟") : Text("Regex builder", "正則建構器") )</button>
+                </div>
+
+                @if (_regexBuilderOpen)
+                {
+                    <div id="changelog-regex-builder" class="changelog-regex-builder" role="region" aria-label="@Text("Regex builder", "正則建構器")">
+                        <div class="changelog-regex-builder__head">
+                            <strong>@Text("Build a local pattern", "砌一個本機模式")</strong>
+                            <span>@Text("The .NET regex engine runs with a short timeout.", ".NET 正則引擎會用短時間限制運行。")</span>
+                        </div>
+                        <div class="changelog-search-row">
+                            <input class="ops-input" value="@_regexPattern" @oninput="OnPatternInput" placeholder="^v0\.1\.(8[0-9]|7[0-9])$" aria-label="@Text("Regex pattern", "正則模式")" />
+                            <button class="ops-btn ops-btn--ghost" type="button" @onclick="ApplyRegex" disabled="@string.IsNullOrWhiteSpace(_regexPattern)">@Text("Use pattern", "使用模式")</button>
+                        </div>
+                        <div class="changelog-regex-flags" role="group" aria-label="@Text("Regex flags", "正則旗標")">
+                            <label><input type="checkbox" checked="@_regexIgnoreCase" @onchange="OnIgnoreCaseChanged" /> i · @Text("ignore case", "忽略大小寫")</label>
+                            <label><input type="checkbox" checked="@_regexMultiline" @onchange="OnMultilineChanged" /> m · @Text("multiline", "多行")</label>
+                            <label><input type="checkbox" checked="@_regexSingleline" @onchange="OnSinglelineChanged" /> s · @Text("dot all", "點號跨行")</label>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(_regexError))
+                        {
+                            <div class="changelog-inline-error" role="alert">@_regexError</div>
+                        }
+                    </div>
+                }
+
+                <div class="changelog-date-row" role="group" aria-label="@Text("Release date filter", "發布日期篩選")">
+                    <label>@Text("From", "由") <input type="date" value="@_fromDate" @oninput="OnFromDateInput" aria-label="@Text("Release date from", "發布日期由")" /></label>
+                    <label>@Text("To", "到") <input type="date" value="@_toDate" @oninput="OnToDateInput" aria-label="@Text("Release date to", "發布日期到")" /></label>
+                    <button class="ops-btn ops-btn--ghost" type="button" @onclick="ClearDateFilter">@Text("All dates", "全部日期")</button>
+                    <button class="ops-btn ops-btn--ghost" type="button" @onclick="SetTodayFilter">@Text("Today", "今日")</button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_dateError))
+                {
+                    <div class="changelog-inline-error" role="alert">@_dateError</div>
+                }
+            </div>
+
+            <div class="changelog-filter-summary" role="status" aria-live="polite">
+                @Text($"Showing {FilteredEntries.Count} of {ChangelogCatalog.Entries.Count} releases", $"顯示緊 {FilteredEntries.Count} / {ChangelogCatalog.Entries.Count} 個版本")
+                @if (_regexMode)
+                {
+                    <span> · @Text("regex", "正則")</span>
+                }
+            </div>
+        </ChildContent>
+    </SectionCard>
+
+    <MudTabs @bind-ActivePanelIndex="_activeTab" Rounded="true" Border="true" Class="changelog-tabs">
+        <MudTabPanel Text="@Text("Release history", "發布歷史")" Icon="@Icons.Material.Filled.History">
+            @if (FilteredEntries.Count == 0)
+            {
+                <div class="changelog-empty" role="status">@Text("No releases match the current search and date filter.", "目前搜尋同日期篩選搵唔到版本。")</div>
+            }
+            else
+            {
+                <div class="changelog-list">
+                    @foreach (var entry in FilteredEntries)
+                    {
+                        <article class="changelog-entry" data-version="@entry.Version">
+                            <div class="changelog-entry__head">
+                                <div>
+                                    <h2>@entry.Version <span class="changelog-entry__code">· @entry.CodeName</span></h2>
+                                    <div class="changelog-entry__date">@entry.ReleaseDate.ToString("yyyy-MM-dd") · @entry.Category</div>
+                                </div>
+                                <a class="ops-btn ops-btn--ghost" href="https://github.com/Ding-Ding-Projects/HomeAssistantAcDefender/commit/@entry.CommitSha" target="_blank" rel="noopener" aria-label="@Text($"Open commit {entry.CommitSha}", $"開啟提交 {entry.CommitSha}")">@entry.CommitSha[..7]</a>
+                            </div>
+                            @if (entry.LegacyDuplicate)
+                            {
+                                <div class="changelog-entry__legacy" role="note">
+                                    @Text("Legacy published metadata reused this code name or commit SHA; this record is shown exactly as published.", "舊發布資料重用咗呢個點心代號或者提交 SHA；呢條紀錄照發布原樣保留。")
+                                </div>
+                            }
+                            <p class="changelog-entry__summary">@FunnySummary(entry.Summary)</p>
+                        </article>
+                    }
+                </div>
+            }
+        </MudTabPanel>
+        <MudTabPanel Text="@Text("Export & traceability", "匯出同追蹤")" Icon="@Icons.Material.Filled.FileDownload">
+            <div class="changelog-export-card">
+                <h2>@Text("Export the filtered view", "匯出篩選後內容")</h2>
+                <p>@Text("The Markdown export records the active search, date range, release date, category, full SHA, code name, and commit link.", "Markdown 匯出會記錄目前搜尋、日期範圍、發布日期、分類、完整 SHA、點心代號同提交連結。")</p>
+                <div class="changelog-export-actions">
+                    <a class="ops-btn" href="@MarkdownDataUrl" download="ac-defender-changelog.md">@Text("Download Markdown", "下載 Markdown")</a>
+                    <button class="ops-btn ops-btn--ghost" type="button" @onclick="CopyMarkdown">@Text("Copy Markdown", "複製 Markdown")</button>
+                </div>
+                <div class="helper-text">@Text("Commit links are validated against the published release catalog before this page is shipped.", "提交連結已喺發布目錄驗證，先至會隨頁面出貨。")</div>
+            </div>
+        </MudTabPanel>
+    </MudTabs>
+</MudStack>
+
+@code {
+    [CascadingParameter(Name = "LangMode")]
+    private string LangMode { get; set; } = Lang.English;
+
+    private string _searchQuery = "";
+    private string _regexPattern = "";
+    private string _fromDate = "";
+    private string _toDate = "";
+    private string _regexError = "";
+    private string _dateError = "";
+    private bool _regexBuilderOpen;
+    private bool _regexMode;
+    private bool _regexIgnoreCase;
+    private bool _regexMultiline;
+    private bool _regexSingleline;
+    private int _activeTab;
+    private int _englishFunnyLevel = 1;
+    private int _cantoneseFunnyLevel = 1;
+
+    private IReadOnlyList<ChangelogEntry> FilteredEntries => ChangelogCatalog.Entries
+        .Where(MatchesEntry)
+        .ToArray();
+
+    private string MarkdownDataUrl => "data:text/markdown;charset=utf-8," + Uri.EscapeDataString(BuildMarkdown());
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            _englishFunnyLevel = ParseLevel(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-funny-en"));
+            _cantoneseFunnyLevel = ParseLevel(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-funny-yue"));
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (JSException)
+        {
+            // The catalog and filters remain fully usable if browser storage is unavailable.
+        }
+    }
+
+    private string Text(string english, string cantonese) => LangMode switch
+    {
+        Lang.Cantonese => cantonese,
+        Lang.Both => $"{english} · {cantonese}",
+        _ => english
+    };
+
+    private string FunnySummary(string summary) => LangMode switch
+    {
+        Lang.Cantonese => FunnyTone.Cantonese(summary, _cantoneseFunnyLevel),
+        Lang.Both => $"{FunnyTone.English(summary, _englishFunnyLevel)}\n{FunnyTone.Cantonese(summary, _cantoneseFunnyLevel)}",
+        _ => FunnyTone.English(summary, _englishFunnyLevel)
+    };
+
+    private void OnSearchInput(ChangeEventArgs args)
+    {
+        _searchQuery = args.Value?.ToString() ?? "";
+        if (_regexMode)
+        {
+            _regexPattern = _searchQuery;
+            ValidateRegex();
+        }
+    }
+
+    private void OnPatternInput(ChangeEventArgs args)
+    {
+        _regexPattern = args.Value?.ToString() ?? "";
+        _searchQuery = _regexPattern;
+        ValidateRegex();
+    }
+
+    private void ApplyRegex()
+    {
+        if (ValidateRegex())
+        {
+            _regexMode = true;
+        }
+    }
+
+    private void OnIgnoreCaseChanged(ChangeEventArgs args)
+    {
+        _regexIgnoreCase = IsChecked(args);
+        ValidateRegex();
+    }
+
+    private void OnMultilineChanged(ChangeEventArgs args)
+    {
+        _regexMultiline = IsChecked(args);
+        ValidateRegex();
+    }
+
+    private void OnSinglelineChanged(ChangeEventArgs args)
+    {
+        _regexSingleline = IsChecked(args);
+        ValidateRegex();
+    }
+
+    private static bool IsChecked(ChangeEventArgs args) => args.Value is bool value
+        ? value
+        : bool.TryParse(args.Value?.ToString(), out var parsed) && parsed;
+
+    private void ToggleRegexBuilder()
+    {
+        _regexBuilderOpen = !_regexBuilderOpen;
+        if (!_regexBuilderOpen)
+        {
+            _regexMode = false;
+            _regexError = "";
+        }
+    }
+
+    private bool ValidateRegex()
+    {
+        if (string.IsNullOrWhiteSpace(_regexPattern))
+        {
+            _regexError = "";
+            return true;
+        }
+
+        try
+        {
+            _ = BuildRegex();
+            _regexError = "";
+            return true;
+        }
+        catch (ArgumentException ex)
+        {
+            _regexError = $"Invalid regex: {ex.Message}";
+            _regexMode = false;
+            return false;
+        }
+    }
+
+    private Regex BuildRegex()
+    {
+        var options = RegexOptions.CultureInvariant;
+        if (_regexIgnoreCase) options |= RegexOptions.IgnoreCase;
+        if (_regexMultiline) options |= RegexOptions.Multiline;
+        if (_regexSingleline) options |= RegexOptions.Singleline;
+        return new Regex(_regexPattern, options, TimeSpan.FromMilliseconds(100));
+    }
+
+    private bool MatchesEntry(ChangelogEntry entry)
+    {
+        if (!MatchesDate(entry.ReleaseDate))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            return true;
+        }
+
+        if (!_regexMode)
+        {
+            var haystack = string.Join(" ", entry.Version, entry.CodeName, entry.Category, entry.Summary, entry.CommitSha);
+            return haystack.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase);
+        }
+
+        try
+        {
+            var pattern = BuildRegex();
+            return new[] { entry.Version, entry.CodeName, entry.Category, entry.Summary, entry.CommitSha }
+                .Any(value => pattern.IsMatch(value));
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            _regexError = "Regex evaluation timed out; simplify the pattern.";
+            return false;
+        }
+    }
+
+    private bool MatchesDate(DateOnly date)
+    {
+        if (!TryDate(_fromDate, out var from) || !TryDate(_toDate, out var to))
+        {
+            return false;
+        }
+
+        return (from is null || date >= from.Value) && (to is null || date <= to.Value);
+    }
+
+    private void OnFromDateInput(ChangeEventArgs args)
+    {
+        _fromDate = args.Value?.ToString() ?? "";
+        ValidateDates();
+    }
+
+    private void OnToDateInput(ChangeEventArgs args)
+    {
+        _toDate = args.Value?.ToString() ?? "";
+        ValidateDates();
+    }
+
+    private void ValidateDates()
+    {
+        _dateError = "";
+        if (!TryDate(_fromDate, out var from) || !TryDate(_toDate, out var to))
+        {
+            _dateError = Text("Enter dates as YYYY-MM-DD.", "日期請用 YYYY-MM-DD。");
+        }
+        else if (from is not null && to is not null && from > to)
+        {
+            _dateError = Text("The start date must be on or before the end date.", "開始日期要早過或者等於結束日期。 ");
+        }
+    }
+
+    private void ClearDateFilter()
+    {
+        _fromDate = "";
+        _toDate = "";
+        _dateError = "";
+    }
+
+    private void SetTodayFilter()
+    {
+        var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        _fromDate = today;
+        _toDate = today;
+        _dateError = "";
+    }
+
+    private static bool TryDate(string value, out DateOnly? date)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            date = null;
+            return true;
+        }
+
+        if (DateOnly.TryParseExact(value, "yyyy-MM-dd", out var parsed))
+        {
+            date = parsed;
+            return true;
+        }
+
+        date = null;
+        return false;
+    }
+
+    private string BuildMarkdown()
+    {
+        var lines = new List<string>
+        {
+            "# AC Defender Changelog",
+            "",
+            $"Filtered view: {(_searchQuery.Length == 0 ? "(none)" : _searchQuery)}",
+            $"Date range: {(_fromDate.Length == 0 ? "any" : _fromDate)} → {(_toDate.Length == 0 ? "any" : _toDate)}",
+            ""
+        };
+
+        foreach (var entry in FilteredEntries)
+        {
+            lines.Add($"## {entry.Version} — {entry.CodeName}");
+            lines.Add($"- Date: {entry.ReleaseDate:yyyy-MM-dd}");
+            lines.Add($"- Category: {entry.Category}");
+            lines.Add($"- Change: {entry.Summary}");
+            lines.Add($"- Commit: [{entry.CommitSha}](https://github.com/Ding-Ding-Projects/HomeAssistantAcDefender/commit/{entry.CommitSha})");
+            if (entry.LegacyDuplicate)
+            {
+                lines.Add("- Note: Legacy published metadata reused this code name or commit SHA; record preserved exactly.");
+            }
+            lines.Add("");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private async Task CopyMarkdown()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", BuildMarkdown());
+        }
+        catch (JSException)
+        {
+            // Download remains available when clipboard permission is denied.
+        }
+    }
+
+    private static int ParseLevel(string? value) => int.TryParse(value, out var level) ? Math.Clamp(level, 1, 5) : 1;
+}
