@@ -37,6 +37,14 @@ state.
 - Settings, schedule rules, settings-repository history, documentation search, and
   changelog search each expose a full anchored regex builder with plain text as the
   default and a bounded .NET/browser engine as documented.
+- The server tab strip persists pinned order and bounded local group labels while preserving
+  the older localStorage format. Remaining global-memory tab work includes four-way search and
+  bulk-close actions.
+- Dashboard and Controls route real thermostat OFF actions through the native two-key/full-slider
+  super-confirmation with Emergency exit, Escape, focus return, reduced-motion handling, and no
+  fake Home Assistant state.
+- Notification history now composes regex search with typed UTC date windows, Today/7d/30d
+  presets, journal-derived action counts, validated API bounds, and filter-complete exports.
 
 ## Changelog viewer
 
@@ -56,8 +64,8 @@ From this checkout:
 python scripts/count_lines.py
 ```
 
-The script completed successfully at the `cd5518e` integration boundary and reported 381
-counted text files, 70,685 total lines, and 63,178 non-blank lines. The report
+The script completed successfully at the `8832ffc` integration boundary and reported 384
+counted text files, 72,171 total lines, and 64,496 non-blank lines. The report
 also listed 38 tracked binary/non-text files and the excluded build/runtime/vendor
  directories. The Electron controller's 86,642-byte icon is binary and is not
 inflated into the source-line total.

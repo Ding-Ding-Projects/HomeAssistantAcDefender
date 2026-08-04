@@ -73,6 +73,7 @@ load the server image.
 | [App tabs](docs/wiki/App-tabs.md) | Persisted browser-style route tabs with keyboard navigation and overflow-safe scrolling |
 | [Changelog](docs/wiki/Changelog.md) | Every published version, date/regex filters, Markdown export, and commit traceability |
 | [Notification history](docs/wiki/Notification-history.md) | Review, dismiss, and restore activity notices without losing the audit trail |
+| [Thermostat OFF super-confirmation](docs/wiki/Super-confirmation.md) | Native two-key, full-slider gate for the real destructive OFF command |
 | [Appearance editor](docs/wiki/Appearance-editor.md) | Persisted light/dark theme, density, accent, CJK-safe typography, live preview, and reset |
 | [Dim-sum startup surprise](docs/wiki/Dim-sum-surprise.md) | One exact 10% post-boot delight using public catalog metadata and immutable photo URLs |
 | [API](docs/wiki/API.md) | JSON endpoints and the `/api/status/stream` SSE feed |
@@ -142,8 +143,11 @@ snapshot — no refreshing, ever:
 - **Release changelog** (`/changelog`) — every published version with date and regex filters,
   exact commit links, legacy-metadata warnings, and filtered Markdown export.
 - **Notification history** (`/notifications`, backed by `/api/notifications`) — authenticated
-  review, search, dismiss, restore, and local JSON/Markdown export of real activity notices; it
-  never invents thermostat state.
+  review, search, typed date windows, action counts, dismiss, restore, and local JSON/Markdown
+  export of real activity notices; it never invents thermostat state.
+- **Thermostat OFF super-confirmation** — both Dashboard and Controls show the exact affected
+  device and command, require two independent keys plus a full slider, and support Emergency exit,
+  Escape, focus return, reduced motion, and truthful Home Assistant failure reporting.
 - **Appearance editor** (`/settings`) — persisted light/dark theme, density, accent, CJK-safe
   font family, bounded UI scale, live shell application, and reset without changing HVAC logic.
 - **Dim-sum startup surprise** — after boot, one fresh 10% draw may show a bilingual dish card
