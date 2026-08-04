@@ -589,7 +589,7 @@
         var index = tabs.ToList().FindIndex(station => station.Href == href);
         if (index < 0)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var targetIndex = args.Key switch
