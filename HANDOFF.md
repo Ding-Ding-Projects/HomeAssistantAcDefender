@@ -36,10 +36,11 @@ From this checkout:
 python scripts/count_lines.py
 ```
 
-The script completed successfully and reported 337 counted text files, 59,558
-total lines, and 52,587 non-blank lines at the audited baseline. The report also
-listed 35 tracked binary/non-text files and the excluded build/runtime/vendor
-directories. No Docker build or deployment was run from this docs-only branch.
+The script completed successfully at the current `master` tip and reported 361
+counted text files, 67,091 total lines, and 59,926 non-blank lines. The report
+also listed 38 tracked binary/non-text files and the excluded build/runtime/vendor
+directories. The Electron controller's 86,642-byte icon is binary and is not
+inflated into the source-line total.
 
 ## Integration and deployment notes
 
