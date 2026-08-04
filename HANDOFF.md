@@ -50,6 +50,19 @@ create its first verified release. Only after that remote evidence is available
 should the Docker Compose stack be rebuilt on the deployment host.
 Keep `.env`, `App_Data`, access tokens, and host state outside Git.
 
+## Dim-sum startup surprise
+
+- `Services/DimSumSurpriseService.cs` carries a five-row metadata cache pinned to the public
+  `dim-sum-photos` catalog revision `f77ea1169db0bfc17365414c44ff495a823c6823`. Its five
+  immutable `catalog-v1` release URLs are public PNGs; no image bytes are tracked here.
+- `Components/Layout/MainLayout.razor` performs one fresh 10%-bucket draw after boot, only on
+  the signed-in command route when no cooling-failure alert is active. The anchored status card
+  is keyboard-dismissable, auto-dismisses after 12 seconds, respects reduced motion through the
+  shared stylesheet, and removes itself with a non-blocking notice if the public image fails.
+- `HomeAssistantAcDefender.Tests/DimSumSurpriseTests.cs` covers metadata provenance, published
+  URL shape, exact draw boundaries, deterministic selection, and invalid bucket handling. Full
+  `dotnet build` and the console regression runner remain the required integration checks.
+
 ## Open issues
 
 At audit start, `gh issue list --state open` returned no open issues for either
