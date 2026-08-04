@@ -161,6 +161,9 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1180, height: 820, minWidth: 840, minHeight: 600,
     title: "AC Defender Controller",
+    frame: false,
+    autoHideMenuBar: true,
+    titleBarStyle: "hidden",
     backgroundColor: "#101a17",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -217,6 +220,15 @@ app.whenReady().then(() => {
     return request(route[0], { method: route[1] });
   });
   ipcMain.handle("auth:disconnect", () => { connection.cookie = ""; return true; });
+  ipcMain.handle("window:control", (event, action) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window || window.isDestroyed()) return false;
+    if (action === "minimize") window.minimize();
+    else if (action === "maximize") window.isMaximized() ? window.unmaximize() : window.maximize();
+    else if (action === "close") window.close();
+    else throw new Error("Unknown window control.");
+    return true;
+  });
   ipcMain.handle("update:configure", (_event, values) => {
     const result = configureUpdater(values?.feedUrl);
     saveConfig({ updateFeedUrl: updateFeedUrl });

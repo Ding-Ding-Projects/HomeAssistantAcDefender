@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld("controller", {
   target: (temperature) => ipcRenderer.invoke("api:target", temperature),
   defender: (enabled) => ipcRenderer.invoke("api:defender", enabled),
   command: (name) => ipcRenderer.invoke("api:command", name),
+  windowControl: (action) => ipcRenderer.invoke("window:control", action),
   configureUpdater: (feedUrl) => ipcRenderer.invoke("update:configure", { feedUrl }),
   checkForUpdate: () => ipcRenderer.invoke("update:check"),
   installUpdate: () => ipcRenderer.invoke("update:install"),

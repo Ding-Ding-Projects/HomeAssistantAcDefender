@@ -138,6 +138,7 @@ function App() {
 
   if (phase !== "live") {
     return <main className={`login-shell ${themeClass}`}>
+      <WindowTitleBar />
       <section className="login-card" aria-labelledby="login-title">
         <img src="./shield.svg" className="brand-mark" alt="AC Defender shield" />
         <h1 id="login-title">{t(labels.app)}</h1>
@@ -156,6 +157,7 @@ function App() {
 
   const tabs: { id: Tab; label: Copy }[] = [{ id: "dashboard", label: labels.dashboard }, { id: "notifications", label: labels.notifications }, { id: "settings", label: labels.settings }];
   return <main className={`app-shell ${themeClass}`}>
+    <WindowTitleBar />
     <header className="top-app-bar">
       <div className="brand"><img src="./shield.svg" alt="" /><div><strong>{t(labels.app)}</strong><small>Windows controller · real API only</small></div></div>
       <span className={`status-chip ${online ? "chip-ok" : "chip-warn"}`}>{online ? "● ONLINE" : "○ OFFLINE"}</span>
@@ -174,6 +176,17 @@ function App() {
     {offConfirm && <div className="modal-scrim" role="presentation"><section className="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="off-title"><h2 id="off-title">Turn the real thermostat off?</h2><p>This sends <code>POST /api/thermostat/off</code> to Home Assistant through the hosted defender. It changes a real device; no simulated state is used.</p><div className="dialog-actions"><button className="button button-tonal" onClick={() => setOffConfirm(false)}>Cancel</button><button className="button button-danger" disabled={busy} onClick={() => { setOffConfirm(false); void action(() => window.controller.command("thermostatOff"), { en: "Thermostat OFF command sent.", yue: "已經發出關閉溫控器指令。" }); }}>Turn off real thermostat</button></div></section></div>}
     {paletteOpen && <CommandPalette query={paletteQuery} setQuery={setPaletteQuery} onClose={() => setPaletteOpen(false)} onNavigate={(destination, focus) => { setTab(destination); setSettingsFocus(focus || null); setPaletteOpen(false); if (destination === "notifications") loadNotifications(); }} t={t} />}
   </main>;
+}
+
+function WindowTitleBar() {
+  return <div className="window-titlebar" role="toolbar" aria-label="Window controls">
+    <div className="window-titlebar__brand"><img src="./shield.svg" alt="" /><span>AC Defender Controller</span></div>
+    <div className="window-titlebar__actions">
+      <button type="button" className="window-control" onClick={() => void window.controller.windowControl("minimize")} aria-label="Minimize window">−</button>
+      <button type="button" className="window-control" onClick={() => void window.controller.windowControl("maximize")} aria-label="Maximize or restore window">□</button>
+      <button type="button" className="window-control window-control--close" onClick={() => void window.controller.windowControl("close")} aria-label="Close window">×</button>
+    </div>
+  </div>;
 }
 
 function Dashboard({ snapshot, thermostat, runtime, target, targetDraft, setTargetDraft, busy, action, setOffConfirm, t, eventRows }: { snapshot: DefenderSnapshot | null; thermostat: DefenderSnapshot["homeAssistantThermostat"]; runtime: DefenderSnapshot["acRuntime"]; target: number; targetDraft: number | null; setTargetDraft: (value: number | null) => void; busy: boolean; action: (run: () => Promise<DefenderSnapshot>, message?: Copy) => Promise<void>; setOffConfirm: (value: boolean) => void; t: (value: Copy) => string; eventRows: DefenderSnapshot["events"] }) {

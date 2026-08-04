@@ -33,6 +33,9 @@
     "asar": true,
     "files": [
       "dist/**/*",
+      "!dist/win-unpacked{,/**/*}",
+      "!dist/squirrel-windows{,/**/*}",
+      "!dist/squirrel-frameless{,/**/*}",
       "electron/**/*",
       "package.json"
     ],
