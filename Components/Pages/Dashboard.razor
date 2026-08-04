@@ -4,7 +4,6 @@
 @inject DefenderStateStore StateStore
 @inject AcDefenderService Defender
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 @inject IJSRuntime JS
 
 <PageTitle>Command Center - AC Defender</PageTitle>
@@ -118,9 +117,22 @@
                                 <button class="ops-mode-btn active" @onclick="ForceBoost">❆ COOL</button>
                                 <button class="ops-mode-btn" @onclick="ForceTarget">⌖ TARGET</button>
                                 <button class="ops-mode-btn" @onclick="RefreshReal">⟳ REFRESH</button>
-                                <button class="ops-mode-btn" @onclick="TurnOff">⏻ OFF</button>
+                                <button id="dashboard-thermostat-off" class="ops-mode-btn" @onclick="TurnOff" disabled="@_thermostatOffGateOpen">⏻ OFF</button>
                             </div>
                             <div class="@ThermoNoteClass">@ThermoNote</div>
+                            @if (_thermostatOffGateOpen)
+                            {
+                                <DestructiveActionSuperConfirmation
+                                    ActionTitle="Turn off the real thermostat?"
+                                    CantoneseActionTitle="關閉真正溫控器？"
+                                    Description="This authorizes one real Home Assistant OFF command for the dining-room thermostat. No command is sent until both keys and the full slider are complete."
+                                    CantoneseDescription="呢道閘門只會授權飯廳溫控器一次真正 Home Assistant 關機指令。兩把鎖匙同全程滑桿未完成之前，唔會發送指令。"
+                                    AffectedDevice="climate.dining_room"
+                                    CommandSummary="climate.set_hvac_mode → off"
+                                    ReturnFocusId="dashboard-thermostat-off"
+                                    OnConfirmed="ConfirmThermostatOffGate"
+                                    OnCancelled="CancelThermostatOffGate" />
+                            }
                         </div>
                     }
                 </div>
@@ -383,6 +395,7 @@
     private double _targetInput = 22.0;
     private bool _targetDirty;
     private bool _thermoOpen;
+    private bool _thermostatOffGateOpen;
 
     private DefenderSnapshot? Snapshot => State.Snapshot;
 
@@ -568,7 +581,13 @@
     private string KnobY => $"{(96 - 82 * Math.Cos((135 + SetpointAngle) * Math.PI / 180)).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}px";
 
     private void ToggleThermostatPop() => _thermoOpen = !_thermoOpen;
-    private void CloseThermostat() => _thermoOpen = false;
+    private void CloseThermostat()
+    {
+        if (!_thermostatOffGateOpen)
+        {
+            _thermoOpen = false;
+        }
+    }
 
     // ---------- telemetry ----------
 
@@ -789,18 +808,32 @@
     private Task ForceTarget() => RunThermostatAction(() => Defender.ForceTargetAsync(CancellationToken.None), "Exact target sent.", "force exact target");
     private Task ForceBoost() => RunThermostatAction(() => Defender.ForceCoolingBoostAsync(CancellationToken.None), "Cooling boost sent.", "force cooling");
 
-    private async Task TurnOff()
+    private Task TurnOff()
     {
-        var confirm = await DialogService.ShowMessageBoxAsync(
-            "Turn off the real thermostat?",
-            "This sends a real Home Assistant command to turn the dining-room thermostat off.",
-            yesText: "Turn thermostat off",
-            cancelText: "Cancel");
+        _thermostatOffGateOpen = true;
+        return Task.CompletedTask;
+    }
 
-        if (confirm == true)
+    private async Task ConfirmThermostatOffGate()
+    {
+        _thermostatOffGateOpen = false;
+        StateHasChanged();
+        if (!TryBeginWebsiteCommand("turn thermostat off", bypassDebounce: true))
         {
-            await RunThermostatAction(() => Defender.TurnThermostatOffAsync(CancellationToken.None), "Thermostat turned off.", "turn thermostat off");
+            return;
         }
+
+        await RunThermostatActionAfterGate(
+            () => Defender.TurnThermostatOffAsync(CancellationToken.None),
+            "Thermostat turned off.");
+    }
+
+    private Task CancelThermostatOffGate()
+    {
+        _thermostatOffGateOpen = false;
+        StateHasChanged();
+        Snackbar.Add("Thermostat OFF authorization cancelled; no Home Assistant command was sent.", Severity.Info);
+        return Task.CompletedTask;
     }
 
     private bool TryBeginWebsiteCommand(string actionName, bool bypassDebounce = false)
@@ -823,6 +856,11 @@
             return;
         }
 
+        await RunThermostatActionAfterGate(action, successMessage);
+    }
+
+    private async Task RunThermostatActionAfterGate(Func<Task> action, string successMessage)
+    {
         try
         {
             await action();

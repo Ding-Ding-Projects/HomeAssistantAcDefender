@@ -1,0 +1,285 @@
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@implements IDisposable
+
+<section class="destructive-super-confirm"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="@TitleId"
+         aria-describedby="@DescriptionId"
+         tabindex="-1"
+         @ref="_surface"
+         @onkeydown="HandleKeyDown">
+    <div class="destructive-super-confirm__head">
+        <div>
+            <p class="destructive-super-confirm__eyebrow">@L("DESTRUCTIVE ACTION GATE", "高危動作閘門")</p>
+            <h2 id="@TitleId">@L(ActionTitle, CantoneseActionTitle)</h2>
+        </div>
+        <button type="button"
+                class="destructive-super-confirm__exit"
+                @onclick="Cancel"
+                aria-label="@L("Emergency exit", "緊急退出")">
+            <span aria-hidden="true">✕</span>
+            @L("Emergency exit", "緊急退出")
+        </button>
+    </div>
+
+    <p id="@DescriptionId" class="destructive-super-confirm__description">
+        @L(Description, CantoneseDescription)
+    </p>
+
+    <dl class="destructive-super-confirm__facts">
+        <div>
+            <dt>@L("Affected device", "受影響裝置")</dt>
+            <dd><code>@AffectedDevice</code></dd>
+        </div>
+        <div>
+            <dt>@L("Real Home Assistant command", "真正 Home Assistant 指令")</dt>
+            <dd><code>@CommandSummary</code></dd>
+        </div>
+        <div>
+            <dt>@L("Defender state", "衛兵狀態")</dt>
+            <dd>@L("The defender will stand down before this call.", "衛兵會喺呢個指令之前停工。")</dd>
+        </div>
+    </dl>
+
+    <div class="destructive-super-confirm__keys" aria-describedby="@KeysDescriptionId">
+        <p id="@KeysDescriptionId" class="destructive-super-confirm__section-label">
+            @L("Turn both independent keys before the slider unlocks.", "要扭掣兩把獨立鎖匙，滑桿先會解鎖。")
+        </p>
+        <div class="destructive-super-confirm__key-row">
+            <button type="button"
+                    class="@(KeyClass(_key1))"
+                    @onclick="() => ToggleKey(1)"
+                    aria-label="@L("Turn arming key one", "扭動第一把啟動鎖匙")"
+                    aria-pressed="@(_key1 ? "true" : "false")">
+                <span aria-hidden="true">🗝</span>
+                <span>@L("Key 1", "鎖匙一")</span>
+            </button>
+            <button type="button"
+                    class="@(KeyClass(_key2))"
+                    @onclick="() => ToggleKey(2)"
+                    aria-label="@L("Turn arming key two", "扭動第二把啟動鎖匙")"
+                    aria-pressed="@(_key2 ? "true" : "false")">
+                <span aria-hidden="true">🗝</span>
+                <span>@L("Key 2", "鎖匙二")</span>
+            </button>
+        </div>
+        <p class="destructive-super-confirm__key-status" role="status" aria-live="polite">@KeysStatus</p>
+    </div>
+
+    <div class="destructive-super-confirm__slider @(Armed ? "destructive-super-confirm__slider--armed" : "destructive-super-confirm__slider--locked") @(IsComplete ? "destructive-super-confirm__slider--complete" : "")">
+        <div class="destructive-super-confirm__fill" style="width: @_value%"></div>
+        <span class="destructive-super-confirm__slider-label">@SliderLabel</span>
+        <span class="destructive-super-confirm__slider-knob" style="left: calc(@_value% * (100% - 46px) / 100%)" aria-hidden="true">@(IsComplete ? "✓" : Armed ? "⚠" : "🔒")</span>
+        <input type="range"
+               min="0"
+               max="100"
+               step="1"
+               value="@_value"
+               @oninput="OnInput"
+               @onchange="OnRelease"
+               disabled="@(Disabled || !Armed || IsComplete)"
+               aria-label="@L("Slide the full range to authorize turning the real thermostat off", "滑滿全程，授權關閉真正溫控器")"
+               aria-valuemin="0"
+               aria-valuemax="100"
+               aria-valuenow="@_value" />
+    </div>
+
+    @if (IsProgressing || IsComplete)
+    {
+        <div class="destructive-super-confirm__status @(IsComplete ? "destructive-super-confirm__status--complete" : "destructive-super-confirm__status--progress")"
+             role="status"
+             aria-live="assertive">
+            <span aria-hidden="true">@(IsComplete ? "✓" : "⟳")</span>
+            @StatusText
+        </div>
+    }
+
+    <p class="destructive-super-confirm__hint">
+        @L("Escape or Emergency exit cancels without sending a command.", "按 Escape 或緊急退出會取消，唔會發送指令。")
+    </p>
+</section>
+
+@code {
+    [Parameter] public string ActionTitle { get; set; } = "Turn off the real thermostat?";
+    [Parameter] public string CantoneseActionTitle { get; set; } = "關閉真正溫控器？";
+    [Parameter] public string Description { get; set; } = "This gate authorizes one real, irreversible Home Assistant OFF command.";
+    [Parameter] public string CantoneseDescription { get; set; } = "呢道閘門只會授權一次真正、不可即時撤回嘅 Home Assistant 關機指令。";
+    [Parameter] public string AffectedDevice { get; set; } = "climate.dining_room";
+    [Parameter] public string CommandSummary { get; set; } = "climate.set_hvac_mode → off";
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback OnConfirmed { get; set; }
+    [Parameter] public EventCallback OnCancelled { get; set; }
+    [Parameter] public string ReturnFocusId { get; set; } = string.Empty;
+
+    [CascadingParameter(Name = "LangMode")]
+    private string? LangMode { get; set; }
+
+    private readonly string _instanceId = Guid.NewGuid().ToString("N");
+    private ElementReference _surface;
+    private bool _key1;
+    private bool _key2;
+    private bool _complete;
+    private int _value;
+    private Timer? _disarmTimer;
+
+    private string TitleId => $"destructive-super-confirm-title-{_instanceId}";
+    private string DescriptionId => $"destructive-super-confirm-description-{_instanceId}";
+    private string KeysDescriptionId => $"destructive-super-confirm-keys-{_instanceId}";
+    private bool Armed => _key1 && _key2;
+    private bool IsComplete => _complete;
+    private bool IsProgressing => _value > 0 && !_complete;
+
+    private string KeysStatus => _complete
+        ? L("AUTHORIZED", "已授權")
+        : Armed
+            ? L("ARMED — slide the full range", "已啟動——滑滿全程")
+            : _key1 || _key2
+                ? L("ONE MORE KEY…", "仲差一把鎖匙……")
+                : L("SAFETY LOCK", "安全鎖")
+        ;
+
+    private string SliderLabel => _complete
+        ? L("AUTHORIZATION COMPLETE", "授權完成")
+        : Armed
+            ? L("SLIDE TO AUTHORIZE THERMOSTAT OFF", "滑動授權關閉溫控器")
+            : L("TURN BOTH KEYS TO UNLOCK", "扭掣兩把鎖匙解鎖")
+        ;
+
+    private string StatusText => _complete
+        ? L("Authorization complete; sending the real command now.", "授權完成；而家發送真正指令。")
+        : L("Authorization in progress — keep the slider moving.", "授權進行中——繼續滑動滑桿。")
+        ;
+
+    private string KeyClass(bool active) => active
+        ? "destructive-super-confirm__key destructive-super-confirm__key--active"
+        : "destructive-super-confirm__key";
+
+    private string L(string english, string cantonese) => LangMode switch
+    {
+        Lang.Cantonese => cantonese,
+        Lang.Both => $"{english} · {cantonese}",
+        _ => english,
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await JS.InvokeVoidAsync("acAccessibility.captureFocus");
+        await JS.InvokeVoidAsync("acAccessibility.activateModal", _surface);
+    }
+
+    private void ToggleKey(int key)
+    {
+        if (_complete || Disabled)
+        {
+            return;
+        }
+
+        if (key == 1)
+        {
+            _key1 = !_key1;
+        }
+        else
+        {
+            _key2 = !_key2;
+        }
+
+        _disarmTimer?.Dispose();
+        _disarmTimer = null;
+        if (Armed)
+        {
+            _disarmTimer = new Timer(_ => _ = InvokeAsync(Disarm), null, TimeSpan.FromSeconds(30), Timeout.InfiniteTimeSpan);
+        }
+    }
+
+    private void Disarm()
+    {
+        if (_complete)
+        {
+            return;
+        }
+
+        _key1 = false;
+        _key2 = false;
+        _value = 0;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnInput(ChangeEventArgs args)
+    {
+        if (_complete || Disabled || !Armed || !int.TryParse(args.Value?.ToString(), out var value))
+        {
+            return;
+        }
+
+        _value = Math.Clamp(value, 0, 100);
+        if (_value < 96)
+        {
+            return;
+        }
+
+        _value = 100;
+        _complete = true;
+        _disarmTimer?.Dispose();
+        _disarmTimer = null;
+        StateHasChanged();
+
+        // Keep the completed animation visible long enough to distinguish authorization
+        // from the command result; the command itself is still invoked only after completion.
+        await Task.Delay(320);
+        await DeactivateModalAsync();
+        await OnConfirmed.InvokeAsync();
+        await ReturnFocusAsync();
+    }
+
+    private void OnRelease()
+    {
+        if (!_complete)
+        {
+            _value = 0;
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key.Equals("Escape", StringComparison.OrdinalIgnoreCase))
+        {
+            await Cancel();
+        }
+    }
+
+    private async Task Cancel()
+    {
+        if (_complete)
+        {
+            return;
+        }
+
+        _disarmTimer?.Dispose();
+        _disarmTimer = null;
+        await DeactivateModalAsync();
+        await OnCancelled.InvokeAsync();
+        await ReturnFocusAsync();
+    }
+
+    private Task DeactivateModalAsync() =>
+        JS.InvokeVoidAsync("acAccessibility.deactivateModal", _surface).AsTask();
+
+    private async Task ReturnFocusAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(ReturnFocusId))
+        {
+            await Task.Delay(20);
+            await JS.InvokeVoidAsync("acAccessibility.focusElementById", ReturnFocusId);
+        }
+    }
+
+    public void Dispose() => _disarmTimer?.Dispose();
+}
