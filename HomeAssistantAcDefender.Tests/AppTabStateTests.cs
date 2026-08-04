@@ -30,6 +30,43 @@ internal sealed class AppTabStateTests
         }
     }
 
+    public void PinningGroupsAndPersistenceRoundTripWithoutDefenderState()
+    {
+        var state = new AppTabState(
+            ["/", "/defense", "/settings", "/logs"],
+            ["/settings", "/logs", "/"],
+            "/defense");
+
+        if (!state.SetPinned("/logs", true) || !state.SetGroup("/logs", "Audit"))
+        {
+            throw new InvalidOperationException("An existing tab should accept pin and group metadata.");
+        }
+
+        AssertSequence(state.Tabs, ["/logs", "/settings", "/", "/defense"]);
+        if (!state.IsPinned("/logs") || state.GroupFor("/logs") != "Audit")
+        {
+            throw new InvalidOperationException("Pin and group metadata should be readable from the tab state.");
+        }
+
+        var restored = new AppTabState(["/", "/defense", "/settings", "/logs"], null, "/");
+        restored.Restore(AppTabState.ParsePersisted(state.Serialize()), "/defense");
+
+        AssertSequence(restored.Tabs, ["/logs", "/settings", "/", "/defense"]);
+        if (!restored.IsPinned("/logs") || restored.GroupFor("/logs") != "Audit")
+        {
+            throw new InvalidOperationException("Pin and group metadata should survive localStorage serialization.");
+        }
+    }
+
+    public void LegacyStringArrayStorageStillLoads()
+    {
+        var records = AppTabState.ParsePersisted("[\"/settings\",\"/logs\"]");
+        if (!records.Select(record => record.Href).SequenceEqual(["/settings", "/logs"]))
+        {
+            throw new InvalidOperationException("The pre-metadata tab storage format should remain readable.");
+        }
+    }
+
     private static void AssertSequence(IReadOnlyList<string> actual, IReadOnlyList<string> expected)
     {
         if (!actual.SequenceEqual(expected, StringComparer.OrdinalIgnoreCase))

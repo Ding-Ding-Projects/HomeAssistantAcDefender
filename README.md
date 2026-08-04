@@ -137,7 +137,8 @@ snapshot — no refreshing, ever:
 - **Command palette** (`Ctrl+Shift+F`) — keyboard navigation to each real destination without
   bypassing authentication or thermostat safety gates.
 - **Open tabs** — persisted browser-style route tabs complement the full rail, keep the active
-  route visible through overflow, and expose arrow/Home/End keyboard navigation.
+  route visible through overflow, expose arrow/Home/End keyboard navigation, and support a stable
+  pinned region plus bounded local group labels.
 - **Release changelog** (`/changelog`) — every published version with date and regex filters,
   exact commit links, legacy-metadata warnings, and filtered Markdown export.
 - **Notification history** (`/notifications`, backed by `/api/notifications`) — authenticated

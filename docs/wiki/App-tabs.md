@@ -16,9 +16,15 @@ existing tab instead of creating a duplicate.
 
 - Tabs use the real route hrefs (`/`, `/defense`, `/comfort`, `/energy`, `/logs`, `/controls`,
   `/settings`, `/repository`, `/guide`, `/wiki`, `/api-docs`, and `/changelog`).
-- The tab order and membership are stored in browser `localStorage` under `ac-defender-open-tabs`.
-  Invalid, duplicate, or unknown hrefs are discarded on load; `/` is always retained as the safe
-  command tab, and the current route is always added.
+- The tab order, pin state, and optional group name are stored in browser `localStorage` under
+  `ac-defender-open-tabs`. The current payload is an array of `{ href, pinned, group }` records;
+  the earlier string-array payload remains readable so an upgrade does not throw away a user's
+  navigation layout. Invalid, duplicate, or unknown hrefs are discarded on load; `/` is always
+  retained as the safe command tab, and the current route is always added.
+- Pinning moves a route into a stable protected region at the front of the strip. The pin button
+  is keyboard reachable and does not send a Home Assistant command. Grouping is a local label on
+  the active route: type a short name in **Group active tab**, or clear it to ungroup. Group names
+  are bounded to 48 characters and are presentation metadata only.
 - Storage is a convenience only. If it is unavailable or malformed, the in-memory tab set starts
   from the command tab and the current route; no Home Assistant command or live state is changed.
 - The horizontal viewport scrolls rather than clipping long tab sets. When navigation changes, the
@@ -34,10 +40,11 @@ keyboard-reachable, and reduced-motion users do not receive animated scrolling.
 
 ## Failure and security considerations
 
-Tab state contains only an allow-listed route path; it never stores Home Assistant tokens, climate
-readings, command payloads, or provider-authored content. A broken local-storage value cannot
-redirect navigation outside the app's known routes. The rail remains available if the tab strip
-fails to initialize, and route navigation never waits for Home Assistant.
+Tab state contains only an allow-listed route path plus a bounded pin flag and group label; it never
+stores Home Assistant tokens, climate readings, command payloads, or provider-authored content. A
+broken local-storage value cannot redirect navigation outside the app's known routes. The rail
+remains available if the tab strip fails to initialize, and route navigation never waits for Home
+Assistant.
 
 ## Verification
 
@@ -46,7 +53,9 @@ fails to initialize, and route navigation never waits for Home Assistant.
 2. Reload the browser and confirm the tab membership/order survives.
 3. At a 390 px viewport, open enough pages to overflow the strip. Confirm the viewport scrolls,
    the active tab is visible, and the document has no horizontal overflow.
-4. Focus a tab and use <kbd>Home</kbd>, <kbd>End</kbd>, arrow keys, and <kbd>Enter</kbd>. Confirm
+4. Pin two tabs and confirm they stay together at the front after reload; assign and clear a group
+   on two routes and confirm the labels survive reload without changing the defender snapshot.
+5. Focus a tab and use <kbd>Home</kbd>, <kbd>End</kbd>, arrow keys, and <kbd>Enter</kbd>. Confirm
    `role=tablist`, `role=tab`, `aria-selected`, `aria-controls`, and `tabpanel` values remain truthful.
 
 Suggested next steps: [Command palette](Command-palette.html), [Settings](Settings.html), and
