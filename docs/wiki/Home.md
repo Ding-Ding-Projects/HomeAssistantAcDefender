@@ -27,6 +27,7 @@ Assistant climate entity or returns a real error.
 | **[Settings](Settings.html)** | Every knob on the Settings page |
 | **[Notification history](Notification-history.html)** | Reviewable activity notices that survive the live log tail |
 | **[Command palette](Command-palette.html)** | Keyboard-first navigation from every signed-in page |
+| **[Windows Electron controller](Windows-Electron-controller.html)** | Separate Windows client for the hosted service |
 | **[API](API.html)** | The JSON endpoints and SSE stream |
 | **[Architecture](Architecture.html)** | How the code is put together |
 | **[Deployment](Deployment.html)** | Docker hosting |

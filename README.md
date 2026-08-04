@@ -131,6 +131,9 @@ snapshot — no refreshing, ever:
   bypassing authentication or thermostat safety gates.
 - **Notification history** (`/api/notifications`) — authenticated review and restore of real
   activity notices; it never invents thermostat state.
+- **Windows Electron controller** (`desktop-electron/`) — a separate Windows client for the
+  hosted service. It signs in through the real `/login` flow, reads `/api/status`, and sends
+  authenticated commands; defender logic remains on the server.
 - **Guide** (`/guide`) — the built-in manual, generated from the guard catalog.
 
 See the [Website Tour](docs/wiki/Website-Tour.md) for all of it with screenshots.

@@ -6,6 +6,10 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
 
 ## Delivery gates
 
+- [x] Add the separate Windows Electron controller source and its local build/static checks.
+- [ ] Produce and open a verified Squirrel.Windows installer; the current workstation's Squirrel
+      writer reports a missing `dist/win-unpacked/locales` payload.
+
 - [x] Build and regression-test the application before a release.
 - [x] Build a loadable Docker image archive and checksum from the exact tested commit.
 - [x] Publish a CI-generated line-count table with source, tests, styles/markup,

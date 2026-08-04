@@ -18,6 +18,16 @@ runtime control code was changed here.
   failure modes, and verification. `README.md`, `ROADMAP.md`, and this file link
   the workflow and its evidence.
 
+## Windows Electron controller
+
+- `desktop-electron/` is a separate Windows-only Electron + React/TypeScript controller. It does
+  not contain defender logic or simulated HVAC state.
+- `npm run build` and `npm test` pass from `desktop-electron/` in the current checkout.
+- `npm run dist` reaches Squirrel.Windows packaging but is not an installer proof: the local
+  Squirrel writer failed while writing setup because `dist/win-unpacked/locales` was missing.
+  Keep this verification boundary explicit until a Windows packaging host produces and opens the
+  real installer.
+
 ## Local verification
 
 From this checkout:
