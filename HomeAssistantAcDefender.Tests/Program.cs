@@ -31,6 +31,7 @@ dimSumSurpriseTests.DrawRejectsInvalidBuckets();
 settingsRepositoryTests.IdenticalSaveRecoversDirtySnapshotAfterGitFailureAndRestart();
 var notificationHistoryTests = new NotificationHistoryStoreTests();
 notificationHistoryTests.JournalSurvivesRestartAndReviewActions();
+notificationHistoryTests.DateAndActionFiltersUseJournalHistory();
 var notificationExportTests = new NotificationExportServiceTests();
 notificationExportTests.JsonAndMarkdownExportsPreserveFiltersAndUtf8();
 notificationExportTests.EmptyExportIsExplicitAndUiUsesLocalBridge();

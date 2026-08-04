@@ -130,8 +130,55 @@ api.MapGet("/notifications", (
     int? limit,
     bool? includeDismissed,
     string? level,
+    string? from,
+    string? to,
+    string? actions,
     NotificationHistoryStore notifications) =>
-    Results.Ok(notifications.GetSnapshot(limit ?? 100, includeDismissed ?? false, level)));
+{
+    DateTimeOffset? fromInclusive = null;
+    DateTimeOffset? toExclusive = null;
+    if (!string.IsNullOrWhiteSpace(from))
+    {
+        if (!DateTimeOffset.TryParse(from, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal, out var parsedFrom))
+        {
+            return Results.BadRequest(new { error = "from must be an ISO-8601 timestamp or YYYY-MM-DD date." });
+        }
+
+        fromInclusive = parsedFrom;
+    }
+
+    if (!string.IsNullOrWhiteSpace(to))
+    {
+        if (to.Length == 10 && DateOnly.TryParseExact(to, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsedDate))
+        {
+            toExclusive = new DateTimeOffset(parsedDate.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+        else if (DateTimeOffset.TryParse(to, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal, out var parsedTo))
+        {
+            toExclusive = parsedTo;
+        }
+        else
+        {
+            return Results.BadRequest(new { error = "to must be an ISO-8601 timestamp or YYYY-MM-DD date." });
+        }
+    }
+
+    if (fromInclusive is not null && toExclusive is not null && toExclusive <= fromInclusive)
+    {
+        return Results.BadRequest(new { error = "to must be after from." });
+    }
+
+    var actionFilter = string.IsNullOrWhiteSpace(actions)
+        ? null
+        : actions.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    if (actionFilter is not null && actionFilter.Any(action => !NotificationHistoryStore.ActionKinds.Contains(action, StringComparer.OrdinalIgnoreCase)))
+    {
+        return Results.BadRequest(new { error = "actions accepts only created, read, dismissed, and restored." });
+    }
+
+    return Results.Ok(notifications.GetSnapshot(limit ?? 100, includeDismissed ?? false, level, fromInclusive, toExclusive, actionFilter));
+});
 api.MapPost("/notifications/{id:guid}/read", (Guid id, NotificationHistoryStore notifications) =>
     notifications.MarkRead(id)
         ? Results.Ok(notifications.GetSnapshot(includeDismissed: true))

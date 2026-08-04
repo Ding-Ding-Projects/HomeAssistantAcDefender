@@ -22,6 +22,10 @@ public sealed class NotificationHistoryStore
     {
         "info", "success", "warning", "error"
     };
+    private static readonly HashSet<string> KnownActions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "created", "read", "dismissed", "restored"
+    };
 
     private readonly object gate = new();
     private readonly ILogger<NotificationHistoryStore> logger;
@@ -41,6 +45,9 @@ public sealed class NotificationHistoryStore
     }
 
     public string JournalPath => journalPath;
+
+    /// <summary>Journal actions that can be selected by the notification history UI.</summary>
+    public static IReadOnlyList<string> ActionKinds { get; } = ["created", "read", "dismissed", "restored"];
 
     /// <summary>Records a non-blocking defender notice without ever throwing into the control path.</summary>
     public NotificationRecord Append(string level, string message, DateTimeOffset? timestamp = null)
@@ -76,23 +83,42 @@ public sealed class NotificationHistoryStore
     public NotificationHistorySnapshot GetSnapshot(
         int limit = 100,
         bool includeDismissed = false,
-        string? level = null)
+        string? level = null,
+        DateTimeOffset? fromInclusive = null,
+        DateTimeOffset? toExclusive = null,
+        IReadOnlySet<string>? actions = null)
     {
         lock (gate)
         {
             var normalizedLevel = string.IsNullOrWhiteSpace(level) ? null : NormalizeLevel(level);
-            var active = records.Values
+            var normalizedActions = actions is null
+                ? null
+                : actions
+                    .Where(item => !string.IsNullOrWhiteSpace(item))
+                    .Select(item => item.Trim().ToLowerInvariant())
+                    .Where(KnownActions.Contains)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var matching = records.Values
                 .Where(item => includeDismissed || !item.Dismissed)
                 .Where(item => normalizedLevel is null || string.Equals(item.Level, normalizedLevel, StringComparison.OrdinalIgnoreCase))
+                .Where(item => fromInclusive is null || item.Timestamp >= fromInclusive.Value)
+                .Where(item => toExclusive is null || item.Timestamp < toExclusive.Value)
+                .Where(item => normalizedActions is null || normalizedActions.Count == 0 || item.Actions.Any(action => normalizedActions.Contains(action)))
+                .ToArray();
+            var active = matching
                 .OrderByDescending(item => item.Timestamp)
                 .ThenByDescending(item => item.Id)
                 .Take(Math.Clamp(limit, 1, MaximumReadLimit))
                 .Select(item => item.ToRecord())
                 .ToArray();
 
-            var allActive = records.Values.Count(item => !item.Dismissed);
-            var unread = records.Values.Count(item => !item.Read && !item.Dismissed);
-            return new NotificationHistorySnapshot(active, unread, allActive);
+            var allActive = matching.Count(item => !item.Dismissed);
+            var unread = matching.Count(item => !item.Read && !item.Dismissed);
+            var actionCounts = matching
+                .SelectMany(item => item.Actions)
+                .GroupBy(action => action, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+            return new NotificationHistorySnapshot(active, unread, allActive, actionCounts);
         }
     }
 
@@ -113,6 +139,7 @@ public sealed class NotificationHistoryStore
 
             record.Read = true;
             record.ReadAt = at;
+            record.AddAction("read");
             return true;
         }
     }
@@ -134,6 +161,7 @@ public sealed class NotificationHistoryStore
 
             record.Dismissed = true;
             record.DismissedAt = at;
+            record.AddAction("dismissed");
             return true;
         }
     }
@@ -155,6 +183,7 @@ public sealed class NotificationHistoryStore
 
             record.Dismissed = false;
             record.DismissedAt = null;
+            record.AddAction("restored");
             return true;
         }
     }
@@ -233,19 +262,23 @@ public sealed class NotificationHistoryStore
                     Timestamp = entry.Timestamp,
                     Level = NormalizeLevel(entry.Level),
                     Message = NormalizeMessage(entry.Message),
+                    Actions = ["created"],
                 };
                 break;
             case "read" when records.TryGetValue(entry.Id, out var read):
                 read.Read = true;
                 read.ReadAt = entry.Timestamp;
+                read.AddAction("read");
                 break;
             case "dismissed" when records.TryGetValue(entry.Id, out var dismissed):
                 dismissed.Dismissed = true;
                 dismissed.DismissedAt = entry.Timestamp;
+                dismissed.AddAction("dismissed");
                 break;
             case "restored" when records.TryGetValue(entry.Id, out var restored):
                 restored.Dismissed = false;
                 restored.DismissedAt = null;
+                restored.AddAction("restored");
                 break;
         }
     }
@@ -306,19 +339,41 @@ public sealed class NotificationHistoryStore
 
         public DateTimeOffset? DismissedAt { get; set; }
 
-        public static NotificationState From(NotificationRecord record) => new()
-        {
-            Id = record.Id,
-            Timestamp = record.Timestamp,
-            Level = record.Level,
-            Message = record.Message,
-            Read = record.Read,
-            Dismissed = record.Dismissed,
-            ReadAt = record.ReadAt,
-            DismissedAt = record.DismissedAt,
-        };
+        public List<string> Actions { get; init; } = [];
 
-        public NotificationRecord ToRecord() => new(Id, Timestamp, Level, Message, Read, Dismissed, ReadAt, DismissedAt);
+        public static NotificationState From(NotificationRecord record)
+        {
+            var actions = (record.Actions ?? [])
+                .Where(KnownActions.Contains)
+                .ToList();
+            if (!actions.Contains("created", StringComparer.OrdinalIgnoreCase))
+            {
+                actions.Insert(0, "created");
+            }
+
+            return new NotificationState
+            {
+                Id = record.Id,
+                Timestamp = record.Timestamp,
+                Level = record.Level,
+                Message = record.Message,
+                Read = record.Read,
+                Dismissed = record.Dismissed,
+                ReadAt = record.ReadAt,
+                DismissedAt = record.DismissedAt,
+                Actions = actions,
+            };
+        }
+
+        public NotificationRecord ToRecord() => new(Id, Timestamp, Level, Message, Read, Dismissed, ReadAt, DismissedAt, Actions.ToArray());
+
+        public void AddAction(string action)
+        {
+            if (!Actions.Contains(action, StringComparer.OrdinalIgnoreCase))
+            {
+                Actions.Add(action);
+            }
+        }
     }
 
     private sealed class JournalEntry

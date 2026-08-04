@@ -14,7 +14,7 @@ GET /api/usage/live
 GET /api/usage/alectra-hui
 GET /api/usage/history
 GET /api/status/stream
-GET /api/notifications?limit=100&includeDismissed=false&level=warning
+GET /api/notifications?limit=100&includeDismissed=false&level=warning&from=2026-08-04&to=2026-08-04&actions=created,dismissed
 POST /api/notifications/{id}/read
 POST /api/notifications/{id}/dismiss
 POST /api/notifications/{id}/restore
@@ -67,10 +67,13 @@ The status snapshot includes:
 ## Notification centre
 
 `GET /api/notifications` reads the durable notification journal. Results are newest-first and include
-`items`, `unreadCount`, and `activeCount`. Dismissed records are hidden by default; pass
-`includeDismissed=true` to review them. `level` accepts `info`, `success`, `warning`, or `error`.
-The read, dismiss, and restore endpoints append a review action to the same JSONL journal. All four
-routes are authenticated with the rest of `/api` and never issue a Home Assistant command.
+`items`, `unreadCount`, `activeCount`, and `actionCounts`. Dismissed records are hidden by default; pass
+`includeDismissed=true` to review them. `level` accepts `info`, `success`, `warning`, or `error`. Optional
+`from` and `to` accept ISO-8601 timestamps; date-only values use UTC day boundaries, with a date-only `to`
+value inclusive. `actions` accepts comma-separated journal actions (`created`, `read`, `dismissed`, and
+`restored`). Each item carries the ordered `actions` that were actually appended to the JSONL journal.
+The read, dismiss, and restore endpoints append a review action to the same JSONL journal. All four routes
+are authenticated with the rest of `/api` and never issue a Home Assistant command.
 
 ## Usage
 

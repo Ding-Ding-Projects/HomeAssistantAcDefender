@@ -28,7 +28,15 @@ internal sealed class NotificationExportServiceTests
                 ReadAt: DateTimeOffset.Parse("2026-08-04T12:03:00Z"),
                 DismissedAt: null),
         };
-        var filters = new NotificationExportFilters("警告", "regex", "im", "warning", IncludeDismissed: true);
+        var filters = new NotificationExportFilters(
+            "警告",
+            "regex",
+            "im",
+            "warning",
+            IncludeDismissed: true,
+            StartDate: "2026-08-04",
+            EndDate: "2026-08-04",
+            Actions: ["created", "dismissed"]);
         var exportedAt = DateTimeOffset.Parse("2026-08-04T12:04:00Z");
         var service = new NotificationExportService();
 
@@ -46,8 +54,11 @@ internal sealed class NotificationExportServiceTests
         Assert(root.GetProperty("filters").GetProperty("searchMode").GetString() == "regex"
             && root.GetProperty("filters").GetProperty("searchFlags").GetString() == "im"
             && root.GetProperty("filters").GetProperty("level").GetString() == "warning"
-            && root.GetProperty("filters").GetProperty("includeDismissed").GetBoolean(),
-            "JSON export should preserve every active filter.");
+            && root.GetProperty("filters").GetProperty("includeDismissed").GetBoolean()
+            && root.GetProperty("filters").GetProperty("startDate").GetString() == "2026-08-04"
+            && root.GetProperty("filters").GetProperty("endDate").GetString() == "2026-08-04"
+            && root.GetProperty("filters").GetProperty("actions").GetArrayLength() == 2,
+            "JSON export should preserve every active search, date, level, dismissed, and action filter.");
         Assert(root.GetProperty("notifications")[0].GetProperty("message").GetString() == records[0].Message,
             "JSON export should preserve the complete Unicode notification message.");
 
@@ -56,8 +67,10 @@ internal sealed class NotificationExportServiceTests
             "Markdown export should identify its schema.");
         Assert(markdown.Contains("Search mode: `regex`", StringComparison.Ordinal)
             && markdown.Contains("Search flags: `im`", StringComparison.Ordinal)
-            && markdown.Contains("Include dismissed: `true`", StringComparison.Ordinal),
-            "Markdown export should preserve filter metadata.");
+            && markdown.Contains("Include dismissed: `true`", StringComparison.Ordinal)
+            && markdown.Contains("Start date (UTC): `2026-08-04`", StringComparison.Ordinal)
+            && markdown.Contains("Action filter: `created, dismissed`", StringComparison.Ordinal),
+            "Markdown export should preserve search, date, dismissed, and action filter metadata.");
         Assert(markdown.Contains("警告 \\| wall touched<br>review it", StringComparison.Ordinal),
             "Markdown export should keep Unicode and escape table delimiters/newlines.");
     }
@@ -76,10 +89,14 @@ internal sealed class NotificationExportServiceTests
         var app = File.ReadAllText(Path.Combine(root, "Components", "App.razor"));
         var bridge = File.ReadAllText(Path.Combine(root, "wwwroot", "js", "notification-export.js"));
         var serviceSource = File.ReadAllText(Path.Combine(root, "Services", "NotificationExportService.cs"));
+        var program = File.ReadAllText(Path.Combine(root, "Program.cs"));
         Assert(page.Contains("Export JSON", StringComparison.Ordinal)
             && page.Contains("Export Markdown", StringComparison.Ordinal)
+            && page.Contains("Start date (UTC, YYYY-MM-DD)", StringComparison.Ordinal)
+            && page.Contains("Last 7 days", StringComparison.Ordinal)
+            && page.Contains("Filter by journal action", StringComparison.Ordinal)
             && page.Contains("FilteredNotifications", StringComparison.Ordinal),
-            "Notification page should expose both exports and build them from its filtered view.");
+            "Notification page should expose exports, date presets, journal-action filters, and build them from its filtered view.");
         Assert(app.Contains("js/notification-export.js", StringComparison.Ordinal),
             "The app shell should load the local notification export bridge.");
         Assert(bridge.Contains("downloadBase64", StringComparison.Ordinal)
@@ -90,6 +107,11 @@ internal sealed class NotificationExportServiceTests
             && serviceSource.Contains("Encoding.UTF8", StringComparison.Ordinal)
             && serviceSource.Contains(NotificationExportService.Schema, StringComparison.Ordinal),
             "Export service should declare UTF-8 JSON/Markdown output and a versioned schema.");
+        Assert(program.Contains("string? from", StringComparison.Ordinal)
+            && program.Contains("string? to", StringComparison.Ordinal)
+            && program.Contains("string? actions", StringComparison.Ordinal)
+            && program.Contains("toExclusive", StringComparison.Ordinal),
+            "The authenticated notification API should expose bounded ISO date and journal-action query filters.");
     }
 
     private static string FindRepositoryRoot()

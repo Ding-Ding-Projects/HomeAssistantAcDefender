@@ -53,6 +53,9 @@ public sealed class NotificationExportService
         builder.AppendLine($"- Search flags: `{EscapeCode(filters.SearchFlags)}`");
         builder.AppendLine($"- Level filter: `{EscapeCode(filters.Level)}`");
         builder.AppendLine($"- Include dismissed: `{filters.IncludeDismissed.ToString().ToLowerInvariant()}`");
+        builder.AppendLine($"- Start date (UTC): `{EscapeCode(filters.StartDate)}`");
+        builder.AppendLine($"- End date (UTC, inclusive): `{EscapeCode(filters.EndDate)}`");
+        builder.AppendLine($"- Action filter: `{EscapeCode(string.Join(", ", filters.Actions ?? []))}`");
         builder.AppendLine($"- Records exported: `{records.Count}`");
         builder.AppendLine();
 
@@ -91,7 +94,10 @@ public sealed record NotificationExportFilters(
     string SearchMode,
     string SearchFlags,
     string Level,
-    bool IncludeDismissed);
+    bool IncludeDismissed,
+    string StartDate = "",
+    string EndDate = "",
+    IReadOnlyList<string>? Actions = null);
 
 public sealed record NotificationExportDocument(
     string Schema,
