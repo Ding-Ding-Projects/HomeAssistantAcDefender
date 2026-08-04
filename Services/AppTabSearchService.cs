@@ -115,9 +115,10 @@ public static class AppTabSearchService
         }
 
         var normalizedActive = AppTabState.NormalizeHref(activeHref);
+        var candidateItems = items.ToArray();
         var matches = new List<SearchItem>();
         var excluded = new List<ExcludedItem>();
-        foreach (var item in items)
+        foreach (var item in candidateItems)
         {
             if (!MatchesGroup(item, normalized.Group))
             {
@@ -134,6 +135,10 @@ public static class AppTabSearchService
             if (string.Equals(AppTabState.NormalizeHref(item.Href), normalizedActive, StringComparison.OrdinalIgnoreCase))
             {
                 excluded.Add(new(item, "Active tab is retained so the current page stays open."));
+            }
+            else if (string.Equals(AppTabState.NormalizeHref(item.Href), "/", StringComparison.Ordinal) && candidateItems.Length > 1)
+            {
+                excluded.Add(new(item, "Command tab is retained as the safe navigation home."));
             }
             else if (item.Pinned && !includePinned)
             {

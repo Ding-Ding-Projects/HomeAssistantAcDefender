@@ -129,6 +129,11 @@ public sealed class AppTabState
     public bool Close(string href)
     {
         var normalized = NormalizeHref(href);
+        if (string.Equals(normalized, "/", StringComparison.Ordinal) && _tabs.Count > 1)
+        {
+            return false;
+        }
+
         if (!_metadata.Remove(normalized))
         {
             return false;
