@@ -2523,8 +2523,79 @@ body { font-family: 'JetBrains Mono', Consolas, monospace; -webkit-font-smoothin
     z-index: 19;
 }
 
+/* Browser-style app tabs complement the full rail; the viewport scrolls instead of clipping. */
+.ops-app-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--line2);
+    background: var(--panel);
+}
+
+.ops-app-tabs__title,
+.ops-app-tabs__count {
+    flex: 0 0 auto;
+    color: var(--sub);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.ops-app-tabs__count {
+    min-width: 20px;
+    padding: 3px 5px;
+    border: 1px solid var(--line2);
+    border-radius: 3px;
+    text-align: center;
+}
+
+.ops-app-tabs__viewport {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 3px;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+}
+
+.ops-app-tab {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 7px;
+    min-height: 32px;
+    max-width: min(260px, 42vw);
+    padding: 6px 12px;
+    border: 1px solid transparent;
+    border-bottom-color: var(--line2);
+    color: var(--sub);
+    background: transparent;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.ops-app-tab__glyph { color: var(--accent); font-size: 12px; }
+.ops-app-tab:hover { color: var(--ink); background: var(--panel2); text-decoration: none; }
+.ops-app-tab--active {
+    border-color: var(--line2);
+    border-bottom-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
 @media (max-width: 760px) {
     .ops-classified { position: static; letter-spacing: 0.16em; }
+    .ops-app-tabs { padding: 5px 8px; }
+    .ops-app-tabs__title { display: none; }
+    .ops-app-tab { max-width: 58vw; padding-inline: 10px; }
 }
 
 /* mobile master toggle appended to the bottom nav */

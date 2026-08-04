@@ -19,6 +19,9 @@ public static class YueCommon
         map["ORDERS"] = "指令";
         map["GUIDE"] = "手冊";
         map["STATIONS"] = "崗位";
+        map["OPEN TABS"] = "開啟分頁";
+        map["Open pages"] = "開啟頁面";
+        map["CHANGELOG"] = "版本紀錄";
 
         // ── Page titles ──
         map["Command Center"] = "指揮中心";

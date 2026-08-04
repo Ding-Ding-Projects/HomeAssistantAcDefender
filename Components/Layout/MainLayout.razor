@@ -61,6 +61,32 @@
     @* ═════════ CLASSIFICATION STRIP (per-page hazard ribbon) ═════════ *@
     <aside class="ops-classified" aria-label="Page classification">@PageStrip</aside>
 
+    @* ═════════ BROWSER-STYLE APP TABS (the rail remains the complete navigator) ═════════ *@
+    <nav class="ops-app-tabs" aria-label="@L("Open pages")">
+        <div class="ops-app-tabs__title">@L("OPEN TABS")</div>
+        <div class="ops-app-tabs__viewport" role="tablist" aria-label="@L("Open pages")">
+            @foreach (var item in OpenStations)
+            {
+                var active = IsActive(item);
+                <a id="@AppTabId(item.Href)"
+                   class="@AppTabClass(item)"
+                   href="@item.Href"
+                   role="tab"
+                   aria-controls="main-content"
+                   aria-selected="@(active ? "true" : "false")"
+                   tabindex="@(active ? "0" : "-1")"
+                   data-app-tab="@item.Href"
+                   data-active-app-tab="@(active ? "true" : "false")"
+                   aria-label="@($"{Lang.TInline(_langMode, item.Label)} tab")"
+                   @onkeydown="@(args => HandleAppTabKeyDown(args, item.Href))">
+                    <span class="ops-app-tab__glyph" aria-hidden="true">@item.Glyph</span>
+                    <span>@Lang.TInline(_langMode, item.Label)</span>
+                </a>
+            }
+        </div>
+        <span class="ops-app-tabs__count" aria-live="polite">@OpenStations.Count</span>
+    </nav>
+
     <div class="ops-body">
 
         @* ═════════ NAV RAIL ═════════ *@
@@ -87,7 +113,7 @@
         </nav>
 
         @* ═════════ MAIN ═════════ *@
-        <main id="main-content" class="ops-main" tabindex="-1">
+        <main id="main-content" class="ops-main" tabindex="-1" role="tabpanel" aria-labelledby="@ActiveAppTabId">
 
             @if (BannerVisible)
             {
@@ -174,6 +200,10 @@
     private int _bootStep;
     private bool _bootStarted;
     private string _langMode = Lang.English;
+    private AppTabState? _appTabs;
+    private bool _appTabsHydrated;
+
+    private const string AppTabsStorageKey = "ac-defender-open-tabs";
 
     // ---------- language (EN / 粵 / EN+粵) ----------
 
@@ -328,9 +358,30 @@
         new("/wiki", "⎘", "WIKI", "AREA-10", true),
         new("/api-docs", "{}", "API DOCS", "AREA-11", true),
         new("/notifications", "!", "NOTIFY", "AREA-12", true),
+        new("/changelog", "↻", "CHANGELOG", "AREA-13", false),
     ];
 
     private string CurrentPath => new Uri(Nav.Uri).AbsolutePath.TrimEnd('/').ToLowerInvariant() is { Length: > 0 } p ? p : "/";
+
+    private string CurrentStationHref => Stations.FirstOrDefault(IsActive)?.Href ?? "/";
+
+    private IReadOnlyList<Station> OpenStations =>
+        (_appTabs?.Tabs ?? [CurrentStationHref])
+            .Select(href => Stations.FirstOrDefault(station => station.Href == href))
+            .Where(static station => station is not null)
+            .Select(static station => station!)
+            .ToArray();
+
+    private string ActiveAppTabId => AppTabId(CurrentStationHref);
+
+    private static string AppTabId(string href)
+    {
+        var suffix = href.Trim('/').Replace('/', '-').Replace('.', '-');
+        return suffix.Length == 0 ? "app-tab-home" : $"app-tab-{suffix}";
+    }
+
+    private string AppTabClass(Station station) =>
+        IsActive(station) ? "ops-app-tab ops-app-tab--active" : "ops-app-tab";
 
     private bool IsActive(Station s) => s.Href == "/"
         ? CurrentPath == "/"
@@ -370,6 +421,7 @@
         "/wiki" => "Foundation wiki — every algorithm, every screenshot, one search box · zero simulators",
         "/api-docs" => "API documentation — session-gated JSON routes, real thermostat commands, public reactor voucher · zero simulators",
         "/notifications" => "Notification centre — review, search, dismiss, and restore real defender notices without blocking control",
+        "/changelog" => "Release history — every published version, date, code name, and completing commit · filters stay local",
         _ => "SECURE · CONTAIN · PROTECT THE COOL"
     };
 
@@ -386,6 +438,7 @@
         "/guide" => "Field Manual",
         "/api-docs" => "API Documentation",
         "/notifications" => "Notification Centre",
+        "/changelog" => "Release Changelog",
         var path when path.StartsWith("/wiki", StringComparison.Ordinal) => "Site Wiki",
         var other => other.TrimStart('/') is { Length: > 0 } name
             ? char.ToUpperInvariant(name[0]) + name[1..]
@@ -405,6 +458,8 @@
         "/guide" => $"AREA-09 · {GuardCatalog.All.Count()} PROCEDURES",
         var w when CurrentPath.StartsWith("/wiki", StringComparison.Ordinal) => "AREA-10 · FOUNDATION WIKI",
         "/api-docs" => "AREA-11 · API REFERENCE",
+        "/notifications" => "AREA-12 · NOTIFICATION CENTRE",
+        "/changelog" => "AREA-13 · RELEASE HISTORY",
         _ => ""
     };
 
@@ -508,12 +563,103 @@
 
     protected override void OnInitialized()
     {
+        _appTabs = new AppTabState(Stations.Select(station => station.Href), null, CurrentStationHref);
         State.Changed += OnStateChanged;
         Nav.LocationChanged += OnLocationChanged;
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-        => InvokeAsync(StateHasChanged);
+    {
+        _ = InvokeAsync(async () =>
+        {
+            EnsureCurrentAppTab();
+            await PersistAppTabsAsync();
+            StateHasChanged();
+            await Task.Delay(1);
+            await RevealActiveAppTabAsync();
+        });
+    }
+
+    private void EnsureCurrentAppTab() =>
+        _appTabs?.EnsureOpen(CurrentStationHref);
+
+    private Task HandleAppTabKeyDown(KeyboardEventArgs args, string href)
+    {
+        var tabs = OpenStations;
+        var index = tabs.ToList().FindIndex(station => station.Href == href);
+        if (index < 0)
+        {
+            return;
+        }
+
+        var targetIndex = args.Key switch
+        {
+            "ArrowRight" => (index + 1) % tabs.Count,
+            "ArrowLeft" => (index - 1 + tabs.Count) % tabs.Count,
+            "Home" => 0,
+            "End" => tabs.Count - 1,
+            "Enter" or " " => index,
+            _ => -1
+        };
+
+        if (targetIndex >= 0)
+        {
+            Nav.NavigateTo(tabs[targetIndex].Href);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task LoadAppTabsAsync()
+    {
+        List<string>? saved = null;
+        try
+        {
+            var raw = await JS.InvokeAsync<string?>("localStorage.getItem", AppTabsStorageKey);
+            if (!string.IsNullOrWhiteSpace(raw))
+            {
+                saved = System.Text.Json.JsonSerializer.Deserialize<List<string>>(raw);
+            }
+        }
+        catch
+        {
+            // Invalid or unavailable browser storage must never affect navigation.
+        }
+
+        _appTabs = new AppTabState(Stations.Select(station => station.Href), saved, CurrentStationHref);
+        _appTabsHydrated = true;
+        await PersistAppTabsAsync();
+    }
+
+    private async Task PersistAppTabsAsync()
+    {
+        if (!_appTabsHydrated || _appTabs is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var serialized = System.Text.Json.JsonSerializer.Serialize(_appTabs.Tabs);
+            await JS.InvokeVoidAsync("localStorage.setItem", AppTabsStorageKey, serialized);
+        }
+        catch
+        {
+            // Local storage is a convenience; the in-memory tabs remain usable.
+        }
+    }
+
+    private async Task RevealActiveAppTabAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("acAccessibility.revealActiveAppTab");
+        }
+        catch
+        {
+            // A missing helper must not block route navigation.
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -538,7 +684,9 @@
 
             await UpdateDocumentLanguageAsync();
 
+            await LoadAppTabsAsync();
             StateHasChanged();
+            await RevealActiveAppTabAsync();
         }
         catch
         {

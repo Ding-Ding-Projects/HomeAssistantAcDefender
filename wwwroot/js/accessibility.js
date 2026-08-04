@@ -33,6 +33,13 @@ window.acAccessibility = {
         if (element instanceof HTMLElement) element.focus({ preventScroll: true });
     },
 
+    revealActiveAppTab() {
+        const active = document.querySelector('[data-active-app-tab="true"]');
+        if (active instanceof HTMLElement) {
+            active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
+    },
+
     restoreFocus() {
         if (this.commandPalettePreviousFocus instanceof HTMLElement && document.contains(this.commandPalettePreviousFocus)) {
             this.commandPalettePreviousFocus.focus({ preventScroll: true });
