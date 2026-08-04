@@ -15,7 +15,7 @@ window.acAccessibility = {
         this.commandPaletteTarget = target;
         this.commandPalettePreviousFocus = null;
         this.commandPaletteHandler = event => {
-            if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "k") return;
+            if (!(event.ctrlKey || event.metaKey) || !event.shiftKey || event.key.toLowerCase() !== "f") return;
             event.preventDefault();
             this.commandPalettePreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
             target.invokeMethodAsync("OpenFromShortcut");

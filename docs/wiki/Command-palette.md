@@ -5,7 +5,7 @@ title: "Command palette"
 # Command palette
 
 AC Defender exposes a keyboard-first command palette from every signed-in page.
-Press **Ctrl+K** (or **Cmd+K** on macOS clients) or activate **COMMANDS** in the
+Press **Ctrl+Shift+F** (or the platform-equivalent modifier) or activate **COMMANDS** in the
 header. The palette searches local command labels and descriptions, supports
 Up/Down selection and Enter activation, and closes with Escape. It navigates to
 the same real pages as the rail, so no command creates simulated thermostat
