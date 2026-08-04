@@ -12,6 +12,9 @@ interface ControllerConfig {
   funnyCantonese: number;
   theme: "dark" | "light";
   density: "compact" | "comfortable";
+  accent: string;
+  fontFamily: string;
+  fontScale: number;
   updateFeedUrl: string;
   activeTab: "dashboard" | "notifications" | "settings";
   tabOrder: Array<"dashboard" | "notifications" | "settings">;
