@@ -1,0 +1,125 @@
+@page "/notifications"
+@using System.Text.RegularExpressions
+@inject NotificationHistoryStore NotificationStore
+@inject ISnackbar Snackbar
+
+<PageTitle>Notification history - AC Defender</PageTitle>
+
+<MudStack Spacing="3" Class="notifications-shell">
+    <SectionCard Title="Notification centre"
+                 Subtitle="Reviewable defender notices"
+                 Help="Dismissed notices remain reviewable. This journal records real defender events and never replaces a Home Assistant command.">
+        <Actions>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@_snapshot?.UnreadCount unread</MudChip>
+            <MudButton Variant="Variant.Outlined" OnClick="Refresh">Refresh</MudButton>
+        </Actions>
+        <ChildContent>
+            <div class="notification-history-toolbar">
+                <input class="ops-input" value="@_search" @oninput="OnSearchChanged" placeholder="Search notifications…" aria-label="Search notifications" />
+                <select class="ops-input" value="@_level" @onchange="OnLevelChanged" aria-label="Filter notification level">
+                    <option value="">All levels</option>
+                    <option value="info">Info</option>
+                    <option value="success">Success</option>
+                    <option value="warning">Warning</option>
+                    <option value="error">Error</option>
+                </select>
+                <label class="notification-history-check"><input type="checkbox" checked="@_includeDismissed" @onchange="OnIncludeDismissedChanged" /> Include dismissed</label>
+            </div>
+            <RegexSearchBuilder Id="notifications-search" Value="@_search" ValueChanged="SetSearch"
+                                Mode="@_searchMode" ModeChanged="SetSearchMode"
+                                Flags="@_searchFlags" FlagsChanged="SetSearchFlags" />
+        </ChildContent>
+    </SectionCard>
+
+    <SectionCard Title="History" Subtitle="@(_snapshot is null ? "Loading" : $"{FilteredNotifications.Count} of {_snapshot.Items.Count} shown")">
+        @if (FilteredNotifications.Count == 0)
+        {
+            <div class="notification-history-empty" role="status">No notifications match the current filters.</div>
+        }
+        else
+        {
+            <div class="notification-history-list" role="list" aria-label="Notification history">
+                @foreach (var notification in FilteredNotifications)
+                {
+                    <article class="notification-history-card notification-history-card--@notification.Level" role="listitem" @key="notification.Id">
+                        <div class="notification-history-card__head">
+                            <span class="notification-history-card__level">@notification.Level.ToUpperInvariant()</span>
+                            <time datetime="@notification.Timestamp.ToString("O")">@notification.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</time>
+                        </div>
+                        <p>@notification.Message</p>
+                        <div class="notification-history-card__actions">
+                            @if (!notification.Read)
+                            {
+                                <button class="ops-btn ops-btn--outline" @onclick="@(() => MarkRead(notification.Id))">Mark read</button>
+                            }
+                            @if (notification.Dismissed)
+                            {
+                                <button class="ops-btn ops-btn--outline" @onclick="@(() => Restore(notification.Id))">Restore</button>
+                            }
+                            else
+                            {
+                                <button class="ops-btn ops-btn--outline" @onclick="@(() => Dismiss(notification.Id))">Dismiss</button>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </SectionCard>
+</MudStack>
+
+@code {
+    private NotificationHistorySnapshot? _snapshot;
+    private string _search = "";
+    private string _level = "";
+    private bool _includeDismissed;
+    private string _searchMode = "plain";
+    private string _searchFlags = "im";
+
+    private IReadOnlyList<NotificationRecord> FilteredNotifications => (_snapshot?.Items ?? [])
+        .Where(MatchesSearch)
+        .ToArray();
+
+    protected override void OnInitialized() => Refresh();
+
+    private void Refresh() => _snapshot = NotificationStore.GetSnapshot(500, _includeDismissed, _level);
+
+    private void OnSearchChanged(ChangeEventArgs args) { _search = args.Value?.ToString() ?? ""; }
+    private void OnLevelChanged(ChangeEventArgs args) { _level = args.Value?.ToString() ?? ""; Refresh(); }
+    private void OnIncludeDismissedChanged(ChangeEventArgs args) { _includeDismissed = args.Value is bool value && value; Refresh(); }
+
+    private Task SetSearch(string value) { _search = value; return Task.CompletedTask; }
+    private Task SetSearchMode(string value) { _searchMode = value; return Task.CompletedTask; }
+    private Task SetSearchFlags(string value) { _searchFlags = value; return Task.CompletedTask; }
+
+    private bool MatchesSearch(NotificationRecord notification)
+    {
+        if (string.IsNullOrWhiteSpace(_search)) return true;
+        var haystack = $"{notification.Level} {notification.Message} {notification.Timestamp:O}";
+        if (string.Equals(_searchMode, "regex", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var options = RegexOptions.CultureInvariant;
+                if (_searchFlags.Contains('i')) options |= RegexOptions.IgnoreCase;
+                if (_searchFlags.Contains('m')) options |= RegexOptions.Multiline;
+                if (_searchFlags.Contains('s')) options |= RegexOptions.Singleline;
+                return new Regex(_search, options, TimeSpan.FromMilliseconds(100)).IsMatch(haystack);
+            }
+            catch (ArgumentException) { return false; }
+            catch (RegexMatchTimeoutException) { return false; }
+        }
+
+        return haystack.Contains(_search, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void MarkRead(Guid id) { Show(NotificationStore.MarkRead(id), "Marked read"); }
+    private void Dismiss(Guid id) { Show(NotificationStore.Dismiss(id), "Notification dismissed"); }
+    private void Restore(Guid id) { Show(NotificationStore.Restore(id), "Notification restored"); }
+
+    private void Show(bool success, string message)
+    {
+        Snackbar.Add(success ? message : "Notification history could not be updated.", success ? Severity.Success : Severity.Warning);
+        Refresh();
+    }
+}

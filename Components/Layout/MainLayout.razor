@@ -327,6 +327,7 @@
         new("/guide", "✦", "GUIDE", "AREA-09", false),
         new("/wiki", "⎘", "WIKI", "AREA-10", true),
         new("/api-docs", "{}", "API DOCS", "AREA-11", true),
+        new("/notifications", "!", "NOTIFY", "AREA-12", true),
     ];
 
     private string CurrentPath => new Uri(Nav.Uri).AbsolutePath.TrimEnd('/').ToLowerInvariant() is { Length: > 0 } p ? p : "/";
@@ -346,6 +347,7 @@
         "/repository" => "GIT",
         "/wiki" => "FULL",
         "/api-docs" => "DOC",
+        "/notifications" => "NEW",
         _ => ""
     };
 
@@ -367,6 +369,7 @@
         "/guide" => "Field Manual — generated from the same guard catalog that runs the live board · full articles in the WIKI",
         "/wiki" => "Foundation wiki — every algorithm, every screenshot, one search box · zero simulators",
         "/api-docs" => "API documentation — session-gated JSON routes, real thermostat commands, public reactor voucher · zero simulators",
+        "/notifications" => "Notification centre — review, search, dismiss, and restore real defender notices without blocking control",
         _ => "SECURE · CONTAIN · PROTECT THE COOL"
     };
 
@@ -382,6 +385,7 @@
         "/repository" or "/settings/repository" => "Settings Repository",
         "/guide" => "Field Manual",
         "/api-docs" => "API Documentation",
+        "/notifications" => "Notification Centre",
         var path when path.StartsWith("/wiki", StringComparison.Ordinal) => "Site Wiki",
         var other => other.TrimStart('/') is { Length: > 0 } name
             ? char.ToUpperInvariant(name[0]) + name[1..]
