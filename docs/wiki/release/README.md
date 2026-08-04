@@ -11,6 +11,7 @@ downloadable Home Assistant AC Defender release.
 | Article | Covers |
 | --- | --- |
 | [Line counts and release archives](line-counts.html) | CI-generated source/test/markup counts, Docker image archives, checksums, and public release metadata |
+| [Windows signed update-feed contract](windows-update-feed.html) | HTTPS Squirrel `RELEASES` preflight, manifest validation, signature boundary, and recovery |
 
 ## Suggested articles
 

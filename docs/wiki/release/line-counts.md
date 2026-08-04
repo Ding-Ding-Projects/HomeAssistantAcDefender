@@ -47,10 +47,12 @@ the required port.
 The Electron controller's `desktop-electron/package.json` targets
 Squirrel.Windows. A successful release therefore carries the Setup executable,
 the full NuGet package, and `RELEASES`; the latter two are required by Squirrel's
-delta/update flow. The current client does not enable background updates until a
-signed feed and a non-blocking **Restart to install update** surface are wired
-and verified. Treat the attached assets as build artifacts, not proof that an
-unsigned update feed is safe to consume.
+delta/update flow. The current client keeps background checks disabled until an
+operator configures an HTTPS feed, preflights its direct `RELEASES` manifest,
+and then lets Squirrel perform its own signature verification. The non-blocking
+**Restart to install update** surface is emitted only after Electron reports a
+downloaded update. Treat the attached assets as build artifacts, not proof that
+an unsigned update feed is safe to consume.
 
 ## Reproducing the line-count table
 

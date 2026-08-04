@@ -1,12 +1,12 @@
 import { readFile } from "node:fs/promises";
 import { access } from "node:fs/promises";
 
-const files = ["package.json", "electron/main.cjs", "electron/preload.cjs", "src/App.tsx", "src/App.css", "public/shield.svg"];
+const files = ["package.json", "electron/main.cjs", "electron/preload.cjs", "electron/update-contract.cjs", "src/App.tsx", "src/App.css", "public/shield.svg"];
 for (const file of files) await access(new URL(`../${file}`, import.meta.url));
 const main = await readFile(new URL("../electron/main.cjs", import.meta.url), "utf8");
 const app = await readFile(new URL("../src/App.tsx", import.meta.url), "utf8");
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
-const required = ["/api/status", "/api/target", "/api/defender", "/api/thermostat/off", "AntiforgeryToken", "autoUpdater", "update-downloaded", "quitAndInstall"];
+const required = ["/api/status", "/api/target", "/api/defender", "/api/thermostat/off", "AntiforgeryToken", "autoUpdater", "update-downloaded", "quitAndInstall", "normalizeUpdateFeedUrl", "probeSquirrelFeed", "manifestEntries"];
 for (const marker of required) if (!main.includes(marker)) throw new Error(`Missing API/auth marker: ${marker}`);
 for (const marker of ["Ctrl+Shift+F", "bilingual", "funnyEnglish", "funnyCantonese", "SEARCH / REGEX BUILDER", "Guided regex blocks", "Raw pattern", "Sample text", "captures:", "Copy /pattern/flags", "Use in search", "Notification search regex builder", "Command palette regex builder", "settings-base-url", "settings-funny-en", "settings-update-feed", "settings-accent", "settings-font-family", "settings-font-scale", "appearance-preview", "focus the exact control", "role=\"tablist\"", "role=\"tabpanel\"", "aria-controls", "tabOrder", "tabAppearance", "Edit ", "Ctrl+Shift+←/→"]) if (!app.includes(marker)) throw new Error(`Missing controller feature: ${marker}`);
 for (const marker of ["Restart to install update", "updateFeedUrl", "SIGNED UPDATE FEED"]) if (!app.includes(marker)) throw new Error(`Missing update/settings feature: ${marker}`);

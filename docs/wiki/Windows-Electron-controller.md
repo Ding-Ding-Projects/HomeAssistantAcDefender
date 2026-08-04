@@ -17,6 +17,9 @@ decisions remain in the server and every reading or command comes from the real 
 - Dashboard commands call `/api/status`, `/api/target`, `/api/defender`, and the real thermostat
   command endpoints. Thermostat-off has an explicit confirmation naming the affected device.
 - Notification history reads, marks read, dismisses, and restores records through the hosted API.
+- The optional Squirrel update feed is normalized and preflighted against a direct `RELEASES`
+  manifest before Electron checks for packages. See [Windows signed update-feed contract](release/windows-update-feed.html)
+  for the signature boundary and recovery states.
 - Settings persist language mode, independent English/Cantonese funny levels, theme, density,
   accent/seed color, installed-font choice, and UI scale (85%–135%), plus a settings-local
   plain-text/regex search builder. Appearance values apply live to the controller only;
@@ -35,9 +38,10 @@ runtime images.
 
 ## Failure modes
 
-Connection, authentication, HTTP, and API errors are rendered as errors. A disconnected host
-never produces a made-up reading or success result. The Squirrel installer target is configured,
-and the local Windows packaging command produces the complete installer/update set.
+Connection, authentication, HTTP, API, and update-feed errors are rendered as errors. A
+disconnected host never produces a made-up reading or success result. The Squirrel installer
+target is configured, and the local Windows packaging command produces the complete
+installer/update set; the feed article records why unsigned local artifacts are not trust proof.
 
 ## Verification
 
