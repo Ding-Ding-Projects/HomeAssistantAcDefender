@@ -31,8 +31,12 @@ rewriting history.
 The search is plain-text-first and matches version, code name, category, summary, and full
 SHA. **Regex builder** is an explicit opt-in beside the field. It supports a raw .NET regex,
 ignore-case (`i`), multiline (`m`), and dot-all (`s`) flags, validates patterns inline, and
-uses a 100 ms evaluation timeout. From/to native date inputs accept typed ISO dates and
-compose with search; **All dates** clears the range and **Today** selects the current date.
+uses a 100 ms evaluation timeout. The date filter uses an anchored Material calendar popover
+beside the ISO text inputs. Typed `YYYY-MM-DD` values stay visible while incomplete or invalid
+input is reported inline. The calendar supports previous/next month navigation, a
+keyboard-reachable two-click range selection, and **Today**, **7 days**, and **30 days**
+inclusive presets. **All dates** clears the range. Date filtering composes with search and
+remains part of every Markdown export.
 
 ## Export and failure handling
 
@@ -46,15 +50,23 @@ The catalog is static and contains no access token, Home Assistant state, or the
 command. If a release API refresh is unavailable, the last committed catalog remains usable;
 the build should fail rather than emit a release entry without a real commit SHA.
 
+The calendar is presentation-only: it never sends a thermostat command or changes the
+published release facts. Its pure ISO parsing, inclusive presets, range ordering, and stable
+six-week grid are covered by `ChangelogDateRangeTests`.
+
 ## Verification
 
 1. Open **Command palette → Release changelog**.
-2. Search `v0.1.8`, set a date range, and confirm the count composes both filters.
-3. Open Regex builder, enter `^v0\.1\.(8[0-9])$`, enable `i`, and confirm only matching
+2. Open the calendar beside the date fields, move between months, choose a start and end,
+   then confirm the count composes that range with the search.
+3. Type a partial (`2026-08`) and invalid (`2026-02-30`) date and confirm the value remains
+   visible with an inline error. Try **Today**, **7 days**, and **30 days**.
+4. Open Regex builder, enter `^v0\.1\.(8[0-9])$`, enable `i`, and confirm only matching
    versions remain. Enter `[` to verify inline validation and an honest empty state.
-4. Open a commit link, download Markdown, and confirm the exported full SHA matches the
-   visible entry.
-5. Repeat at a 390 px viewport and with bilingual mode; no horizontal overflow is allowed.
+5. Open a commit link, download Markdown, and confirm the exported full SHA and active date
+   range match the visible entry.
+6. Repeat at a 390 px viewport and with bilingual mode; no horizontal overflow is allowed and
+   the anchored popover remains within the viewport.
 
 Suggested next steps: [Release operations](release/README.html), [Settings](Settings.html),
 and [Website Tour](Website-Tour.html).

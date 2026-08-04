@@ -2234,7 +2234,30 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
 .changelog-regex-flags label { display: inline-flex; gap: 5px; align-items: center; min-height: 28px; }
 .changelog-date-row { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
 .changelog-date-row label { display: flex; flex-direction: column; gap: 4px; color: var(--sub); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
-.changelog-date-row input[type=date] { min-height: 34px; border: 1px solid var(--line2); background: var(--panel2); color: var(--ink); padding: 6px 8px; font: inherit; }
+.changelog-date-input { min-height: 34px; width: 132px; }
+.changelog-calendar-anchor { position: relative; }
+.changelog-calendar-trigger { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; }
+.changelog-calendar-popover { position: absolute; z-index: 20; top: calc(100% + 8px); left: 0; width: min(320px, calc(100vw - 28px)); max-height: calc(100vh - 32px); overflow-y: auto; padding: 12px; border: 1px solid var(--line2); border-radius: 12px; background: var(--panel); color: var(--ink); box-shadow: 0 14px 35px rgb(0 0 0 / 28%); }
+.changelog-calendar__header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.changelog-calendar__header strong { font-size: 13px; letter-spacing: .04em; }
+.changelog-calendar__weekdays, .changelog-calendar__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.changelog-calendar__weekdays { color: var(--sub); font-size: 9px; letter-spacing: .08em; text-align: center; text-transform: uppercase; }
+.changelog-calendar__day { min-height: 32px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); cursor: pointer; font: inherit; font-size: 11px; }
+.changelog-calendar__day:hover, .changelog-calendar__day:focus-visible { border-color: var(--accent); outline: none; }
+.changelog-calendar__day--outside { color: var(--sub); opacity: .58; }
+.changelog-calendar__day--range { background: color-mix(in srgb, var(--accent) 18%, transparent); border-radius: 0; }
+.changelog-calendar__day--start, .changelog-calendar__day--end { background: var(--accent); color: var(--on-accent, #071018); font-weight: 700; }
+.changelog-calendar__day--start { border-radius: 8px 0 0 8px; }
+.changelog-calendar__day--end { border-radius: 0 8px 8px 0; }
+.changelog-calendar__day--start.changelog-calendar__day--end { border-radius: 8px; }
+.changelog-calendar__day--today:not(.changelog-calendar__day--start):not(.changelog-calendar__day--end) { box-shadow: inset 0 -2px 0 var(--accent); }
+.changelog-calendar__hint { margin-top: 9px; color: var(--sub); font-size: 10px; line-height: 1.4; }
+.changelog-calendar__presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.changelog-calendar__presets .ops-btn, .changelog-calendar-clear { min-height: 30px; }
+.changelog-calendar-clear { margin-top: 8px; width: 100%; }
+@media (max-width: 600px) {
+  .changelog-calendar-popover { top: auto; bottom: calc(100% + 8px); }
+}
 .changelog-inline-error { border-left: 3px solid var(--danger, #ff5c47); color: var(--danger, #ff5c47); padding: 6px 9px; background: var(--panel2); font-size: 10px; }
 .changelog-filter-summary { color: var(--sub); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
 .changelog-empty { border: 1px dashed var(--line2); color: var(--sub); padding: 24px; text-align: center; }

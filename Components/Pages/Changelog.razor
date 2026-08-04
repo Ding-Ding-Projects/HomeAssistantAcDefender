@@ -1,5 +1,6 @@
 @page "/changelog"
 @inject IJSRuntime JS
+@using System.Globalization
 @using System.Text.RegularExpressions
 
 <PageTitle>Changelog - AC Defender</PageTitle>
@@ -39,10 +40,48 @@
                 }
 
                 <div class="changelog-date-row" role="group" aria-label="@Text("Release date filter", "發布日期篩選")">
-                    <label>@Text("From", "由") <input type="date" value="@_fromDate" @oninput="OnFromDateInput" aria-label="@Text("Release date from", "發布日期由")" /></label>
-                    <label>@Text("To", "到") <input type="date" value="@_toDate" @oninput="OnToDateInput" aria-label="@Text("Release date to", "發布日期到")" /></label>
+                    <label>@Text("From", "由")
+                        <input class="ops-input changelog-date-input" type="text" inputmode="numeric" maxlength="10" value="@_fromDate" @oninput="OnFromDateInput" placeholder="YYYY-MM-DD" aria-label="@Text("Release date from", "發布日期由")" aria-invalid="@IsDateInvalid(_fromDate)" />
+                    </label>
+                    <label>@Text("To", "到")
+                        <input class="ops-input changelog-date-input" type="text" inputmode="numeric" maxlength="10" value="@_toDate" @oninput="OnToDateInput" placeholder="YYYY-MM-DD" aria-label="@Text("Release date to", "發布日期到")" aria-invalid="@IsDateInvalid(_toDate)" />
+                    </label>
+                    <div class="changelog-calendar-anchor">
+                        <button class="ops-btn ops-btn--ghost changelog-calendar-trigger" type="button" @onclick="ToggleCalendar" aria-expanded="@_calendarOpen" aria-controls="changelog-calendar-popover">
+                            <span aria-hidden="true">▦</span>
+                            @DateRangeButtonText
+                        </button>
+                        @if (_calendarOpen)
+                        {
+                            <div id="changelog-calendar-popover" class="changelog-calendar-popover" role="dialog" aria-modal="false" aria-label="@Text("Choose release date range", "選擇發布日期範圍")">
+                                <div class="changelog-calendar__header">
+                                    <button class="ops-btn ops-btn--icon" type="button" @onclick="PreviousCalendarMonth" aria-label="@Text("Previous month", "上個月")" title="@Text("Previous month", "上個月")">‹</button>
+                                    <strong aria-live="polite">@CalendarMonthLabel</strong>
+                                    <button class="ops-btn ops-btn--icon" type="button" @onclick="NextCalendarMonth" aria-label="@Text("Next month", "下個月")" title="@Text("Next month", "下個月")">›</button>
+                                </div>
+                                <div class="changelog-calendar__weekdays" aria-hidden="true">
+                                    @foreach (var weekday in CalendarWeekdays)
+                                    {
+                                        <span>@weekday</span>
+                                    }
+                                </div>
+                                <div class="changelog-calendar__grid" role="grid" aria-label="@CalendarMonthLabel">
+                                    @foreach (var day in CalendarDays)
+                                    {
+                                        <button type="button" class="changelog-calendar__day @CalendarDayClass(day)" @onclick="() => SelectCalendarDate(day)" aria-label="@CalendarAriaLabel(day)" aria-pressed="@IsDateSelected(day).ToString().ToLowerInvariant()" aria-current="@(IsToday(day) ? "date" : null)">@day.Day</button>
+                                    }
+                                </div>
+                                <div class="changelog-calendar__hint">@Text("Select a start date, then an end date. Typed ISO dates stay in sync.", "先揀開始日期，再揀結束日期；手動輸入 ISO 日期會同步。")</div>
+                                <div class="changelog-calendar__presets" role="group" aria-label="@Text("Date presets", "日期預設")">
+                                    <button class="ops-btn ops-btn--ghost" type="button" @onclick="SetTodayFilter">@Text("Today", "今日")</button>
+                                    <button class="ops-btn ops-btn--ghost" type="button" @onclick="SetSevenDayFilter">@Text("7 days", "7 日")</button>
+                                    <button class="ops-btn ops-btn--ghost" type="button" @onclick="SetThirtyDayFilter">@Text("30 days", "30 日")</button>
+                                </div>
+                                <button class="ops-btn ops-btn--ghost changelog-calendar-clear" type="button" @onclick="ClearDateFilter">@Text("All dates", "全部日期")</button>
+                            </div>
+                        }
+                    </div>
                     <button class="ops-btn ops-btn--ghost" type="button" @onclick="ClearDateFilter">@Text("All dates", "全部日期")</button>
-                    <button class="ops-btn ops-btn--ghost" type="button" @onclick="SetTodayFilter">@Text("Today", "今日")</button>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(_dateError))
                 {
@@ -123,6 +162,27 @@
     private int _activeTab;
     private int _englishFunnyLevel = 1;
     private int _cantoneseFunnyLevel = 1;
+    private bool _calendarOpen;
+    private DateOnly _calendarMonth = ChangelogDateRange.MonthStart(DateOnly.FromDateTime(DateTime.UtcNow));
+
+    private static IReadOnlyList<string> CalendarWeekdays { get; } = ["M", "T", "W", "T", "F", "S", "S"];
+
+    private IReadOnlyList<DateOnly> CalendarDays => ChangelogDateRange.CalendarDays(_calendarMonth);
+
+    private string CalendarMonthLabel => _calendarMonth.ToString("MMMM yyyy", CultureInfo.InvariantCulture);
+
+    private string DateRangeButtonText
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_fromDate) && string.IsNullOrWhiteSpace(_toDate))
+            {
+                return Text("Choose dates", "選日期");
+            }
+
+            return $"{(_fromDate.Length == 0 ? "…" : _fromDate)} → {(_toDate.Length == 0 ? "…" : _toDate)}";
+        }
+    }
 
     private IReadOnlyList<ChangelogEntry> FilteredEntries => ChangelogCatalog.Entries
         .Where(MatchesEntry)
@@ -284,11 +344,16 @@
 
     private bool MatchesDate(DateOnly date)
     {
-        if (!TryDate(_fromDate, out var from) || !TryDate(_toDate, out var to))
+        var fromState = ChangelogDateRange.Classify(_fromDate, out var fromDate);
+        var toState = ChangelogDateRange.Classify(_toDate, out var toDate);
+        if (fromState is ChangelogDateInputState.Invalid or ChangelogDateInputState.Partial
+            || toState is ChangelogDateInputState.Invalid or ChangelogDateInputState.Partial)
         {
             return false;
         }
 
+        var from = fromState == ChangelogDateInputState.Valid ? fromDate : (DateOnly?)null;
+        var to = toState == ChangelogDateInputState.Valid ? toDate : (DateOnly?)null;
         return (from is null || date >= from.Value) && (to is null || date <= to.Value);
     }
 
@@ -307,11 +372,17 @@
     private void ValidateDates()
     {
         _dateError = "";
-        if (!TryDate(_fromDate, out var from) || !TryDate(_toDate, out var to))
+        var fromState = ChangelogDateRange.Classify(_fromDate, out var from);
+        var toState = ChangelogDateRange.Classify(_toDate, out var to);
+        if (fromState == ChangelogDateInputState.Partial || toState == ChangelogDateInputState.Partial)
+        {
+            _dateError = Text("Finish typing each date as YYYY-MM-DD.", "請完成輸入日期，格式係 YYYY-MM-DD。 ");
+        }
+        else if (fromState == ChangelogDateInputState.Invalid || toState == ChangelogDateInputState.Invalid)
         {
             _dateError = Text("Enter dates as YYYY-MM-DD.", "日期請用 YYYY-MM-DD。");
         }
-        else if (from is not null && to is not null && from > to)
+        else if (fromState == ChangelogDateInputState.Valid && toState == ChangelogDateInputState.Valid && from > to)
         {
             _dateError = Text("The start date must be on or before the end date.", "開始日期要早過或者等於結束日期。 ");
         }
@@ -324,31 +395,103 @@
         _dateError = "";
     }
 
+    private void ToggleCalendar()
+    {
+        _calendarOpen = !_calendarOpen;
+        if (_calendarOpen)
+        {
+            if (ChangelogDateRange.Classify(_fromDate, out var from) == ChangelogDateInputState.Valid)
+            {
+                _calendarMonth = ChangelogDateRange.MonthStart(from);
+            }
+            else if (ChangelogDateRange.Classify(_toDate, out var to) == ChangelogDateInputState.Valid)
+            {
+                _calendarMonth = ChangelogDateRange.MonthStart(to);
+            }
+        }
+    }
+
+    private void PreviousCalendarMonth() => _calendarMonth = ChangelogDateRange.ShiftMonth(_calendarMonth, -1);
+
+    private void NextCalendarMonth() => _calendarMonth = ChangelogDateRange.ShiftMonth(_calendarMonth, 1);
+
+    private void SelectCalendarDate(DateOnly date)
+    {
+        var fromState = ChangelogDateRange.Classify(_fromDate, out var from);
+        var toState = ChangelogDateRange.Classify(_toDate, out var to);
+        var range = ChangelogDateRange.SelectDate(
+            fromState == ChangelogDateInputState.Valid ? from : null,
+            toState == ChangelogDateInputState.Valid ? to : null,
+            date);
+        _fromDate = range.From?.ToString(ChangelogDateRange.IsoFormat, CultureInfo.InvariantCulture) ?? "";
+        _toDate = range.To?.ToString(ChangelogDateRange.IsoFormat, CultureInfo.InvariantCulture) ?? "";
+        _calendarMonth = ChangelogDateRange.MonthStart(date);
+        ValidateDates();
+    }
+
     private void SetTodayFilter()
     {
-        var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
-        _fromDate = today;
-        _toDate = today;
+        SetDatePreset(ChangelogDatePreset.Today);
+    }
+
+    private void SetSevenDayFilter() => SetDatePreset(ChangelogDatePreset.SevenDays);
+
+    private void SetThirtyDayFilter() => SetDatePreset(ChangelogDatePreset.ThirtyDays);
+
+    private void SetDatePreset(ChangelogDatePreset preset)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var range = ChangelogDateRange.Preset(today, preset);
+        _fromDate = range.From?.ToString(ChangelogDateRange.IsoFormat, CultureInfo.InvariantCulture) ?? "";
+        _toDate = range.To?.ToString(ChangelogDateRange.IsoFormat, CultureInfo.InvariantCulture) ?? "";
+        _calendarMonth = ChangelogDateRange.MonthStart(today);
         _dateError = "";
     }
 
-    private static bool TryDate(string value, out DateOnly? date)
+    private bool IsDateInvalid(string value)
+        => ChangelogDateRange.Classify(value, out _) is ChangelogDateInputState.Partial or ChangelogDateInputState.Invalid;
+
+    private bool IsToday(DateOnly date) => date == DateOnly.FromDateTime(DateTime.UtcNow);
+
+    private bool IsDateSelected(DateOnly date)
+        => ChangelogDateRange.Classify(_fromDate, out var from) == ChangelogDateInputState.Valid && date == from
+            || ChangelogDateRange.Classify(_toDate, out var to) == ChangelogDateInputState.Valid && date == to;
+
+    private string CalendarDayClass(DateOnly date)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        var classes = new List<string>();
+        if (date.Month != _calendarMonth.Month)
         {
-            date = null;
-            return true;
+            classes.Add("changelog-calendar__day--outside");
         }
 
-        if (DateOnly.TryParseExact(value, "yyyy-MM-dd", out var parsed))
+        var fromState = ChangelogDateRange.Classify(_fromDate, out var from);
+        var toState = ChangelogDateRange.Classify(_toDate, out var to);
+        if (fromState == ChangelogDateInputState.Valid && date == from)
         {
-            date = parsed;
-            return true;
+            classes.Add("changelog-calendar__day--start");
         }
 
-        date = null;
-        return false;
+        if (toState == ChangelogDateInputState.Valid && date == to)
+        {
+            classes.Add("changelog-calendar__day--end");
+        }
+
+        if (fromState == ChangelogDateInputState.Valid && toState == ChangelogDateInputState.Valid && date >= from && date <= to)
+        {
+            classes.Add("changelog-calendar__day--range");
+        }
+
+        if (IsToday(date))
+        {
+            classes.Add("changelog-calendar__day--today");
+        }
+
+        return string.Join(' ', classes);
     }
+
+    private string CalendarAriaLabel(DateOnly date)
+        => date.ToString("dddd, MMMM d, yyyy", CultureInfo.InvariantCulture);
 
     private string BuildMarkdown()
     {
