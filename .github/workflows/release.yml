@@ -56,11 +56,27 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --retry 3 --retry-delay 2 --silent --show-error \
+          fallback() {
+            echo 'name=No public code name resolved' >> "${GITHUB_OUTPUT}"
+            echo 'photo_url=' >> "${GITHUB_OUTPUT}"
+          }
+          if ! curl --fail --retry 3 --retry-delay 2 --silent --show-error \
             https://raw.githubusercontent.com/Ding-Ding-Projects/dim-sum-photos/main/catalog/index.json \
-            -o /tmp/dim-sum-catalog.json
-          gh api --paginate --slurp 'repos/Ding-Ding-Projects/dim-sum-photos/releases?per_page=100' > /tmp/dim-sum-releases.json
-          gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases?per_page=100" > /tmp/project-releases.json
+            -o /tmp/dim-sum-catalog.json; then
+            echo 'Public dim-sum catalog unavailable; continuing without a code name.'
+            fallback
+            exit 0
+          fi
+          if ! gh api --paginate --slurp 'repos/Ding-Ding-Projects/dim-sum-photos/releases?per_page=100' > /tmp/dim-sum-releases.json; then
+            echo 'Public dim-sum release assets unavailable; continuing without a code name.'
+            fallback
+            exit 0
+          fi
+          if ! gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases?per_page=100" > /tmp/project-releases.json; then
+            echo 'Project release history unavailable; continuing without a code name.'
+            fallback
+            exit 0
+          fi
           python3 - <<'PY'
           import json
           import os
