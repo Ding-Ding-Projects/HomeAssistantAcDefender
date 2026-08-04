@@ -28,6 +28,7 @@ Assistant climate entity or returns a real error.
 | **[Changelog](Changelog.html)** | Every published release, date filter, regex search, export, and commit traceability |
 | **[Notification history](Notification-history.html)** | Reviewable activity notices that survive the live log tail |
 | **[Command palette](Command-palette.html)** | Keyboard-first navigation from every signed-in page |
+| **[App tabs](App-tabs.html)** | Persisted browser-style route tabs with keyboard navigation and overflow-safe scrolling |
 | **[Windows Electron controller](Windows-Electron-controller.html)** | Separate Windows client for the hosted service |
 | **[API](API.html)** | The JSON endpoints and SSE stream |
 | **[Architecture](Architecture.html)** | How the code is put together |

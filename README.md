@@ -67,6 +67,7 @@ guide](docs/wiki/release/line-counts.md) explains how to load it and reproduce t
 | [Defender Logic](docs/wiki/Defender-Logic.md) | The decision cycle and every guard's exact rules |
 | [Settings](docs/wiki/Settings.md) | Every knob on the Settings page |
 | [Command palette](docs/wiki/Command-palette.md) | `Ctrl+Shift+F` keyboard navigation to every real app area |
+| [App tabs](docs/wiki/App-tabs.md) | Persisted browser-style route tabs with keyboard navigation and overflow-safe scrolling |
 | [Changelog](docs/wiki/Changelog.md) | Every published version, date/regex filters, Markdown export, and commit traceability |
 | [Notification history](docs/wiki/Notification-history.md) | Review, dismiss, and restore activity notices without losing the audit trail |
 | [API](docs/wiki/API.md) | JSON endpoints and the `/api/status/stream` SSE feed |
@@ -130,6 +131,8 @@ snapshot — no refreshing, ever:
   the schedule editor.
 - **Command palette** (`Ctrl+Shift+F`) — keyboard navigation to each real destination without
   bypassing authentication or thermostat safety gates.
+- **Open tabs** — persisted browser-style route tabs complement the full rail, keep the active
+  route visible through overflow, and expose arrow/Home/End keyboard navigation.
 - **Release changelog** (`/changelog`) — every published version with date and regex filters,
   exact commit links, legacy-metadata warnings, and filtered Markdown export.
 - **Notification history** (`/api/notifications`) — authenticated review and restore of real
