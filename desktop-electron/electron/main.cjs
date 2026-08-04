@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, safeStorage, session, autoUpdater } = requi
 const path = require("node:path");
 const fs = require("node:fs");
 
-const DEFAULT_BASE_URL = "http://192.168.50.242:8888";
+const DEFAULT_BASE_URL = "http://127.0.0.1:8888";
 const CONFIG_VERSION = 1;
 let mainWindow;
 let connection = { baseUrl: DEFAULT_BASE_URL, username: "", cookie: "" };

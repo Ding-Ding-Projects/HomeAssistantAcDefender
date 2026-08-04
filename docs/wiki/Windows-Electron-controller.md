@@ -10,8 +10,8 @@ decisions remain in the server and every reading or command comes from the real 
 
 ## Behaviour
 
-- First-run address: `http://192.168.50.242:8888`; the address remains editable for another
-  deployment.
+- First-run address: `http://127.0.0.1:8888`; the address remains editable for another
+  approved deployment. Public docs intentionally do not record private LAN addresses.
 - The main process performs the real `/login` form exchange, preserves the server cookie and
   antiforgery token, and exposes only a narrow authenticated IPC bridge to the renderer.
 - Dashboard commands call `/api/status`, `/api/target`, `/api/defender`, and the real thermostat

@@ -16,4 +16,4 @@ Date: 2026-07-20
 - `dotnet build HomeAssistantAcDefender.csproj`: passed with zero warnings and zero errors.
 - Dashboard and Settings rendered in the authenticated Development app with no browser console errors; visual review found no regression.
 - The pre-release repository audit found one clean `master` checkout before this task, no linked worktrees, no stashes, and no unrelated work to preserve. Temporary browser diagnostics were removed before staging.
-- Release target remains `master`, production host port `8888`, and `/home/docker/HomeAssistantAcDefender`; production secrets remain only in the host-managed `.env`.
+- Release target remains `master` and production host port `8888`; the approved host path is supplied at deployment time and production secrets remain only in the host-managed `.env`.

@@ -19,4 +19,4 @@ Date: 2026-07-18
 - `dotnet run --project HomeAssistantAcDefender.Tests/HomeAssistantAcDefender.Tests.csproj --no-restore`: full regression console passed.
 - Temporary browser-audit scripts containing local test credentials were removed before staging.
 - Pre-release repository audit found one `master` checkout, no linked worktrees, and no stashes. No `.env`, `App_Data`, deployment archive, token, account credential, or browser-audit credential is part of the intended commit.
-- Release target remains `master`, production host port `8888`, and `/home/docker/HomeAssistantAcDefender`; production secrets stay only in the host-managed `.env`.
+- Release target remains `master` and production host port `8888`; the approved host path is supplied at deployment time and production secrets stay only in the host-managed `.env`.

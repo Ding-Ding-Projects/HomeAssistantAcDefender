@@ -18,7 +18,7 @@ function fmtMoney(dollars?: number): string {
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>("login");
-  const [baseUrl, setBaseUrl] = useState("http://192.168.50.242:8888");
+  const [baseUrl, setBaseUrl] = useState("http://127.0.0.1:8888");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -98,7 +98,7 @@ export default function App() {
           <p className="sub">Sign in to the defender that guards your AC.</p>
           <label>
             Defender address
-            <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="http://192.168.50.242:8888" />
+            <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="http://127.0.0.1:8888" />
           </label>
           <label>
             Username

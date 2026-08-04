@@ -33,7 +33,7 @@ fn err(message: impl std::fmt::Display) -> String {
 fn normalize_base_url(raw: &str) -> Result<String, String> {
     let trimmed = raw.trim().trim_end_matches('/');
     if trimmed.is_empty() {
-        return Err("Enter the defender's address, e.g. http://192.168.50.242:8888".into());
+        return Err("Enter the defender's address, e.g. http://127.0.0.1:8888".into());
     }
     if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
         Ok(trimmed.to_string())

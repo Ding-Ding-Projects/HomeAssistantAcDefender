@@ -15,7 +15,7 @@ the essentials on your desktop:
 
 All HTTP happens on the **Rust side** (reqwest with a cookie store), not in the webview —
 so there is no CORS, and the app signs in through the same antiforgery login form the
-website uses. Enter the defender address (e.g. `http://192.168.50.242:8888`) plus your
+website uses. Enter the defender address (e.g. `http://127.0.0.1:8888`) plus your
 website username/password. "Remember password" stores the connection in your OS app-config
 folder (`connection.json`) — leave it unchecked to keep the password off disk.
 

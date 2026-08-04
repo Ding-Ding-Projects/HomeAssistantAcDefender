@@ -51,22 +51,22 @@ This project controls a real Home Assistant climate entity. Do not add dummy the
 
 ## Deployment
 
-Remote host:
+Deployment host (supply the approved host at task time; do not commit its address):
 
 ```text
-docker@192.168.50.242
+docker@<deployment-host>
 ```
 
 Project path:
 
 ```text
-/home/docker/HomeAssistantAcDefender
+/srv/HomeAssistantAcDefender
 ```
 
 Deployment command:
 
 ```bash
-cd /home/docker/HomeAssistantAcDefender
+cd /srv/HomeAssistantAcDefender
 docker compose build --no-cache
 docker compose up -d
 ```

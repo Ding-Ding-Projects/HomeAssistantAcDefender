@@ -8,9 +8,8 @@ hosted service.
 
 ## Connect to the hosted site
 
-The first-run address is **`http://192.168.50.242:8888`**, the Docker host and port used by this
-repository. It is editable in the sign-in screen and Settings tab for another deployment. Use
-HTTPS when the address crosses an untrusted network; the controller does not weaken certificate
+The first-run address is **`http://127.0.0.1:8888`** for a local Compose copy. It is editable in
+the sign-in screen and Settings tab for another approved deployment. Use HTTPS when the address crosses an untrusted network; the controller does not weaken certificate
 validation or put credentials in a URL. The app signs in through `/login`, preserves the server's
 cookie and antiforgery token, and then calls the authenticated API from Electron's main process,
 so renderer code never receives a password or cookie.
