@@ -24,6 +24,10 @@ mono_crash.*
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+
+# The release documentation is source, not a build output directory.
+!docs/wiki/release/
+!docs/wiki/release/*.md
 x64/
 x86/
 [Ww][Ii][Nn]32/
