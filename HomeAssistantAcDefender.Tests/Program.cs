@@ -11,6 +11,8 @@ using Microsoft.Extensions.Options;
 
 var tests = new DefenderSetPointRegressionTests();
 var settingsRepositoryTests = new SettingsGitRepositoryRegressionTests();
+var uiLanguageTests = new UiLanguageRegressionTests();
+uiLanguageTests.FunnyLevelsAreIndependentAndBounded();
 settingsRepositoryTests.IdenticalSaveRecoversDirtySnapshotAfterGitFailureAndRestart();
 tests.ManualTouchWhileWarmRestartsBelowRoomByApproach();
 tests.ManualTouchAfterTargetRestartsBelowRoomByApproach();

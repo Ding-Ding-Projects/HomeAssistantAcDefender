@@ -2162,6 +2162,44 @@ body { font-family: 'JetBrains Mono', Consolas, monospace; -webkit-font-smoothin
 
 .setting-panels { display: flex; flex-direction: column; gap: 14px; }
 
+.settings-tone-control {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    border: 1px solid var(--line2);
+    background: var(--panel2);
+    padding: 12px 14px;
+    min-height: 74px;
+}
+.settings-tone-control__heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--ink);
+    font-weight: 800;
+    font-size: 12px;
+}
+.settings-tone-control__heading strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+.settings-tone-control__help { color: var(--sub); font-size: 10px; }
+.settings-tone-control__slider {
+    width: 100%;
+    accent-color: var(--accent);
+    min-height: 32px;
+    cursor: pointer;
+}
+.settings-tone-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    border-left: 3px solid var(--accent);
+    background: var(--panel2);
+    padding: 10px 12px;
+    white-space: normal;
+    line-height: 1.5;
+}
+.settings-tone-preview strong { color: var(--accent); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
+.settings-tone-preview span { color: var(--ink); font-size: 11px; }
+
 .save-bar {
     position: sticky;
     bottom: 0;

@@ -7,6 +7,40 @@ title: "Settings"
 
 The MudBlazor settings page controls defender behavior without editing configuration files. Each input, button, and action label includes short helper text below it. Times are displayed with a 24-hour clock.
 
+## Language and tone preferences
+
+The **Language & tone** card is presentation-only. It never changes a Home Assistant
+entity, a target temperature, or a guard decision.
+
+- **Language mode** chooses English, playful Hong Kong Cantonese (口語廣東話), or a
+  bilingual preview. The top-bar language switch and this selector share the browser key
+  `ac-defender-lang`.
+- **English funny level** and **Cantonese funny level** are independent sliders from 1
+  (fully professional) through 5 (maximum playfulness). They are stored separately as
+  `ac-defender-funny-en` and `ac-defender-funny-yue` in browser `localStorage`; no token,
+  thermostat state, or server setting is written.
+- The live preview proves that the two voices can differ. The selected voice may style
+  surrounding copy, including warnings and errors, but facts (what happened, affected
+  entity, numbers, and available action) remain unchanged.
+
+### Failure modes and safety
+
+Private browsing or a browser policy can reject `localStorage`. In that case the controls
+still work for the current page and fall back to English, level 1 after a reload. A failed
+preference write never blocks a real settings save or a Home Assistant command. The
+preferences are not secrets and are never sent to the defender worker.
+
+### Verification
+
+Open **Settings → Language & tone**, move each slider separately, and confirm its preview
+line changes without changing the other language. Reload the page to verify persistence,
+then switch to bilingual mode and verify both preview lines remain visible at narrow width.
+The UI change is covered by the normal `dotnet build` gate; browser verification should be
+performed against the running Docker deployment before release.
+
+Suggested next steps: [Website Tour](Website-Tour.html), [Deployment](Deployment.html), and
+[Architecture](Architecture.html).
+
 ## Automation
 
 - Schedule enabled: turns custom schedule rules on or off.
