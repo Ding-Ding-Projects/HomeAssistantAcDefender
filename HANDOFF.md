@@ -2,9 +2,10 @@
 
 ## Scope
 
-The CI and documentation audit is intentionally limited to workflow files,
-release tooling, and documentation. No `Components/`, `Services/`, or other
-runtime control code was changed here.
+The current handoff covers the server UI, the Windows controller, the in-app
+changelog, release tooling, and deployment evidence. Defender control logic
+still remains server-side; the Windows controller contains no simulated HVAC
+state.
 
 ## CI and documentation slice
 
@@ -27,6 +28,21 @@ runtime control code was changed here.
   `.nupkg`, and `RELEASES` feed under `desktop-electron/dist/squirrel-windows`.
   Keep this verification boundary explicit until a Windows packaging host opens the real
   installer and a signed background update feed plus restart banner are verified.
+- The controller uses a frameless Material title bar with real minimize, maximize,
+  and close IPC controls. Headless packaged-app capture verified the branded frame.
+- Settings, schedule rules, settings-repository history, documentation search, and
+  changelog search each expose a full anchored regex builder with plain text as the
+  default and a bounded .NET/browser engine as documented.
+
+## Changelog viewer
+
+- `/changelog` is an offline, traceable catalog of 220 published non-draft releases at
+  the 2026-08-04 refresh boundary. Each entry carries its release tag/date, dim-sum
+  code name, completing commit SHA, category, and duplicate-metadata warning where
+  the published history reuses a dish or SHA. The regression runner validates every
+  SHA with `git cat-file`.
+- Headless browser proof at desktop and 390px widths found 220 entries, regex
+  `^v0\.1\.(20[0-9]|21[0-9]|22[0-4])$` produced 24 matches, and no horizontal overflow.
 
 ## Local verification
 
@@ -36,8 +52,8 @@ From this checkout:
 python scripts/count_lines.py
 ```
 
-The script completed successfully at the current `master` tip and reported 361
-counted text files, 67,218 total lines, and 60,042 non-blank lines. The report
+The script completed successfully at the current `master` tip and reported 366
+counted text files, 68,761 total lines, and 61,478 non-blank lines. The report
 also listed 38 tracked binary/non-text files and the excluded build/runtime/vendor
 directories. The Electron controller's 86,642-byte icon is binary and is not
 inflated into the source-line total.
