@@ -268,7 +268,7 @@
   }
   .search-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 10px;
     align-items: center;
   }
@@ -297,6 +297,87 @@
     cursor: pointer;
   }
   .search-row button:hover { background: var(--teal); }
+  .regex-builder-toggle {
+    white-space: nowrap;
+  }
+  .regex-builder {
+    position: relative;
+    z-index: 4;
+    margin-top: 10px;
+    padding: 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--paper);
+    box-shadow: 0 14px 34px rgba(17, 24, 39, .16);
+  }
+  .regex-builder[hidden] { display: none; }
+  .regex-builder-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(130px, 180px);
+    gap: 10px;
+    align-items: end;
+  }
+  .regex-builder-grid + .regex-builder-grid { margin-top: 10px; }
+  .regex-builder-grid > button {
+    min-height: 38px;
+    border: 1px solid var(--line-strong);
+    border-radius: 7px;
+    background: var(--ink);
+    color: #fff;
+    font-weight: 900;
+    cursor: pointer;
+  }
+  .regex-builder-grid > button:hover { background: var(--teal); }
+  .regex-builder label {
+    display: grid;
+    gap: 5px;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 900;
+  }
+  .regex-builder input,
+  .regex-builder select {
+    min-height: 38px;
+    border: 1px solid var(--line-strong);
+    border-radius: 7px;
+    padding: 7px 9px;
+    background: var(--paper);
+    color: var(--ink);
+    font: inherit;
+  }
+  .regex-builder input:focus,
+  .regex-builder select:focus {
+    outline: 3px solid rgba(15, 118, 110, .18);
+    border-color: var(--teal);
+  }
+  .regex-builder-status {
+    margin: 10px 0 0;
+    color: var(--sub);
+    font-size: 13px;
+  }
+  .regex-builder-status[data-invalid="true"] { color: var(--coral); }
+  .regex-builder-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .regex-builder-actions button {
+    min-height: 36px;
+    border: 1px solid var(--line-strong);
+    border-radius: 7px;
+    padding: 0 10px;
+    background: var(--paper);
+    color: var(--ink);
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .regex-builder-actions button:hover { border-color: var(--teal); color: var(--teal); }
+  .regex-builder-help {
+    margin: 9px 0 0;
+    color: var(--sub);
+    font-size: 12px;
+  }
   [data-search-empty] {
     color: var(--coral);
     font-weight: 800;
@@ -577,6 +658,7 @@
   }
   @media (max-width: 560px) {
     .search-row { grid-template-columns: 1fr; }
+    .regex-builder-grid { grid-template-columns: 1fr; }
     .algorithm-grid { grid-template-columns: 1fr; }
     .motion-stage { grid-template-columns: 1fr; min-height: auto; }
     .motion-track,
@@ -652,6 +734,66 @@
     var count = root.querySelector("[data-search-count]");
     var empty = root.querySelector("[data-search-empty]");
     var clear = root.querySelector("[data-search-clear]");
+    var searchRow = input.closest(".search-row") || input.parentElement;
+    var builderToggle = document.createElement("button");
+    builderToggle.type = "button";
+    builderToggle.className = "regex-builder-toggle";
+    builderToggle.textContent = "Regex builder";
+    builderToggle.setAttribute("aria-expanded", "false");
+    builderToggle.setAttribute("aria-label", "Open full regular expression builder for this search");
+    if (searchRow) { searchRow.appendChild(builderToggle); }
+
+    var builder = document.createElement("section");
+    builder.className = "regex-builder";
+    builder.hidden = true;
+    builder.setAttribute("aria-label", "Regular expression builder");
+    builder.innerHTML =
+      '<div class="regex-builder-grid">' +
+        '<label>Pattern <input type="text" data-regex-pattern spellcheck="false" autocomplete="off"></label>' +
+        '<label>Mode <select data-regex-mode><option value="plain">Plain text</option><option value="regex">Regular expression</option></select></label>' +
+        '<label>Flags <input type="text" data-regex-flags value="iu" spellcheck="false" autocomplete="off" aria-describedby="regex-builder-help"></label>' +
+        '<label>Sample text <input type="text" data-regex-sample spellcheck="false" autocomplete="off"></label>' +
+      '</div>' +
+      '<div class="regex-builder-grid">' +
+        '<label>Guided building <select data-regex-snippet>' +
+          '<option value="">Choose a regex building block</option>' +
+          '<option value="literal">Literal text</option>' +
+          '<option value="class">Character class [abc]</option>' +
+          '<option value="anchors">Anchors ^ $</option>' +
+          '<option value="group">Capture group (…)</option>' +
+          '<option value="alternation">Alternation a|b</option>' +
+          '<option value="quantifier">Quantifier + ? {n}</option>' +
+        '</select></label>' +
+        '<button type="button" data-regex-insert>Insert block</button>' +
+      '</div>' +
+      '<p class="regex-builder-help" id="regex-builder-help">Plain text is the default. Regex uses the browser JavaScript RegExp engine; supported flags are g, i, m, s, u and y.</p>' +
+      '<p class="regex-builder-status" data-regex-status role="status" aria-live="polite"></p>' +
+      '<div class="regex-builder-actions">' +
+        '<button type="button" data-regex-use>Use pattern</button>' +
+        '<button type="button" data-regex-copy>Copy pattern</button>' +
+        '<button type="button" data-regex-close>Close builder</button>' +
+      '</div>';
+    if (searchRow && searchRow.parentElement) { searchRow.parentElement.appendChild(builder); }
+
+    var pattern = builder.querySelector("[data-regex-pattern]");
+    var mode = builder.querySelector("[data-regex-mode]");
+    var flags = builder.querySelector("[data-regex-flags]");
+    var sample = builder.querySelector("[data-regex-sample]");
+    var snippet = builder.querySelector("[data-regex-snippet]");
+    var insertSnippet = builder.querySelector("[data-regex-insert]");
+    var status = builder.querySelector("[data-regex-status]");
+    var usePattern = builder.querySelector("[data-regex-use]");
+    var copyPattern = builder.querySelector("[data-regex-copy]");
+    var closeBuilder = builder.querySelector("[data-regex-close]");
+    var modeChangedByUser = false;
+    var snippets = {
+      literal: "text",
+      class: "[abc]",
+      anchors: "^text$",
+      group: "(text)",
+      alternation: "(?:one|two)",
+      quantifier: "text+"
+    };
     if (count && count.parentElement) {
       count.parentElement.setAttribute("role", "status");
       count.parentElement.setAttribute("aria-live", "polite");
@@ -659,26 +801,125 @@
     }
 
     function update() {
-      var query = normalize(input.value);
+      var query = input.value;
+      var regex = null;
+      var invalid = false;
+      if (mode.value === "regex" && query.length) {
+        if (query.length > 512) {
+          invalid = true;
+          if (status) { status.textContent = "Pattern is limited to 512 characters."; }
+        } else {
+          try {
+            regex = new RegExp(query, flags.value || "u");
+          } catch (error) {
+            invalid = true;
+            if (status) { status.textContent = "Invalid pattern: " + error.message; }
+          }
+        }
+      }
       var shown = 0;
       items.forEach(function (item) {
-        var haystack = normalize(item.getAttribute("data-search-text") || item.textContent);
-        var match = !query || haystack.indexOf(query) !== -1;
+        var rawText = item.getAttribute("data-search-text") || item.textContent;
+        var haystack = mode.value === "plain" ? normalize(rawText) : rawText;
+        var needle = mode.value === "plain" ? normalize(query) : query;
+        var match = !needle || (!invalid && (regex ? regex.test(haystack) : haystack.indexOf(needle) !== -1));
+        if (regex) { regex.lastIndex = 0; }
         item.hidden = !match;
         if (match) { shown += 1; }
       });
       if (count) { count.textContent = shown.toString(); }
-      if (empty) { empty.hidden = shown !== 0; }
+      if (empty) { empty.hidden = shown !== 0 || invalid; }
+      if (status && !invalid) {
+        var sampleMessage = "";
+        if (mode.value === "regex" && sample.value) {
+          try {
+            var sampleRegex = new RegExp(query || "(?:)", flags.value || "u");
+            var sampleMatch = sampleRegex.exec(sample.value);
+            if (sampleMatch) {
+              var captures = sampleMatch.slice(1).filter(function (capture) { return capture !== undefined; }).length;
+              sampleMessage = " Sample match: " + (sampleMatch[0] || "(zero-width)") + ". Capture groups: " + captures + ".";
+            } else {
+              sampleMessage = " No sample match.";
+            }
+          } catch (error) {
+            sampleMessage = "";
+          }
+        }
+        status.textContent = mode.value === "regex" ? "JavaScript RegExp is valid." + sampleMessage : "Plain-text matching is active.";
+      }
+      if (status) { status.dataset.invalid = invalid ? "true" : "false"; }
     }
 
     input.addEventListener("input", update);
+    [pattern, mode, flags, sample].forEach(function (control) {
+      control.addEventListener("input", function () {
+        if (control === pattern) {
+          input.value = pattern.value;
+        } else if (control === mode) {
+          modeChangedByUser = true;
+        }
+        update();
+      });
+      control.addEventListener("change", update);
+    });
+    insertSnippet.addEventListener("click", function () {
+      var value = snippets[snippet.value];
+      if (!value) { return; }
+      var start = pattern.selectionStart == null ? pattern.value.length : pattern.selectionStart;
+      var end = pattern.selectionEnd == null ? start : pattern.selectionEnd;
+      pattern.value = pattern.value.slice(0, start) + value + pattern.value.slice(end);
+      pattern.focus();
+      pattern.setSelectionRange(start + value.length, start + value.length);
+      input.value = pattern.value;
+      snippet.value = "";
+      mode.value = "regex";
+      modeChangedByUser = true;
+      update();
+    });
+    builderToggle.addEventListener("click", function () {
+      var open = builder.hidden;
+      if (open) {
+        pattern.value = input.value;
+        if (!modeChangedByUser) { mode.value = "plain"; }
+        builder.hidden = false;
+        builderToggle.setAttribute("aria-expanded", "true");
+        pattern.focus();
+        update();
+      } else {
+        builder.hidden = true;
+        builderToggle.setAttribute("aria-expanded", "false");
+        input.focus();
+      }
+    });
+    usePattern.addEventListener("click", function () {
+      input.value = pattern.value;
+      update();
+      input.focus();
+    });
+    copyPattern.addEventListener("click", function () {
+      var text = pattern.value + (mode.value === "regex" ? "/" + (flags.value || "") : "");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          status.textContent = "Pattern copied.";
+        }).catch(function () { status.textContent = "Copy was blocked; select the pattern and copy it manually."; });
+      } else {
+        status.textContent = "Clipboard is unavailable; select the pattern and copy it manually.";
+      }
+    });
+    closeBuilder.addEventListener("click", function () {
+      builder.hidden = true;
+      builderToggle.setAttribute("aria-expanded", "false");
+      input.focus();
+    });
     if (clear) {
       clear.addEventListener("click", function () {
         input.value = "";
+        pattern.value = "";
         input.focus();
         update();
       });
     }
+    if (!modeChangedByUser && !pattern.value) { pattern.value = input.value; }
     update();
   });
 })();
