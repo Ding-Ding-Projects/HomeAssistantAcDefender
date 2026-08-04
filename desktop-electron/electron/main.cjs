@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, safeStorage, session } = require("electron");
+const { app, BrowserWindow, ipcMain, safeStorage, session, autoUpdater } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 
@@ -6,6 +6,9 @@ const DEFAULT_BASE_URL = "http://192.168.50.242:8888";
 const CONFIG_VERSION = 1;
 let mainWindow;
 let connection = { baseUrl: DEFAULT_BASE_URL, username: "", cookie: "" };
+let updateFeedUrl = "";
+let updateReady = false;
+let updateTimer;
 
 function configPath() {
   return path.join(app.getPath("userData"), "controller-config.json");
@@ -26,12 +29,13 @@ function readConfig() {
       funnyEnglish: clampFunny(raw.funnyEnglish),
       funnyCantonese: clampFunny(raw.funnyCantonese),
       theme: raw.theme === "light" ? "light" : "dark",
-      density: raw.density === "comfortable" ? "comfortable" : "compact"
+      density: raw.density === "comfortable" ? "comfortable" : "compact",
+      updateFeedUrl: typeof raw.updateFeedUrl === "string" ? raw.updateFeedUrl : ""
     };
   } catch {
     return {
       baseUrl: DEFAULT_BASE_URL, username: "", password: "", remember: false,
-      language: "en", funnyEnglish: 2, funnyCantonese: 3, theme: "dark", density: "compact"
+      language: "en", funnyEnglish: 2, funnyCantonese: 3, theme: "dark", density: "compact", updateFeedUrl: ""
     };
   }
 }
@@ -52,7 +56,8 @@ function saveConfig(partial) {
     funnyEnglish: clampFunny(next.funnyEnglish),
     funnyCantonese: clampFunny(next.funnyCantonese),
     theme: next.theme,
-    density: next.density
+    density: next.density,
+    updateFeedUrl: typeof next.updateFeedUrl === "string" ? next.updateFeedUrl : ""
   };
   if (next.remember && next.password && safeStorage.isEncryptionAvailable()) {
     payload.password = safeStorage.encryptString(next.password).toString("base64");
@@ -167,12 +172,33 @@ function createWindow() {
   else mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
 }
 
+function sendUpdateEvent(channel, payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
+}
+
+function configureUpdater(feedUrl) {
+  updateFeedUrl = String(feedUrl || "").trim();
+  if (updateTimer) { clearInterval(updateTimer); updateTimer = undefined; }
+  if (!updateFeedUrl) return { configured: false, platform: process.platform };
+  let parsed;
+  try { parsed = new URL(updateFeedUrl); } catch { throw new Error("Update feed URL must be a valid HTTPS URL."); }
+  if (parsed.protocol !== "https:") throw new Error("Update feeds must use HTTPS so Squirrel signatures and metadata cannot be replaced in transit.");
+  if (process.platform !== "win32") return { configured: false, platform: process.platform };
+  // Squirrel.Windows verifies the signed RELEASES package. We never download or execute an
+  // installer ourselves; autoUpdater owns that verified transaction and only reports ready.
+  autoUpdater.setFeedURL({ url: updateFeedUrl });
+  updateTimer = setInterval(() => {
+    Promise.resolve(autoUpdater.checkForUpdates()).catch((error) => sendUpdateEvent("update-error", { message: error instanceof Error ? error.message : String(error) }));
+  }, 30 * 60 * 1000);
+  return { configured: true, platform: process.platform };
+}
+
 app.whenReady().then(() => {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({ responseHeaders: { ...details.responseHeaders, "Content-Security-Policy": ["default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'"] } });
   });
   ipcMain.handle("config:load", () => readConfig());
-  ipcMain.handle("config:save", (_event, values) => { saveConfig(values || {}); return readConfig(); });
+  ipcMain.handle("config:save", (_event, values) => { saveConfig(values || {}); configureUpdater(values?.updateFeedUrl ?? readConfig().updateFeedUrl); return readConfig(); });
   ipcMain.handle("auth:connect", (_event, values) => login(values));
   ipcMain.handle("api:status", () => request("/api/status"));
   ipcMain.handle("api:notifications", (_event, query) => request(`/api/notifications?limit=${encodeURIComponent(query?.limit || 30)}&includeDismissed=${query?.includeDismissed ? "true" : "false"}`));
@@ -191,7 +217,32 @@ app.whenReady().then(() => {
     return request(route[0], { method: route[1] });
   });
   ipcMain.handle("auth:disconnect", () => { connection.cookie = ""; return true; });
+  ipcMain.handle("update:configure", (_event, values) => {
+    const result = configureUpdater(values?.feedUrl);
+    saveConfig({ updateFeedUrl: updateFeedUrl });
+    return result;
+  });
+  ipcMain.handle("update:check", async () => {
+    if (!updateFeedUrl) return { status: "disabled" };
+    if (process.platform !== "win32") return { status: "windows-only" };
+    try { await autoUpdater.checkForUpdates(); return { status: "checking" }; }
+    catch (error) { throw new Error(`Update check failed: ${error instanceof Error ? error.message : String(error)}`); }
+  });
+  ipcMain.handle("update:install", () => {
+    if (!updateReady) throw new Error("No verified update is ready to install.");
+    autoUpdater.quitAndInstall(false, true);
+    return true;
+  });
+  autoUpdater.on("update-downloaded", (_event, releaseNotes, releaseName) => {
+    updateReady = true;
+    sendUpdateEvent("update-ready", { releaseName: releaseName || "new version", releaseNotes: typeof releaseNotes === "string" ? releaseNotes : "" });
+  });
+  autoUpdater.on("error", (error) => sendUpdateEvent("update-error", { message: error instanceof Error ? error.message : String(error) }));
   createWindow();
+  const saved = readConfig();
+  if (saved.updateFeedUrl) {
+    try { configureUpdater(saved.updateFeedUrl); } catch (error) { sendUpdateEvent("update-error", { message: error instanceof Error ? error.message : String(error) }); }
+  }
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });

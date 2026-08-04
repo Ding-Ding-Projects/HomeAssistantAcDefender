@@ -10,5 +10,18 @@ contextBridge.exposeInMainWorld("controller", {
   notificationAction: (id, action) => ipcRenderer.invoke("api:notification-action", { id, action }),
   target: (temperature) => ipcRenderer.invoke("api:target", temperature),
   defender: (enabled) => ipcRenderer.invoke("api:defender", enabled),
-  command: (name) => ipcRenderer.invoke("api:command", name)
+  command: (name) => ipcRenderer.invoke("api:command", name),
+  configureUpdater: (feedUrl) => ipcRenderer.invoke("update:configure", { feedUrl }),
+  checkForUpdate: () => ipcRenderer.invoke("update:check"),
+  installUpdate: () => ipcRenderer.invoke("update:install"),
+  onUpdateReady: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("update-ready", listener);
+    return () => ipcRenderer.removeListener("update-ready", listener);
+  },
+  onUpdateError: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("update-error", listener);
+    return () => ipcRenderer.removeListener("update-error", listener);
+  }
 });
