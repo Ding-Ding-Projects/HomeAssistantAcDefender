@@ -129,8 +129,14 @@ def blame_agent_lines(path: Path) -> int:
         if is_agent is None:
             metadata = run_git("show", "-s", "--format=%an%n%ae%n%B", sha)
             author, email, *body = metadata.splitlines()
-            text = "\n".join((author, email, *body)).lower()
-            is_agent = bool(re.search(r"\b(agent|automation|bot|codex|claude)\b", text))
+            identity = f"{author} {email}".lower()
+            is_agent = bool(re.search(r"\b(agent|automation|bot|codex|claude)\b", identity))
+            if not is_agent:
+                is_agent = any(
+                    line.lower().startswith("co-authored-by:")
+                    and re.search(r"\b(agent|automation|bot|codex|claude)\b", line.lower())
+                    for line in body
+                )
             _agent_commit_cache[sha] = is_agent
         if is_agent:
             agent_lines += lines
@@ -176,7 +182,7 @@ def main() -> int:
     print(f"| **Grand total (tracked files)** | **{total[2] + excluded_binary}** | **{total[0]} text + binary** | **{total[1]} text + binary** | — |")
     print()
     print(f"- **Grand total of counted text:** {total[0]} lines ({total[1]} non-blank).")
-    print(f"- **Agent attribution rule:** surviving `git blame` lines are agent-written when the commit author or `Co-Authored-By` trailer names an automation identity (`agent`, `automation`, `bot`, `codex`, or `claude`).")
+    print(f"- **Agent attribution rule:** surviving `git blame` lines are agent-written when the commit author identity or an explicit `Co-Authored-By` trailer names an automation identity (`agent`, `automation`, `bot`, `codex`, or `claude`).")
     print(f"- **Excluded:** {excluded_binary} tracked binary/non-text files plus build/runtime/vendor trees (`.git`, `bin`, `obj`, `App_Data`, and `node_modules`). Binary files are excluded because they have no portable source-line meaning.")
     return 0
 
