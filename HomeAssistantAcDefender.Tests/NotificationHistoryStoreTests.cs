@@ -42,6 +42,49 @@ internal sealed class NotificationHistoryStoreTests
             Assert(restarted.Restore(warning.Id), "A dismissed notification should be restorable for review.");
             var restored = restarted.GetSnapshot(level: "warning");
             Assert(restored.Items.Count == 1 && restored.Items[0].Id == warning.Id, "Restoring should return the warning to the active centre.");
+            var warningActions = restored.Items[0].Actions ?? [];
+            Assert(warningActions.SequenceEqual(["created", "dismissed", "restored"]),
+                "The notification record should expose the real journal action history in order.");
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(contentRoot, recursive: true);
+            }
+            catch
+            {
+                // Test cleanup should not mask the assertion that failed first.
+            }
+        }
+    }
+
+    public void DateAndActionFiltersUseJournalHistory()
+    {
+        var contentRoot = Path.Combine(Path.GetTempPath(), "ac-defender-notification-filters-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(contentRoot);
+        try
+        {
+            var options = Options.Create(new DefenderOptions { StateFilePath = Path.Combine(contentRoot, "state.json") });
+            var environment = new TestWebHostEnvironment(contentRoot);
+            var store = new NotificationHistoryStore(options, environment, NullLogger<NotificationHistoryStore>.Instance);
+            var before = store.Append("info", "before", DateTimeOffset.Parse("2026-08-03T23:59:59Z"));
+            var inside = store.Append("warning", "inside", DateTimeOffset.Parse("2026-08-04T12:00:00Z"));
+            var after = store.Append("error", "after", DateTimeOffset.Parse("2026-08-05T00:00:01Z"));
+            Assert(store.Dismiss(inside.Id), "The in-range notification should accept a real dismiss action.");
+
+            var filtered = store.GetSnapshot(
+                includeDismissed: true,
+                fromInclusive: DateTimeOffset.Parse("2026-08-04T00:00:00Z"),
+                toExclusive: DateTimeOffset.Parse("2026-08-05T00:00:00Z"),
+                actions: new HashSet<string>(["dismissed"], StringComparer.OrdinalIgnoreCase));
+            Assert(filtered.Items.Count == 1 && filtered.Items[0].Id == inside.Id,
+                "Date bounds and an action filter should select only the matching journal record.");
+            Assert(filtered.ActionCounts is not null
+                && filtered.ActionCounts.TryGetValue("created", out var created) && created == 1
+                && filtered.ActionCounts.TryGetValue("dismissed", out var dismissed) && dismissed == 1,
+                "Action counts should be derived from the selected records and not a hard-coded status list.");
+            Assert(before.Id != inside.Id && after.Id != inside.Id, "Boundary fixtures should remain distinct real records.");
         }
         finally
         {

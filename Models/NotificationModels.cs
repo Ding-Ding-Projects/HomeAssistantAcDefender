@@ -12,9 +12,11 @@ public sealed record NotificationRecord(
     bool Read,
     bool Dismissed,
     DateTimeOffset? ReadAt,
-    DateTimeOffset? DismissedAt);
+    DateTimeOffset? DismissedAt,
+    IReadOnlyList<string>? Actions = null);
 
 public sealed record NotificationHistorySnapshot(
     IReadOnlyList<NotificationRecord> Items,
     int UnreadCount,
-    int ActiveCount);
+    int ActiveCount,
+    IReadOnlyDictionary<string, int>? ActionCounts = null);

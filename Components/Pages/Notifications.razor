@@ -1,4 +1,5 @@
 @page "/notifications"
+@using System.Globalization
 @using System.Text.RegularExpressions
 @inject NotificationHistoryStore NotificationStore
 @inject NotificationExportService ExportService
@@ -29,6 +30,39 @@
                 </select>
                 <label class="notification-history-check"><input type="checkbox" checked="@_includeDismissed" @onchange="OnIncludeDismissedChanged" /> Include dismissed</label>
             </div>
+            <div class="notification-history-date-filter" aria-label="Notification date range filters">
+                <label>Start date (UTC, YYYY-MM-DD)
+                    <input class="ops-input" type="text" inputmode="numeric" value="@_startDate" @oninput="OnStartDateChanged" placeholder="YYYY-MM-DD" aria-label="Notification start date in UTC" />
+                </label>
+                <label>End date (UTC, YYYY-MM-DD)
+                    <input class="ops-input" type="text" inputmode="numeric" value="@_endDate" @oninput="OnEndDateChanged" placeholder="YYYY-MM-DD" aria-label="Notification end date in UTC" />
+                </label>
+                <label>Preset
+                    <select class="ops-input" value="@_datePreset" @onchange="OnDatePresetChanged" aria-label="Notification date range preset">
+                        <option value="">All dates</option>
+                        <option value="today">Today</option>
+                        <option value="7d">Last 7 days</option>
+                        <option value="30d">Last 30 days</option>
+                    </select>
+                </label>
+            </div>
+            @if (DateFilterError is not null)
+            {
+                <div class="notification-history-filter-error" role="alert">@DateFilterError</div>
+            }
+            @if (ActionKinds.Count > 0)
+            {
+                <fieldset class="notification-history-actions">
+                    <legend>Filter by journal action (counts are derived from the stored history)</legend>
+                    @foreach (var action in ActionKinds)
+                    {
+                        <label class="notification-history-check">
+                            <input type="checkbox" checked="@_actionFilter.Contains(action)" @onchange="@(args => OnActionChanged(action, args))" />
+                            @action <span class="notification-history-action-count">(@ActionCounts[action])</span>
+                        </label>
+                    }
+                </fieldset>
+            }
             <RegexSearchBuilder Id="notifications-search" Value="@_search" ValueChanged="SetSearch"
                                 Mode="@_searchMode" ModeChanged="SetSearchMode"
                                 Flags="@_searchFlags" FlagsChanged="SetSearchFlags" />
@@ -77,20 +111,88 @@
     private string _search = "";
     private string _level = "";
     private bool _includeDismissed;
+    private string _startDate = "";
+    private string _endDate = "";
+    private string _datePreset = "";
+    private readonly HashSet<string> _actionFilter = new(StringComparer.OrdinalIgnoreCase);
     private string _searchMode = "plain";
     private string _searchFlags = "im";
 
-    private IReadOnlyList<NotificationRecord> FilteredNotifications => (_snapshot?.Items ?? [])
+    private IReadOnlyList<NotificationRecord> CandidateNotifications => (_snapshot?.Items ?? [])
+        .Where(notification => _includeDismissed || !notification.Dismissed)
+        .Where(notification => string.IsNullOrWhiteSpace(_level) || string.Equals(notification.Level, _level, StringComparison.OrdinalIgnoreCase))
+        .Where(MatchesDateRange)
+        .ToArray();
+
+    private IReadOnlyDictionary<string, int> ActionCounts => CandidateNotifications
+        .SelectMany(notification => notification.Actions ?? [])
+        .GroupBy(action => action, StringComparer.OrdinalIgnoreCase)
+        .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+
+    private IReadOnlyList<string> ActionKinds => ActionCounts.Keys.OrderBy(action => action, StringComparer.OrdinalIgnoreCase).ToArray();
+
+    private IReadOnlyList<NotificationRecord> FilteredNotifications => CandidateNotifications
+        .Where(notification => _actionFilter.Count == 0 || (notification.Actions ?? []).Any(_actionFilter.Contains))
         .Where(MatchesSearch)
         .ToArray();
 
+    private string? DateFilterError
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(_startDate) && !TryParseDate(_startDate, out _))
+            {
+                return "Start date must be a complete ISO date in YYYY-MM-DD format.";
+            }
+
+            if (!string.IsNullOrWhiteSpace(_endDate) && !TryParseDate(_endDate, out _))
+            {
+                return "End date must be a complete ISO date in YYYY-MM-DD format.";
+            }
+
+            if (TryParseDate(_startDate, out var start) && TryParseDate(_endDate, out var end) && end < start)
+            {
+                return "End date must be on or after the start date.";
+            }
+
+            return null;
+        }
+    }
+
     protected override void OnInitialized() => Refresh();
 
-    private void Refresh() => _snapshot = NotificationStore.GetSnapshot(500, _includeDismissed, _level);
+    private void Refresh() => _snapshot = NotificationStore.GetSnapshot(500, includeDismissed: true);
 
     private void OnSearchChanged(ChangeEventArgs args) { _search = args.Value?.ToString() ?? ""; }
-    private void OnLevelChanged(ChangeEventArgs args) { _level = args.Value?.ToString() ?? ""; Refresh(); }
-    private void OnIncludeDismissedChanged(ChangeEventArgs args) { _includeDismissed = args.Value is bool value && value; Refresh(); }
+    private void OnLevelChanged(ChangeEventArgs args) { _level = args.Value?.ToString() ?? ""; }
+    private void OnIncludeDismissedChanged(ChangeEventArgs args) { _includeDismissed = args.Value is bool value && value; }
+    private void OnStartDateChanged(ChangeEventArgs args) { _startDate = args.Value?.ToString() ?? ""; _datePreset = ""; }
+    private void OnEndDateChanged(ChangeEventArgs args) { _endDate = args.Value?.ToString() ?? ""; _datePreset = ""; }
+
+    private void OnDatePresetChanged(ChangeEventArgs args)
+    {
+        _datePreset = args.Value?.ToString() ?? "";
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        (_startDate, _endDate) = _datePreset switch
+        {
+            "today" => (today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+            "7d" => (today.AddDays(-6).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+            "30d" => (today.AddDays(-29).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+            _ => ("", "")
+        };
+    }
+
+    private void OnActionChanged(string action, ChangeEventArgs args)
+    {
+        if (args.Value is bool selected && selected)
+        {
+            _actionFilter.Add(action);
+        }
+        else
+        {
+            _actionFilter.Remove(action);
+        }
+    }
 
     private Task SetSearch(string value) { _search = value; return Task.CompletedTask; }
     private Task SetSearchMode(string value) { _searchMode = value; return Task.CompletedTask; }
@@ -99,7 +201,7 @@
     private bool MatchesSearch(NotificationRecord notification)
     {
         if (string.IsNullOrWhiteSpace(_search)) return true;
-        var haystack = $"{notification.Level} {notification.Message} {notification.Timestamp:O}";
+        var haystack = $"{notification.Level} {notification.Message} {notification.Timestamp:O} {string.Join(' ', notification.Actions ?? [])}";
         if (string.Equals(_searchMode, "regex", StringComparison.OrdinalIgnoreCase))
         {
             try
@@ -116,6 +218,42 @@
 
         return haystack.Contains(_search, StringComparison.OrdinalIgnoreCase);
     }
+
+    private bool MatchesDateRange(NotificationRecord notification)
+    {
+        if (!TryGetDateRange(out var fromInclusive, out var toExclusive))
+        {
+            return false;
+        }
+
+        return (fromInclusive is null || notification.Timestamp >= fromInclusive.Value)
+            && (toExclusive is null || notification.Timestamp < toExclusive.Value);
+    }
+
+    private bool TryGetDateRange(out DateTimeOffset? fromInclusive, out DateTimeOffset? toExclusive)
+    {
+        fromInclusive = null;
+        toExclusive = null;
+        if (DateFilterError is not null)
+        {
+            return false;
+        }
+
+        if (TryParseDate(_startDate, out var start))
+        {
+            fromInclusive = new DateTimeOffset(start.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+
+        if (TryParseDate(_endDate, out var end))
+        {
+            toExclusive = new DateTimeOffset(end.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc));
+        }
+
+        return true;
+    }
+
+    private static bool TryParseDate(string value, out DateOnly date) =>
+        DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
 
     private void MarkRead(Guid id) { Show(NotificationStore.MarkRead(id), "Marked read"); }
     private void Dismiss(Guid id) { Show(NotificationStore.Dismiss(id), "Notification dismissed"); }
@@ -137,7 +275,15 @@
         Func<IReadOnlyList<NotificationRecord>, NotificationExportFilters, byte[]> build)
     {
         var records = FilteredNotifications;
-        var filters = new NotificationExportFilters(_search, _searchMode, _searchFlags, _level, _includeDismissed);
+        var filters = new NotificationExportFilters(
+            _search,
+            _searchMode,
+            _searchFlags,
+            _level,
+            _includeDismissed,
+            _startDate,
+            _endDate,
+            _actionFilter.OrderBy(action => action, StringComparer.OrdinalIgnoreCase).ToArray());
         try
         {
             var bytes = build(records, filters);

@@ -2206,6 +2206,13 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
 .notification-history-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .notification-history-toolbar .ops-input { min-height: 34px; flex: 1 1 240px; box-sizing: border-box; }
 .notification-history-check { display: inline-flex; gap: 6px; align-items: center; min-height: 34px; color: var(--sub); font-size: 11px; }
+.notification-history-date-filter { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; margin-top: 10px; }
+.notification-history-date-filter label { display: grid; gap: 4px; color: var(--sub); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+.notification-history-date-filter .ops-input { min-height: 34px; min-width: 170px; box-sizing: border-box; }
+.notification-history-filter-error { margin-top: 8px; color: var(--bad); font-size: 12px; }
+.notification-history-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border: 1px solid var(--line2); margin: 10px 0 0; padding: 8px 10px; }
+.notification-history-actions legend { color: var(--sub); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+.notification-history-action-count { color: var(--sub); }
 .notification-history-list { display: flex; flex-direction: column; gap: 10px; }
 .notification-history-card { border: 1px solid var(--line2); border-left: 4px solid var(--teal); padding: 12px 14px; background: var(--panel2); }
 .notification-history-card--success { border-left-color: var(--good); }
