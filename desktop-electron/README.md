@@ -38,6 +38,12 @@ does not log request bodies, tokens, or passwords.
   group/alternation/quantifier blocks, a bounded raw pattern and flags editor, sample text, syntax
   feedback, live matches and capture groups, plus copy and **Use in search** actions. Patterns are
   evaluated locally in the renderer and are never sent to the defender API.
+- Dashboard, Notifications, and Settings are browser-style tabs with `tablist`/`tab`/`tabpanel`
+  roles. The active tab, order, and per-tab bounded appearance values (surface/text color and
+  font size) persist in the Windows profile. Tabs scroll horizontally instead of clipping; drag
+  or `Ctrl+Shift+←/→` reorders them, and right-click or <kbd>F2</kbd> opens the anchored **Edit
+  tab appearance…** editor with Save, Reset, and Cancel. The editor is intentionally bounded to
+  tab chrome and does not alter defender logic or page content.
 
 Errors from the host are shown as errors. A disconnected or unavailable API never produces a
 made-up temperature, HVAC state, success message, or fallback command.

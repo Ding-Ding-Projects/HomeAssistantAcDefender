@@ -4,6 +4,7 @@ const fs = require("node:fs");
 
 const DEFAULT_BASE_URL = "http://192.168.50.242:8888";
 const CONFIG_VERSION = 1;
+const TAB_IDS = ["dashboard", "notifications", "settings"];
 let mainWindow;
 let connection = { baseUrl: DEFAULT_BASE_URL, username: "", cookie: "" };
 let updateFeedUrl = "";
@@ -30,12 +31,16 @@ function readConfig() {
       funnyCantonese: clampFunny(raw.funnyCantonese),
       theme: raw.theme === "light" ? "light" : "dark",
       density: raw.density === "comfortable" ? "comfortable" : "compact",
-      updateFeedUrl: typeof raw.updateFeedUrl === "string" ? raw.updateFeedUrl : ""
+      updateFeedUrl: typeof raw.updateFeedUrl === "string" ? raw.updateFeedUrl : "",
+      activeTab: TAB_IDS.includes(raw.activeTab) ? raw.activeTab : "dashboard",
+      tabOrder: normalizeTabOrder(raw.tabOrder),
+      tabAppearance: normalizeTabAppearance(raw.tabAppearance)
     };
   } catch {
     return {
       baseUrl: DEFAULT_BASE_URL, username: "", password: "", remember: false,
-      language: "en", funnyEnglish: 2, funnyCantonese: 3, theme: "dark", density: "compact", updateFeedUrl: ""
+      language: "en", funnyEnglish: 2, funnyCantonese: 3, theme: "dark", density: "compact", updateFeedUrl: "",
+      activeTab: "dashboard", tabOrder: TAB_IDS, tabAppearance: normalizeTabAppearance({})
     };
   }
 }
@@ -43,6 +48,24 @@ function readConfig() {
 function clampFunny(value) {
   const n = Number(value);
   return Number.isFinite(n) ? Math.min(5, Math.max(1, Math.round(n))) : 2;
+}
+
+function normalizeTabOrder(value) {
+  const incoming = Array.isArray(value) ? value.filter((item) => TAB_IDS.includes(item)) : [];
+  return [...new Set(incoming.concat(TAB_IDS))].slice(0, TAB_IDS.length);
+}
+
+function normalizeTabAppearance(value) {
+  const source = value && typeof value === "object" ? value : {};
+  const output = {};
+  for (const id of TAB_IDS) {
+    const item = source[id] && typeof source[id] === "object" ? source[id] : {};
+    const foreground = typeof item.foreground === "string" && /^#[0-9a-f]{6}$/i.test(item.foreground) ? item.foreground : "#e6f1eb";
+    const background = typeof item.background === "string" && /^#[0-9a-f]{6}$/i.test(item.background) ? item.background : "#16221e";
+    const fontSize = Number(item.fontSize);
+    output[id] = { foreground, background, fontSize: Number.isFinite(fontSize) ? Math.min(28, Math.max(11, Math.round(fontSize))) : 14 };
+  }
+  return output;
 }
 
 function saveConfig(partial) {
@@ -57,7 +80,10 @@ function saveConfig(partial) {
     funnyCantonese: clampFunny(next.funnyCantonese),
     theme: next.theme,
     density: next.density,
-    updateFeedUrl: typeof next.updateFeedUrl === "string" ? next.updateFeedUrl : ""
+    updateFeedUrl: typeof next.updateFeedUrl === "string" ? next.updateFeedUrl : "",
+    activeTab: TAB_IDS.includes(next.activeTab) ? next.activeTab : "dashboard",
+    tabOrder: normalizeTabOrder(next.tabOrder),
+    tabAppearance: normalizeTabAppearance(next.tabAppearance)
   };
   if (next.remember && next.password && safeStorage.isEncryptionAvailable()) {
     payload.password = safeStorage.encryptString(next.password).toString("base64");
