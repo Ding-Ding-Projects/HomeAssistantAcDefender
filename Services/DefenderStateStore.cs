@@ -48,6 +48,7 @@ public sealed class DefenderStateStore
     private readonly DefenderOptions options;
     private readonly ILogger<DefenderStateStore> logger;
     private readonly SettingsGitRepository settingsRepository;
+    private readonly NotificationHistoryStore? notificationHistory;
     private readonly string stateFilePath;
     // Append-only, never-capped audit of every thermostat change, one compact JSON object per line,
     // written to the SAME (persisted) directory as the state file. The in-memory ThermostatChanges
@@ -70,11 +71,13 @@ public sealed class DefenderStateStore
         IOptions<DefenderOptions> options,
         IWebHostEnvironment environment,
         ILogger<DefenderStateStore> logger,
-        SettingsGitRepository settingsRepository)
+        SettingsGitRepository settingsRepository,
+        NotificationHistoryStore? notificationHistory = null)
     {
         this.options = options.Value;
         this.logger = logger;
         this.settingsRepository = settingsRepository;
+        this.notificationHistory = notificationHistory;
         rivalScheduleBlocks = RivalScheduleWatch.Parse(this.options.RivalScheduleBlocks);
         stateFilePath = ResolveStatePath(this.options.StateFilePath, environment.ContentRootPath);
         historyFilePath = Path.Combine(Path.GetDirectoryName(stateFilePath) ?? ".", "thermostat-history.jsonl");
@@ -12255,6 +12258,7 @@ public sealed class DefenderStateStore
         }
 
         AppendEventToDiskLog(level, message);
+        notificationHistory?.Append(level, message);
     }
 
     private void ResetNaturalRecovery(string status)
