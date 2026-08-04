@@ -2162,6 +2162,39 @@ body { font-family: 'JetBrains Mono', Consolas, monospace; -webkit-font-smoothin
 
 .setting-panels { display: flex; flex-direction: column; gap: 14px; }
 
+/* ---------- Changelog viewer ---------- */
+.changelog-shell { max-width: 1120px; }
+.changelog-toolbar { display: flex; flex-direction: column; gap: 10px; }
+.changelog-search-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.changelog-search { flex: 1 1 320px; min-width: 0; }
+.changelog-regex-builder { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--line2); background: var(--panel2); }
+.changelog-regex-builder__head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--sub); font-size: 10px; }
+.changelog-regex-builder__head strong { color: var(--ink); font-size: 11px; }
+.changelog-regex-flags { display: flex; gap: 12px; flex-wrap: wrap; color: var(--sub); font-size: 10px; }
+.changelog-regex-flags label { display: inline-flex; gap: 5px; align-items: center; min-height: 28px; }
+.changelog-date-row { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+.changelog-date-row label { display: flex; flex-direction: column; gap: 4px; color: var(--sub); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.changelog-date-row input[type=date] { min-height: 34px; border: 1px solid var(--line2); background: var(--panel2); color: var(--ink); padding: 6px 8px; font: inherit; }
+.changelog-inline-error { border-left: 3px solid var(--danger, #ff5c47); color: var(--danger, #ff5c47); padding: 6px 9px; background: var(--panel2); font-size: 10px; }
+.changelog-filter-summary { color: var(--sub); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.changelog-empty { border: 1px dashed var(--line2); color: var(--sub); padding: 24px; text-align: center; }
+.changelog-list { display: flex; flex-direction: column; gap: 10px; padding: 12px 0; }
+.changelog-entry { border: 1px solid var(--line2); background: var(--panel); padding: 14px 16px; }
+.changelog-entry__head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.changelog-entry h2 { margin: 0; color: var(--ink); font-size: 14px; letter-spacing: .04em; }
+.changelog-entry__code { color: var(--accent); font-size: 11px; font-weight: 500; }
+.changelog-entry__date { color: var(--sub); font-size: 10px; margin-top: 5px; text-transform: uppercase; letter-spacing: .08em; }
+.changelog-entry__legacy { margin-top: 9px; padding: 7px 10px; border-left: 3px solid var(--warn); background: var(--panel2); color: var(--warn); font-size: 10px; line-height: 1.45; }
+.changelog-entry__summary { margin: 10px 0 0; color: var(--ink); font-size: 12px; line-height: 1.55; white-space: pre-line; }
+.changelog-export-card { display: flex; flex-direction: column; gap: 10px; padding: 18px 4px; }
+.changelog-export-card h2 { margin: 0; color: var(--ink); font-size: 16px; }
+.changelog-export-card p { margin: 0; color: var(--sub); line-height: 1.55; }
+.changelog-export-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 620px) {
+    .changelog-entry__head { flex-direction: column; }
+    .changelog-entry__head .ops-btn { align-self: start; }
+}
+
 .settings-tone-control {
     display: flex;
     flex-direction: column;
