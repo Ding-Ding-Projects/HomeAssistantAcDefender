@@ -66,6 +66,8 @@ guide](docs/wiki/release/line-counts.md) explains how to load it and reproduce t
 | [Energy & Costs](docs/wiki/Energy-and-Costs.md) | TOU rates, the sensor-free AC cost estimate, the calendar, the monthly budget |
 | [Defender Logic](docs/wiki/Defender-Logic.md) | The decision cycle and every guard's exact rules |
 | [Settings](docs/wiki/Settings.md) | Every knob on the Settings page |
+| [Command palette](docs/wiki/Command-palette.md) | `Ctrl+Shift+F` keyboard navigation to every real app area |
+| [Notification history](docs/wiki/Notification-history.md) | Review, dismiss, and restore activity notices without losing the audit trail |
 | [API](docs/wiki/API.md) | JSON endpoints and the `/api/status/stream` SSE feed |
 | [Architecture](docs/wiki/Architecture.md) | How the code is put together |
 | [Deployment](docs/wiki/Deployment.md) | Docker, volumes, and the full environment-variable reference |
@@ -125,6 +127,10 @@ snapshot — no refreshing, ever:
 - **Controls** (`/controls`) — target, fan, force, off, and emergency buttons.
 - **Settings** (`/settings`) — every guard's dials, the **Electricity budget** switch, and
   the schedule editor.
+- **Command palette** (`Ctrl+Shift+F`) — keyboard navigation to each real destination without
+  bypassing authentication or thermostat safety gates.
+- **Notification history** (`/api/notifications`) — authenticated review and restore of real
+  activity notices; it never invents thermostat state.
 - **Guide** (`/guide`) — the built-in manual, generated from the guard catalog.
 
 See the [Website Tour](docs/wiki/Website-Tour.md) for all of it with screenshots.
