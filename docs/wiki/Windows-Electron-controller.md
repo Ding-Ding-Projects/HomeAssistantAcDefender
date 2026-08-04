@@ -45,9 +45,11 @@ npm run build
 npm test
 ```
 
-`npm run build` and `npm test` pass in the current checkout. `npm run dist` is a separate installer
-gate and must not be described as passed until a produced Squirrel installer is opened or otherwise
-verified on Windows.
+`npm run build`, `npm test`, and `npm run dist` pass in the current checkout. The packaging command
+produces a Setup.exe, a `.nupkg` update package, and a `RELEASES` feed under
+`dist/squirrel-windows`; the release workflow verifies those files are non-empty before attaching
+them. Opening the installer and enabling a signed background update feed remain separate gates and
+must not be described as passed until verified on Windows.
 
 ## Suggested articles
 

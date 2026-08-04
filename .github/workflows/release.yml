@@ -16,8 +16,79 @@ env:
   GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.ORG_TOKEN || secrets.GITHUB_TOKEN }}
 
 jobs:
-  verify-and-release:
+  workflow-start:
     runs-on: ubuntu-latest
+    outputs:
+      started_iso: ${{ steps.start.outputs.started_iso }}
+      started_epoch: ${{ steps.start.outputs.started_epoch }}
+    steps:
+      - id: start
+        name: Record workflow start
+        shell: bash
+        run: |
+          set -euo pipefail
+          started_epoch="$(date +%s)"
+          started_iso="$(date -u -d "@${started_epoch}" +%Y-%m-%dT%H:%M:%SZ)"
+          echo "started_epoch=${started_epoch}" >> "${GITHUB_OUTPUT}"
+          echo "started_iso=${started_iso}" >> "${GITHUB_OUTPUT}"
+
+  build-desktop-electron:
+    needs: workflow-start
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop-electron
+    steps:
+      - name: Check out the exact release commit
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+          cache-dependency-path: desktop-electron/package-lock.json
+
+      - name: Install Electron dependencies
+        run: npm ci
+
+      - name: Run Electron static checks
+        run: npm test
+
+      - name: Build Squirrel.Windows installer and update feed
+        run: npm run dist
+
+      - name: Verify Squirrel.Windows artifacts
+        shell: pwsh
+        run: |
+          $artifactRoot = Join-Path $env:GITHUB_WORKSPACE 'desktop-electron\dist\squirrel-windows'
+          $setup = Get-ChildItem -LiteralPath $artifactRoot -Filter '*Setup*.exe' -File
+          $nupkg = Get-ChildItem -LiteralPath $artifactRoot -Filter '*.nupkg' -File
+          $releases = Join-Path $artifactRoot 'RELEASES'
+          if ($setup.Count -lt 1) { throw "Squirrel Setup.exe was not produced in $artifactRoot" }
+          if ($nupkg.Count -lt 1) { throw "Squirrel .nupkg update package was not produced in $artifactRoot" }
+          if (-not (Test-Path -LiteralPath $releases)) { throw "Squirrel RELEASES feed was not produced in $artifactRoot" }
+          foreach ($file in @($setup) + @($nupkg) + @(Get-Item -LiteralPath $releases)) {
+            if ($file.Length -le 0) { throw "Squirrel artifact is empty: $($file.FullName)" }
+            Write-Host ("Verified {0} ({1} bytes)" -f $file.Name, $file.Length)
+          }
+
+      - name: Upload Squirrel.Windows release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-electron-squirrel
+          path: |
+            desktop-electron/dist/squirrel-windows/*Setup*.exe
+            desktop-electron/dist/squirrel-windows/*.nupkg
+            desktop-electron/dist/squirrel-windows/RELEASES
+          if-no-files-found: error
+
+  verify-and-release:
+    needs: [workflow-start, build-desktop-electron]
+    runs-on: ubuntu-latest
+    env:
+      WORKFLOW_STARTED: ${{ needs.workflow-start.outputs.started_iso }}
+      WORKFLOW_STARTED_EPOCH: ${{ needs.workflow-start.outputs.started_epoch }}
     steps:
       - name: Check out the exact release commit
         uses: actions/checkout@v4
@@ -50,6 +121,12 @@ jobs:
 
       - name: Count surviving project lines
         run: python3 scripts/count_lines.py > release-assets/line-count.md
+
+      - name: Download verified Electron release assets
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-electron-squirrel
+          path: release-assets/electron
 
       - name: Resolve an unused public dim-sum code name
         id: dimsum
@@ -131,35 +208,60 @@ jobs:
           DIM_SUM_PHOTO_URL: ${{ steps.dimsum.outputs.photo_url }}
         run: |
           set -euo pipefail
-          {
-            echo "# Home Assistant AC Defender ${RELEASE_TAG}"
-            echo
-            echo "Verified from commit \`${GITHUB_SHA}\`. The Docker image archive is the installable artifact for this server application; decompress it with \`gunzip ac-defender-docker-${GITHUB_SHA}.tar.gz\` and load it with \`docker load --input ac-defender-docker-${GITHUB_SHA}.tar\`, then run it with the documented Compose configuration."
-            echo
-            echo "## Release code name"
-            echo
-            echo "**${DIM_SUM_NAME}**"
-            if [[ -n "${DIM_SUM_PHOTO_URL}" ]]; then
+          write_notes() {
+            local completed="$1"
+            local duration="$2"
+            {
+              echo "# Home Assistant AC Defender ${RELEASE_TAG}"
               echo
-              echo "[Public catalog photo](${DIM_SUM_PHOTO_URL}) (linked, never copied into this repository)."
-            else
+              echo "Verified from commit \`${GITHUB_SHA}\`. The Docker image archive is the installable artifact for this server application; decompress it with \`gunzip ac-defender-docker-${GITHUB_SHA}.tar.gz\` and load it with \`docker load --input ac-defender-docker-${GITHUB_SHA}.tar\`, then run it with the documented Compose configuration."
               echo
-              echo "No unused public photo was available at release time; the software release is not blocked by catalog availability."
-            fi
-            echo
-            echo "## CI line-count report"
-            cat release-assets/line-count.md
-            echo
-            echo "## Checks"
-            echo
-            echo "- \`dotnet build HomeAssistantAcDefender.Tests/HomeAssistantAcDefender.Tests.csproj --configuration Release\`"
-            echo "- Regression suite: passed in this workflow before publication."
-            echo "- Docker image: built from this commit and archived as \`ac-defender-docker-${GITHUB_SHA}.tar.gz\`."
-          } > release-assets/release-notes.md
+              echo "## Windows Electron controller"
+              echo
+              echo "The verified Squirrel.Windows Setup.exe, .nupkg update package, and RELEASES feed are attached for the Windows controller. The application still requires a signed update feed before background updates can be enabled."
+              echo
+              echo "## Workflow timing"
+              echo
+              echo "- Workflow started: ${WORKFLOW_STARTED}"
+              echo "- Workflow completed: ${completed}"
+              echo "- Workflow duration: ${duration} seconds"
+              echo
+              echo "## Release code name"
+              echo
+              echo "**${DIM_SUM_NAME}**"
+              if [[ -n "${DIM_SUM_PHOTO_URL}" ]]; then
+                echo
+                echo "[Public catalog photo](${DIM_SUM_PHOTO_URL}) (linked, never copied into this repository)."
+              else
+                echo
+                echo "No unused public photo was available at release time; the software release is not blocked by catalog availability."
+              fi
+              echo
+              echo "## CI line-count report"
+              cat release-assets/line-count.md
+              echo
+              echo "## Checks"
+              echo
+              echo "- \`dotnet build HomeAssistantAcDefender.Tests/HomeAssistantAcDefender.Tests.csproj --configuration Release\`"
+              echo "- Regression suite: passed in this workflow before publication."
+              echo "- Docker image: built from this commit and archived as \`ac-defender-docker-${GITHUB_SHA}.tar.gz\`."
+              echo "- Electron: \`npm test\`, \`npm run dist\`, and non-empty Setup.exe/.nupkg/RELEASES checks passed on \`windows-latest\`."
+            } > release-assets/release-notes.md
+          }
+          write_notes "pending final release publication" "pending final release publication"
+          release_assets=(
+            "release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz"
+            "release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz.sha256"
+            release-assets/electron/*
+          )
           gh release create "${RELEASE_TAG}" \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
             --title "Home Assistant AC Defender ${RELEASE_TAG} — ${DIM_SUM_NAME}" \
             --notes-file release-assets/release-notes.md \
-            release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz \
-            release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz.sha256
+            "${release_assets[@]}"
+          completed_epoch="$(date +%s)"
+          completed_iso="$(date -u -d "@${completed_epoch}" +%Y-%m-%dT%H:%M:%SZ)"
+          duration_seconds=$((completed_epoch - WORKFLOW_STARTED_EPOCH))
+          write_notes "${completed_iso}" "${duration_seconds}"
+          gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --notes-file release-assets/release-notes.md
