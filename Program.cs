@@ -26,6 +26,7 @@ builder.Services.Configure<DefenderOptions>(builder.Configuration.GetSection(Def
 builder.Services.Configure<KioskOptions>(builder.Configuration.GetSection(KioskOptions.SectionName));
 builder.Services.AddSingleton<SettingsGitRepository>();
 builder.Services.AddSingleton<NotificationHistoryStore>();
+builder.Services.AddSingleton<NotificationExportService>();
 builder.Services.AddSingleton<WikiContentService>();
 builder.Services.AddSingleton<DefenderStateStore>();
 builder.Services.AddSingleton<AcDefenderService>();

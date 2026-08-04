@@ -1,6 +1,8 @@
 @page "/notifications"
 @using System.Text.RegularExpressions
 @inject NotificationHistoryStore NotificationStore
+@inject NotificationExportService ExportService
+@inject IJSRuntime JS
 @inject ISnackbar Snackbar
 
 <PageTitle>Notification history - AC Defender</PageTitle>
@@ -12,6 +14,8 @@
         <Actions>
             <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@_snapshot?.UnreadCount unread</MudChip>
             <MudButton Variant="Variant.Outlined" OnClick="Refresh">Refresh</MudButton>
+            <MudButton Variant="Variant.Outlined" Disabled="@(_snapshot is null)" OnClick="ExportJson">Export JSON</MudButton>
+            <MudButton Variant="Variant.Outlined" Disabled="@(_snapshot is null)" OnClick="ExportMarkdown">Export Markdown</MudButton>
         </Actions>
         <ChildContent>
             <div class="notification-history-toolbar">
@@ -116,6 +120,41 @@
     private void MarkRead(Guid id) { Show(NotificationStore.MarkRead(id), "Marked read"); }
     private void Dismiss(Guid id) { Show(NotificationStore.Dismiss(id), "Notification dismissed"); }
     private void Restore(Guid id) { Show(NotificationStore.Restore(id), "Notification restored"); }
+
+    private Task ExportJson() => ExportAsync(
+        "json",
+        "application/json;charset=utf-8",
+        (records, filters) => ExportService.ToJson(records, filters));
+
+    private Task ExportMarkdown() => ExportAsync(
+        "md",
+        "text/markdown;charset=utf-8",
+        (records, filters) => ExportService.ToMarkdown(records, filters));
+
+    private async Task ExportAsync(
+        string extension,
+        string mimeType,
+        Func<IReadOnlyList<NotificationRecord>, NotificationExportFilters, byte[]> build)
+    {
+        var records = FilteredNotifications;
+        var filters = new NotificationExportFilters(_search, _searchMode, _searchFlags, _level, _includeDismissed);
+        try
+        {
+            var bytes = build(records, filters);
+            var timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
+            var fileName = $"ac-defender-notifications-{timestamp}.{extension}";
+            await JS.InvokeVoidAsync(
+                "acDefenderNotificationExport.downloadBase64",
+                fileName,
+                mimeType,
+                Convert.ToBase64String(bytes));
+            Snackbar.Add($"Exported {records.Count} filtered notifications as {extension.ToUpperInvariant()}.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Notification export failed: {ex.Message}", Severity.Error, options => options.RequireInteraction = true);
+        }
+    }
 
     private void Show(bool success, string message)
     {
