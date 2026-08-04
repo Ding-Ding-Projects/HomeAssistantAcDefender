@@ -2163,6 +2163,22 @@ body { font-family: 'JetBrains Mono', Consolas, monospace; -webkit-font-smoothin
 .setting-panels { display: flex; flex-direction: column; gap: 14px; }
 
 /* ---------- Changelog viewer ---------- */
+.regex-search-builder { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.regex-search-builder__toggle, .regex-search-builder__button { min-height: 32px; border: 1px solid var(--line2); border-radius: 8px; padding: 6px 10px; background: var(--panel2); color: var(--ink); cursor: pointer; font: inherit; }
+.regex-search-builder__toggle { align-self: flex-start; font-size: 12px; }
+.regex-search-builder__toggle:hover, .regex-search-builder__button:hover:not(:disabled) { border-color: var(--teal); color: var(--teal); }
+.regex-search-builder__button:disabled { cursor: not-allowed; opacity: .55; }
+.regex-search-builder__panel { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--panel2); }
+.regex-search-builder__grid, .regex-search-builder__guided { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.regex-search-builder__guided { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.regex-search-builder label { display: flex; flex-direction: column; gap: 4px; color: var(--sub); font-size: 11px; }
+.regex-search-builder input, .regex-search-builder select { width: 100%; min-height: 32px; box-sizing: border-box; border: 1px solid var(--line2); border-radius: 6px; padding: 6px 8px; background: var(--panel); color: var(--ink); font: inherit; }
+.regex-search-builder input:focus, .regex-search-builder select:focus, .regex-search-builder button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.regex-search-builder__help, .regex-search-builder__status { margin: 0; color: var(--sub); font-size: 11px; }
+.regex-search-builder__status { min-height: 18px; }
+.regex-search-builder__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 720px) { .regex-search-builder__grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 460px) { .regex-search-builder__grid, .regex-search-builder__guided { grid-template-columns: 1fr; } }
 .changelog-shell { max-width: 1120px; }
 .changelog-toolbar { display: flex; flex-direction: column; gap: 10px; }
 .changelog-search-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }

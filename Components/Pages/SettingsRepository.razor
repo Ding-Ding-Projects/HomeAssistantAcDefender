@@ -1,5 +1,6 @@
 @page "/settings/repository"
 @page "/repository"
+@using System.Text.RegularExpressions
 @inject DefenderStateStore StateStore
 @inject AcDefenderService Defender
 @inject ISnackbar Snackbar
@@ -79,6 +80,9 @@
             <input class="ops-input" style="width: 100%; box-sizing: border-box; margin: 0 0 10px 0;"
                    value="@_historySearch" @oninput="OnHistorySearchChanged"
                    placeholder="SEARCH COMMITS…" aria-label="Search commits" />
+            <RegexSearchBuilder Id="history-search" Value="@_historySearch" ValueChanged="SetHistorySearch"
+                                Mode="@_historySearchMode" ModeChanged="SetHistorySearchMode"
+                                Flags="@_historySearchFlags" FlagsChanged="SetHistorySearchFlags" />
             <div class="ops-commit-list">
                 @if (FilteredHistory.Count > 0)
                 {
@@ -114,6 +118,8 @@
 @code {
     private SettingsRepositoryState? _repo;
     private string _historySearch = "";
+    private string _historySearchMode = "plain";
+    private string _historySearchFlags = "im";
     private string _commitMessage = "";
 
     protected override void OnInitialized() => Refresh();
@@ -122,6 +128,24 @@
 
     private void OnHistorySearchChanged(ChangeEventArgs e) => _historySearch = e.Value?.ToString() ?? "";
     private void OnCommitMessageChanged(ChangeEventArgs e) => _commitMessage = e.Value?.ToString() ?? "";
+
+    private Task SetHistorySearch(string value)
+    {
+        _historySearch = value;
+        return Task.CompletedTask;
+    }
+
+    private Task SetHistorySearchMode(string value)
+    {
+        _historySearchMode = value;
+        return Task.CompletedTask;
+    }
+
+    private Task SetHistorySearchFlags(string value)
+    {
+        _historySearchFlags = value;
+        return Task.CompletedTask;
+    }
 
     private void CommitNow()
     {
@@ -162,6 +186,27 @@
             if (string.IsNullOrWhiteSpace(_historySearch))
             {
                 return history;
+            }
+
+            if (string.Equals(_historySearchMode, "regex", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var options = RegexOptions.CultureInvariant;
+                    if (_historySearchFlags.Contains('i')) options |= RegexOptions.IgnoreCase;
+                    if (_historySearchFlags.Contains('m')) options |= RegexOptions.Multiline;
+                    if (_historySearchFlags.Contains('s')) options |= RegexOptions.Singleline;
+                    var regex = new Regex(_historySearch, options, TimeSpan.FromMilliseconds(100));
+                    return history.Where(commit => regex.IsMatch($"{commit.ShortHash} {commit.Timestamp} {commit.Message}")).ToArray();
+                }
+                catch (ArgumentException)
+                {
+                    return [];
+                }
+                catch (RegexMatchTimeoutException)
+                {
+                    return [];
+                }
             }
 
             var terms = _historySearch.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);

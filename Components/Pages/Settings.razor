@@ -1,4 +1,5 @@
 @page "/settings"
+@using System.Text.RegularExpressions
 @inject DefenderStateStore StateStore
 @inject AcDefenderService Defender
 @inject ISnackbar Snackbar
@@ -69,6 +70,9 @@
                           Label="Search settings"
                           Placeholder="Search settings (cooldown, walkback, upstairs, weather…)"
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Class="mt-1" />
+            <RegexSearchBuilder Id="settings-search" Value="@_settingsSearch" ValueChanged="SetSettingsSearch"
+                                Mode="@_settingsSearchMode" ModeChanged="SetSettingsSearchMode"
+                                Flags="@_settingsSearchFlags" FlagsChanged="SetSettingsSearchFlags" />
         </ChildContent>
     </SectionCard>
 
@@ -810,6 +814,9 @@
             <MudTextField @bind-Value="_scheduleSearch" Immediate="true" Clearable="true" Margin="Margin.Dense"
                           Label="Search schedule rules"
                           Placeholder="Search schedule rules" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Class="mb-2" />
+            <RegexSearchBuilder Id="schedule-search" Value="@_scheduleSearch" ValueChanged="SetScheduleSearch"
+                                Mode="@_scheduleSearchMode" ModeChanged="SetScheduleSearchMode"
+                                Flags="@_scheduleSearchFlags" FlagsChanged="SetScheduleSearchFlags" />
 
             @if (!FilteredSchedule.Any())
             {
@@ -1214,6 +1221,10 @@
     private string _presenceEntityIds = "";
     private readonly List<ScheduleEntry> _schedule = [];
     private string _scheduleSearch = "";
+    private string _settingsSearchMode = "plain";
+    private string _settingsSearchFlags = "im";
+    private string _scheduleSearchMode = "plain";
+    private string _scheduleSearchFlags = "im";
     private bool _dirty;
     private string _settingsStatus = "";
 
@@ -1221,13 +1232,15 @@
         ? "Unsaved changes"
         : string.IsNullOrWhiteSpace(_settingsStatus) ? "No changes saved yet" : _settingsStatus;
 
-    private bool Show(string keywords) => MatchesSettingsSearch(_settingsSearch, keywords);
+    private bool Show(string keywords) => MatchesSettingsSearch(_settingsSearch, _settingsSearchMode, _settingsSearchFlags, keywords);
 
     private bool IsSettingsSearchActive => !string.IsNullOrWhiteSpace(_settingsSearch);
 
     private IEnumerable<ScheduleEntry> FilteredSchedule =>
         _schedule.Where(entry => MatchesSettingsSearch(
             _scheduleSearch,
+            _scheduleSearchMode,
+            _scheduleSearchFlags,
             entry.Name,
             entry.Days,
             entry.StartTime,
@@ -1237,6 +1250,42 @@
             Summary(entry)));
 
     private string ScheduleResultText => $"{FilteredSchedule.Count()}/{_schedule.Count} rules";
+
+    private Task SetSettingsSearch(string value)
+    {
+        _settingsSearch = value;
+        return Task.CompletedTask;
+    }
+
+    private Task SetSettingsSearchMode(string value)
+    {
+        _settingsSearchMode = value;
+        return Task.CompletedTask;
+    }
+
+    private Task SetSettingsSearchFlags(string value)
+    {
+        _settingsSearchFlags = value;
+        return Task.CompletedTask;
+    }
+
+    private Task SetScheduleSearch(string value)
+    {
+        _scheduleSearch = value;
+        return Task.CompletedTask;
+    }
+
+    private Task SetScheduleSearchMode(string value)
+    {
+        _scheduleSearchMode = value;
+        return Task.CompletedTask;
+    }
+
+    private Task SetScheduleSearchFlags(string value)
+    {
+        _scheduleSearchFlags = value;
+        return Task.CompletedTask;
+    }
 
     protected override void OnInitialized()
     {
@@ -2017,8 +2066,30 @@
         return $"{(entry.Enabled ? "Active" : "Off")} / {dayText} / {entry.StartTime}-{entry.EndTime} / {entry.TargetTemperatureCelsius:0.0} C / {weather}";
     }
 
-    private static bool MatchesSettingsSearch(string search, params string[] values)
+    private static bool MatchesSettingsSearch(string search, string mode, string flags, params string[] values)
     {
+        if (string.Equals(mode, "regex", StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(search))
+        {
+            try
+            {
+                var options = RegexOptions.CultureInvariant;
+                if (flags.Contains('i')) options |= RegexOptions.IgnoreCase;
+                if (flags.Contains('m')) options |= RegexOptions.Multiline;
+                if (flags.Contains('s')) options |= RegexOptions.Singleline;
+                var regex = new Regex(search, options, TimeSpan.FromMilliseconds(100));
+                return values.Any(value => regex.IsMatch(value ?? string.Empty));
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return false;
+            }
+        }
+
         var terms = (search ?? string.Empty)
             .Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         return terms.Length == 0

@@ -1,0 +1,181 @@
+@using System.Text.RegularExpressions
+@inject IJSRuntime JS
+
+<div class="regex-search-builder">
+    <button type="button" class="regex-search-builder__toggle" @onclick="Toggle" aria-expanded="@_open" aria-controls="@BuilderId">
+        @(_open ? "Hide regex builder" : "Open regex builder")
+    </button>
+    @if (_open)
+    {
+        <section id="@BuilderId" class="regex-search-builder__panel" aria-label="Full regular expression builder">
+            <div class="regex-search-builder__grid">
+                <label>Mode
+                    <select value="@Mode" @onchange="OnModeChanged">
+                        <option value="plain">Plain text</option>
+                        <option value="regex">Regular expression</option>
+                    </select>
+                </label>
+                <label>Pattern
+                    <input value="@Value" @oninput="OnValueChanged" spellcheck="false" autocomplete="off" aria-describedby="@HelpId" />
+                </label>
+                <label>Flags
+                    <input value="@Flags" @oninput="OnFlagsChanged" spellcheck="false" autocomplete="off" placeholder="im" aria-describedby="@HelpId" />
+                </label>
+                <label>Sample text
+                    <input value="@_sample" @oninput="OnSampleChanged" spellcheck="false" autocomplete="off" />
+                </label>
+            </div>
+            <div class="regex-search-builder__guided">
+                <label>Guided block
+                    <select value="@_snippet" @onchange="OnSnippetChanged">
+                        <option value="">Choose a building block</option>
+                        <option value="literal">Literal text</option>
+                        <option value="class">Character class</option>
+                        <option value="anchor">Anchor</option>
+                        <option value="group">Capture group</option>
+                        <option value="alternate">Alternation</option>
+                        <option value="quantifier">Quantifier</option>
+                    </select>
+                </label>
+                <button type="button" class="regex-search-builder__button" @onclick="InsertSnippet" disabled="@string.IsNullOrWhiteSpace(_snippet)">Insert block</button>
+            </div>
+            <p id="@HelpId" class="regex-search-builder__help">Plain text is the default. Regex uses the .NET engine with a 100 ms timeout. Supported flags: <code>i</code> ignore case, <code>m</code> multiline, <code>s</code> singleline.</p>
+            <p class="regex-search-builder__status" role="status" aria-live="polite">@Status</p>
+            <div class="regex-search-builder__actions">
+                <button type="button" class="regex-search-builder__button" @onclick="UsePattern" disabled="@(!CanUsePattern)">Use pattern</button>
+                <button type="button" class="regex-search-builder__button" @onclick="CopyPattern">Copy pattern</button>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string Mode { get; set; } = "plain";
+    [Parameter] public EventCallback<string> ModeChanged { get; set; }
+    [Parameter] public string Flags { get; set; } = "im";
+    [Parameter] public EventCallback<string> FlagsChanged { get; set; }
+    [Parameter] public string? Id { get; set; }
+
+    private bool _open;
+    private string _sample = "sample settings text";
+    private string _snippet = "";
+    private string BuilderId => string.IsNullOrWhiteSpace(Id) ? "regex-search-builder" : $"{Id}-builder";
+    private string HelpId => $"{BuilderId}-help";
+    private bool IsRegex => string.Equals(Mode, "regex", StringComparison.OrdinalIgnoreCase);
+    private bool CanUsePattern => !string.IsNullOrWhiteSpace(Value) && (!IsRegex || TryBuildRegex(Value, Flags, out _));
+
+    private string Status
+    {
+        get
+        {
+            if (!IsRegex)
+            {
+                return string.IsNullOrWhiteSpace(Value) ? "Plain-text search is ready." : "Plain-text matching is active.";
+            }
+
+            if (string.IsNullOrWhiteSpace(Value))
+            {
+                return "Enter a pattern to validate it.";
+            }
+
+            if (!TryBuildRegex(Value, Flags, out var regex, out var error))
+            {
+                return $"Invalid regex: {error}";
+            }
+
+            try
+            {
+                var match = regex!.IsMatch(_sample);
+                return match ? "Valid .NET regex; sample text matches." : "Valid .NET regex; sample text has no match.";
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return "Regex evaluation timed out; simplify the pattern.";
+            }
+        }
+    }
+
+    private void Toggle() => _open = !_open;
+
+    private async Task OnValueChanged(ChangeEventArgs args)
+    {
+        await ValueChanged.InvokeAsync(args.Value?.ToString() ?? "");
+    }
+
+    private async Task OnModeChanged(ChangeEventArgs args)
+    {
+        await ModeChanged.InvokeAsync(args.Value?.ToString() == "regex" ? "regex" : "plain");
+    }
+
+    private async Task OnFlagsChanged(ChangeEventArgs args)
+    {
+        var flags = new string((args.Value?.ToString() ?? "").Where(character => character is 'i' or 'm' or 's').Distinct().ToArray());
+        await FlagsChanged.InvokeAsync(flags);
+    }
+
+    private void OnSampleChanged(ChangeEventArgs args) => _sample = args.Value?.ToString() ?? "";
+
+    private void OnSnippetChanged(ChangeEventArgs args) => _snippet = args.Value?.ToString() ?? "";
+
+    private async Task InsertSnippet()
+    {
+        var block = _snippet switch
+        {
+            "literal" => "text",
+            "class" => "[abc]",
+            "anchor" => "^text$",
+            "group" => "(text)",
+            "alternate" => "(one|two)",
+            "quantifier" => "text{1,3}",
+            _ => ""
+        };
+        if (!string.IsNullOrEmpty(block))
+        {
+            await ValueChanged.InvokeAsync(Value + block);
+        }
+    }
+
+    private async Task UsePattern()
+    {
+        if (CanUsePattern)
+        {
+            await ModeChanged.InvokeAsync("regex");
+        }
+    }
+
+    private async Task CopyPattern()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", Value);
+        }
+        catch (JSException)
+        {
+            // Clipboard permission is optional; the pattern remains visible and copyable.
+        }
+    }
+
+    private static bool TryBuildRegex(string pattern, string flags, out Regex? regex) => TryBuildRegex(pattern, flags, out regex, out _);
+
+    private static bool TryBuildRegex(string pattern, string flags, out Regex? regex, out string error)
+    {
+        try
+        {
+            var options = RegexOptions.CultureInvariant;
+            if (flags.Contains('i')) options |= RegexOptions.IgnoreCase;
+            if (flags.Contains('m')) options |= RegexOptions.Multiline;
+            if (flags.Contains('s')) options |= RegexOptions.Singleline;
+            regex = new Regex(pattern, options, TimeSpan.FromMilliseconds(100));
+            error = "";
+            return true;
+        }
+        catch (Exception ex) when (ex is ArgumentException or RegexParseException)
+        {
+            regex = null;
+            error = ex.Message;
+            return false;
+        }
+    }
+}
