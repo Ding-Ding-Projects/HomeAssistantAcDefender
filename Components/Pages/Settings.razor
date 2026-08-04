@@ -1244,6 +1244,16 @@
         LoadFromSnapshot(StateStore.GetSnapshot());
     }
 
+    protected override void OnParametersSet()
+    {
+        // Keep the selector in step with the top-bar switch when this page is clean. A
+        // pending thermostat edit owns the local form state until the user saves it.
+        if (!_dirty)
+        {
+            _uiLanguage = Lang.NormalizeMode(CascadingLangMode);
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender || _uiPreferencesLoaded)
