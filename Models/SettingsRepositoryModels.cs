@@ -29,7 +29,8 @@ public sealed record SettingsRepositoryCommit(
     string Hash,
     string ShortHash,
     string Timestamp,
-    string Message);
+    string Message,
+    string ParentHash = "");
 
 public sealed record SettingsRepositoryFileStatus(
     string Code,

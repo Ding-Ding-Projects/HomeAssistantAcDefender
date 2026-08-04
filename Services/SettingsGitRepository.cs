@@ -414,7 +414,7 @@ public sealed class SettingsGitRepository
             "log",
             $"--max-count={count}",
             "--date=iso-strict",
-            "--pretty=format:%H%x1f%h%x1f%ci%x1f%s",
+            "--pretty=format:%H%x1f%h%x1f%ci%x1f%s%x1f%P",
             "--",
             SettingsFileName);
 
@@ -427,7 +427,7 @@ public sealed class SettingsGitRepository
             .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(line => line.Split('\u001f'))
             .Where(parts => parts.Length >= 4)
-            .Select(parts => new SettingsRepositoryCommit(parts[0], parts[1], parts[2], parts[3]))
+            .Select(parts => new SettingsRepositoryCommit(parts[0], parts[1], parts[2], parts[3], parts.Length >= 5 ? parts[4] : ""))
             .ToArray();
     }
 

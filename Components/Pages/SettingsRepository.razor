@@ -3,6 +3,8 @@
 @using System.Text.RegularExpressions
 @inject DefenderStateStore StateStore
 @inject AcDefenderService Defender
+@inject SettingsRepositoryHistoryExportService ExportService
+@inject IJSRuntime JS
 @inject ISnackbar Snackbar
 
 <PageTitle>Settings Repository — SCP AC Defender</PageTitle>
@@ -31,6 +33,8 @@
         <div class="ops-repo-actions">
             <button class="ops-btn" @onclick="Refresh">⟳ REFRESH</button>
             <button class="ops-btn ops-btn--outline" @onclick="CommitNow">⇡ COMMIT SNAPSHOT</button>
+            <button class="ops-btn ops-btn--outline" disabled="@(_repo is null)" @onclick="ExportHistoryJson">⇩ EXPORT JSON</button>
+            <button class="ops-btn ops-btn--outline" disabled="@(_repo is null)" @onclick="ExportHistoryMarkdown">⇩ EXPORT MARKDOWN</button>
             <button class="ops-btn ops-btn--danger" disabled="@(!CanUndo)" @onclick="UndoLast">↺ UNDO LAST</button>
         </div>
     </div>
@@ -83,13 +87,52 @@
             <RegexSearchBuilder Id="history-search" Value="@_historySearch" ValueChanged="SetHistorySearch"
                                 Mode="@_historySearchMode" ModeChanged="SetHistorySearchMode"
                                 Flags="@_historySearchFlags" FlagsChanged="SetHistorySearchFlags" />
+            <div class="notification-history-date-filter" aria-label="Settings history date range filters">
+                <label>Start date (UTC, YYYY-MM-DD)
+                    <input class="ops-input" type="text" inputmode="numeric" value="@_startDate" @oninput="OnStartDateChanged" placeholder="YYYY-MM-DD" aria-label="Settings history start date in UTC" />
+                </label>
+                <label>End date (UTC, YYYY-MM-DD)
+                    <input class="ops-input" type="text" inputmode="numeric" value="@_endDate" @oninput="OnEndDateChanged" placeholder="YYYY-MM-DD" aria-label="Settings history end date in UTC" />
+                </label>
+                <label>Preset
+                    <select class="ops-input" value="@_datePreset" @onchange="OnDatePresetChanged" aria-label="Settings history date range preset">
+                        <option value="">All dates</option>
+                        <option value="today">Today</option>
+                        <option value="7d">Last 7 days</option>
+                        <option value="30d">Last 30 days</option>
+                        <option value="90d">Last 90 days</option>
+                        <option value="month">This month</option>
+                    </select>
+                </label>
+            </div>
+            @if (DateFilterError is not null)
+            {
+                <div class="notification-history-filter-error" role="alert">@DateFilterError</div>
+            }
+            @if (ActionKinds.Count > 0)
+            {
+                <fieldset class="notification-history-actions">
+                    <legend>Filter by history action (counts are derived from the stored Git history)</legend>
+                    @foreach (var action in ActionKinds)
+                    {
+                        <label class="notification-history-check">
+                            <input type="checkbox" checked="@_actionFilter.Contains(action)" @onchange="@(args => OnActionChanged(action, args))" />
+                            @action <span class="notification-history-action-count">(@ActionCounts[action])</span>
+                        </label>
+                    }
+                </fieldset>
+            }
             <div class="ops-commit-list">
                 @if (FilteredHistory.Count > 0)
                 {
                     @for (var i = 0; i < FilteredHistory.Count; i++)
                     {
                         var commit = FilteredHistory[i];
-                        var newest = i == 0 && string.IsNullOrWhiteSpace(_historySearch);
+                        var newest = i == 0
+                            && string.IsNullOrWhiteSpace(_historySearch)
+                            && string.IsNullOrWhiteSpace(_startDate)
+                            && string.IsNullOrWhiteSpace(_endDate)
+                            && _actionFilter.Count == 0;
                         <div class="@(newest ? "ops-commit-row ops-commit-row--newest" : "ops-commit-row")">
                             <div class="ops-commit-row__top">
                                 <span class="ops-commit-row__hash">@commit.ShortHash</span>
@@ -97,7 +140,7 @@
                                 <span class="ops-commit-row__when">@CommitWhen(commit)</span>
                             </div>
                             <div class="ops-commit-row__meta">
-                                settings.json snapshot
+                                settings.json snapshot · @SettingsRepositoryHistoryFilters.ActionFor(commit)
                                 @if (CanRestore)
                                 {
                                     <button class="ops-commit-row__restore" @onclick="@(() => Restore(commit))">↩ restore</button>
@@ -120,6 +163,10 @@
     private string _historySearch = "";
     private string _historySearchMode = "plain";
     private string _historySearchFlags = "im";
+    private string _startDate = "";
+    private string _endDate = "";
+    private string _datePreset = "";
+    private readonly HashSet<string> _actionFilter = new(StringComparer.OrdinalIgnoreCase);
     private string _commitMessage = "";
 
     protected override void OnInitialized() => Refresh();
@@ -128,6 +175,28 @@
 
     private void OnHistorySearchChanged(ChangeEventArgs e) => _historySearch = e.Value?.ToString() ?? "";
     private void OnCommitMessageChanged(ChangeEventArgs e) => _commitMessage = e.Value?.ToString() ?? "";
+    private void OnStartDateChanged(ChangeEventArgs e) { _startDate = e.Value?.ToString() ?? ""; _datePreset = ""; }
+    private void OnEndDateChanged(ChangeEventArgs e) { _endDate = e.Value?.ToString() ?? ""; _datePreset = ""; }
+
+    private void OnDatePresetChanged(ChangeEventArgs e)
+    {
+        _datePreset = e.Value?.ToString() ?? "";
+        (_startDate, _endDate) = SettingsRepositoryHistoryFilters.ResolvePreset(
+            _datePreset,
+            DateOnly.FromDateTime(DateTime.UtcNow));
+    }
+
+    private void OnActionChanged(string action, ChangeEventArgs e)
+    {
+        if (e.Value is bool selected && selected)
+        {
+            _actionFilter.Add(action);
+        }
+        else
+        {
+            _actionFilter.Remove(action);
+        }
+    }
 
     private Task SetHistorySearch(string value)
     {
@@ -178,46 +247,35 @@
     private void ShowResult(SettingsRepositoryActionResult result) =>
         Snackbar.Add(result.Message, result.Success ? Severity.Success : Severity.Warning);
 
-    private IReadOnlyList<SettingsRepositoryCommit> FilteredHistory
-    {
-        get
-        {
-            var history = _repo?.History ?? [];
-            if (string.IsNullOrWhiteSpace(_historySearch))
-            {
-                return history;
-            }
+    private IReadOnlyList<SettingsRepositoryCommit> CandidateHistory =>
+        SettingsRepositoryHistoryFilters.Filter(
+            _repo?.History ?? [],
+            "",
+            "plain",
+            "im",
+            [],
+            _startDate,
+            _endDate);
 
-            if (string.Equals(_historySearchMode, "regex", StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    var options = RegexOptions.CultureInvariant;
-                    if (_historySearchFlags.Contains('i')) options |= RegexOptions.IgnoreCase;
-                    if (_historySearchFlags.Contains('m')) options |= RegexOptions.Multiline;
-                    if (_historySearchFlags.Contains('s')) options |= RegexOptions.Singleline;
-                    var regex = new Regex(_historySearch, options, TimeSpan.FromMilliseconds(100));
-                    return history.Where(commit => regex.IsMatch($"{commit.ShortHash} {commit.Timestamp} {commit.Message}")).ToArray();
-                }
-                catch (ArgumentException)
-                {
-                    return [];
-                }
-                catch (RegexMatchTimeoutException)
-                {
-                    return [];
-                }
-            }
+    private IReadOnlyDictionary<string, int> ActionCounts =>
+        CandidateHistory
+            .GroupBy(SettingsRepositoryHistoryFilters.ActionFor, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
 
-            var terms = _historySearch.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-            return history
-                .Where(commit => terms.All(term =>
-                    commit.ShortHash.Contains(term, StringComparison.OrdinalIgnoreCase)
-                    || commit.Timestamp.Contains(term, StringComparison.OrdinalIgnoreCase)
-                    || commit.Message.Contains(term, StringComparison.OrdinalIgnoreCase)))
-                .ToArray();
-        }
-    }
+    private IReadOnlyList<string> ActionKinds =>
+        ActionCounts.Keys.OrderBy(action => action, StringComparer.OrdinalIgnoreCase).ToArray();
+
+    private IReadOnlyList<SettingsRepositoryCommit> FilteredHistory =>
+        SettingsRepositoryHistoryFilters.Filter(
+            _repo?.History ?? [],
+            _historySearch,
+            _historySearchMode,
+            _historySearchFlags,
+            _actionFilter,
+            _startDate,
+            _endDate);
+
+    private string? DateFilterError => SettingsRepositoryHistoryFilters.DateRangeError(_startDate, _endDate);
 
     private bool CanUndo => _repo is { Available: true, Initialized: true, Clean: true, History.Count: > 1 };
     private bool CanRestore => _repo is { Available: true, Initialized: true, Clean: true };
@@ -239,4 +297,45 @@
 
     private static string CommitWhen(SettingsRepositoryCommit commit) =>
         DateTimeOffset.TryParse(commit.Timestamp, out var parsed) ? Format.RelativeTime(parsed) : commit.Timestamp;
+
+    private Task ExportHistoryJson() => ExportHistoryAsync(
+        "json",
+        "application/json;charset=utf-8",
+        (commits, filters) => ExportService.ToJson(commits, filters));
+
+    private Task ExportHistoryMarkdown() => ExportHistoryAsync(
+        "md",
+        "text/markdown;charset=utf-8",
+        (commits, filters) => ExportService.ToMarkdown(commits, filters));
+
+    private async Task ExportHistoryAsync(
+        string extension,
+        string mimeType,
+        Func<IReadOnlyList<SettingsRepositoryCommit>, SettingsRepositoryHistoryExportFilters, byte[]> build)
+    {
+        var commits = FilteredHistory;
+        var filters = new SettingsRepositoryHistoryExportFilters(
+            _historySearch,
+            _historySearchMode,
+            _historySearchFlags,
+            _startDate,
+            _endDate,
+            _actionFilter.OrderBy(action => action, StringComparer.OrdinalIgnoreCase).ToArray());
+        try
+        {
+            var bytes = build(commits, filters);
+            var timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
+            var fileName = $"ac-defender-settings-history-{timestamp}.{extension}";
+            await JS.InvokeVoidAsync(
+                "acDefenderNotificationExport.downloadBase64",
+                fileName,
+                mimeType,
+                Convert.ToBase64String(bytes));
+            Snackbar.Add($"Exported {commits.Count} filtered settings commits as {extension.ToUpperInvariant()}.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Settings history export failed: {ex.Message}", Severity.Error, options => options.RequireInteraction = true);
+        }
+    }
 }
