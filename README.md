@@ -73,6 +73,8 @@ load the server image.
 | [App tabs](docs/wiki/App-tabs.md) | Persisted browser-style route tabs with keyboard navigation and overflow-safe scrolling |
 | [Changelog](docs/wiki/Changelog.md) | Every published version, date/regex filters, Markdown export, and commit traceability |
 | [Notification history](docs/wiki/Notification-history.md) | Review, dismiss, and restore activity notices without losing the audit trail |
+| [Appearance editor](docs/wiki/Appearance-editor.md) | Persisted light/dark theme, density, accent, CJK-safe typography, live preview, and reset |
+| [Dim-sum startup surprise](docs/wiki/Dim-sum-surprise.md) | One exact 10% post-boot delight using public catalog metadata and immutable photo URLs |
 | [API](docs/wiki/API.md) | JSON endpoints and the `/api/status/stream` SSE feed |
 | [Architecture](docs/wiki/Architecture.md) | How the code is put together |
 | [Deployment](docs/wiki/Deployment.md) | Docker, volumes, and the full environment-variable reference |
@@ -139,7 +141,13 @@ snapshot — no refreshing, ever:
 - **Release changelog** (`/changelog`) — every published version with date and regex filters,
   exact commit links, legacy-metadata warnings, and filtered Markdown export.
 - **Notification history** (`/notifications`, backed by `/api/notifications`) — authenticated
-  review, search, dismiss, and restore of real activity notices; it never invents thermostat state.
+  review, search, dismiss, restore, and local JSON/Markdown export of real activity notices; it
+  never invents thermostat state.
+- **Appearance editor** (`/settings`) — persisted light/dark theme, density, accent, CJK-safe
+  font family, bounded UI scale, live shell application, and reset without changing HVAC logic.
+- **Dim-sum startup surprise** — after boot, one fresh 10% draw may show a bilingual dish card
+  with accessible alt text and a public catalog photo; it is non-blocking, auto-dismisses, and
+  never vendors an image.
 - **Windows Electron controller** (`desktop-electron/`) — a separate Windows client for the
   hosted service. It signs in through the real `/login` flow, reads `/api/status`, and sends
   authenticated commands; defender logic remains on the server.

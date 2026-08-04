@@ -69,8 +69,8 @@ excluded because they do not represent project source lines. The report keeps a
 grand total of counted text beside the project total so those boundaries stay
 visible.
 
-The latest checked-in refresh at the `6cedbed` integration boundary reported
-370 counted text files, 69,384 total lines, and 62,028 non-blank lines. CI remains
+The latest checked-in refresh at the `cd5518e` integration boundary reported
+381 counted text files, 70,685 total lines, and 63,178 non-blank lines. CI remains
 the release record; this copy is only a handoff convenience and must be refreshed
 from the committed script after a later change.
 
