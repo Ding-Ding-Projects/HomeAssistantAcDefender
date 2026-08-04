@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const DEFAULT_BASE_URL = "http://127.0.0.1:8888";
 const CONFIG_VERSION = 1;
 const TAB_IDS = ["dashboard", "notifications", "settings"];
+const FONT_FAMILIES = ["Segoe UI Variable", "Segoe UI", "Arial", "Cascadia Code", "Consolas", "system-ui"];
 let mainWindow;
 let connection = { baseUrl: DEFAULT_BASE_URL, username: "", cookie: "" };
 let updateFeedUrl = "";
@@ -31,6 +32,9 @@ function readConfig() {
       funnyCantonese: clampFunny(raw.funnyCantonese),
       theme: raw.theme === "light" ? "light" : "dark",
       density: raw.density === "comfortable" ? "comfortable" : "compact",
+      accent: normalizeAccent(raw.accent),
+      fontFamily: normalizeFontFamily(raw.fontFamily),
+      fontScale: normalizeFontScale(raw.fontScale),
       updateFeedUrl: typeof raw.updateFeedUrl === "string" ? raw.updateFeedUrl : "",
       activeTab: TAB_IDS.includes(raw.activeTab) ? raw.activeTab : "dashboard",
       tabOrder: normalizeTabOrder(raw.tabOrder),
@@ -39,10 +43,24 @@ function readConfig() {
   } catch {
     return {
       baseUrl: DEFAULT_BASE_URL, username: "", password: "", remember: false,
-      language: "en", funnyEnglish: 2, funnyCantonese: 3, theme: "dark", density: "compact", updateFeedUrl: "",
+      language: "en", funnyEnglish: 2, funnyCantonese: 3, theme: "dark", density: "compact", accent: "#9de7c0", fontFamily: "Segoe UI Variable", fontScale: 1, updateFeedUrl: "",
       activeTab: "dashboard", tabOrder: TAB_IDS, tabAppearance: normalizeTabAppearance({})
     };
   }
+}
+
+function normalizeAccent(value) {
+  return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value : "#9de7c0";
+}
+
+function normalizeFontFamily(value) {
+  return typeof value === "string" && FONT_FAMILIES.includes(value) ? value : "Segoe UI Variable";
+}
+
+function normalizeFontScale(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 1;
+  return Math.round(Math.min(1.35, Math.max(0.85, n)) * 20) / 20;
 }
 
 function clampFunny(value) {
@@ -80,6 +98,9 @@ function saveConfig(partial) {
     funnyCantonese: clampFunny(next.funnyCantonese),
     theme: next.theme,
     density: next.density,
+    accent: normalizeAccent(next.accent),
+    fontFamily: normalizeFontFamily(next.fontFamily),
+    fontScale: normalizeFontScale(next.fontScale),
     updateFeedUrl: typeof next.updateFeedUrl === "string" ? next.updateFeedUrl : "",
     activeTab: TAB_IDS.includes(next.activeTab) ? next.activeTab : "dashboard",
     tabOrder: normalizeTabOrder(next.tabOrder),
