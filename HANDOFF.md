@@ -12,7 +12,12 @@ state.
 - `.github/workflows/release.yml` restores, builds, and runs the regression suite;
   creates a Docker image archive and checksum; counts lines with the committed
   script; resolves a public dim-sum code name without copying photos; and creates
-  an immutable release only after verification passes.
+  an immutable release only after verification passes. Its trigger covers every
+  branch push and manual dispatch while ignoring generated `v0.1.*` tag pushes,
+  preventing a release from recursively starting another release.
+- The Day Teet Hui landing page carries a pinned, version-labelled download link
+  for the verified `v0.1.876` Windows Setup.exe asset; newer installer versions
+  must replace it only after their own release verification passes.
 - `scripts/count_lines.py` is the reproducible line-count implementation used by
   CI and release notes.
 - `docs/wiki/release/` documents release artifacts, count boundaries, provenance,
@@ -64,8 +69,8 @@ From this checkout:
 python scripts/count_lines.py
 ```
 
-The script completed successfully at the `435767a` integration boundary and reported 393
-counted text files, 74,379 total lines, and 66,466 non-blank lines. The report
+The script completed successfully at the current release-workflow audit boundary and reported 393
+counted text files, 74,402 total lines, and 66,488 non-blank lines. The report
 also listed 38 tracked binary/non-text files and the excluded build/runtime/vendor
  directories. The Electron controller's 86,642-byte icon is binary and is not
 inflated into the source-line total.
