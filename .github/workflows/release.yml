@@ -1,0 +1,150 @@
+name: Verify and publish release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Use the narrowest available token without putting credentials in logs.
+  GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.ORG_TOKEN || secrets.GITHUB_TOKEN }}
+
+jobs:
+  verify-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the exact release commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore application and regression suite
+        run: dotnet restore HomeAssistantAcDefender.Tests/HomeAssistantAcDefender.Tests.csproj
+
+      - name: Build application and regression suite
+        run: dotnet build HomeAssistantAcDefender.Tests/HomeAssistantAcDefender.Tests.csproj --configuration Release --no-restore
+
+      - name: Run regression suite
+        run: dotnet run --project HomeAssistantAcDefender.Tests/HomeAssistantAcDefender.Tests.csproj --configuration Release --no-build
+
+      - name: Build the installable Docker image
+        env:
+          IMAGE_TAG: ac-defender:${{ github.sha }}
+        run: |
+          set -euo pipefail
+          docker build --label org.opencontainers.image.revision="${GITHUB_SHA}" --tag "${IMAGE_TAG}" .
+          mkdir -p release-assets
+          docker save "${IMAGE_TAG}" | gzip -9 > "release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz"
+          sha256sum "release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz" > "release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz.sha256"
+
+      - name: Count surviving project lines
+        run: python3 scripts/count_lines.py > release-assets/line-count.md
+
+      - name: Resolve an unused public dim-sum code name
+        id: dimsum
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --retry 3 --retry-delay 2 --silent --show-error \
+            https://raw.githubusercontent.com/Ding-Ding-Projects/dim-sum-photos/main/catalog/index.json \
+            -o /tmp/dim-sum-catalog.json
+          gh api --paginate --slurp 'repos/Ding-Ding-Projects/dim-sum-photos/releases?per_page=100' > /tmp/dim-sum-releases.json
+          gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases?per_page=100" > /tmp/project-releases.json
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import PurePosixPath
+
+          catalog = json.load(open('/tmp/dim-sum-catalog.json', encoding='utf-8'))
+          def flatten(payload):
+              return [item for page in payload for item in page] if payload and isinstance(payload[0], list) else payload
+          releases = flatten(json.load(open('/tmp/dim-sum-releases.json', encoding='utf-8')))
+          project_releases = flatten(json.load(open('/tmp/project-releases.json', encoding='utf-8')))
+          published_assets = {
+              asset['name']
+              for release in releases
+              if str(release.get('tag_name', '')).startswith('catalog-v1')
+              for asset in release.get('assets', [])
+          }
+          used = '\n'.join(release.get('body') or '' for release in project_releases)
+          for dish in catalog.get('dishes', []):
+              image = dish.get('image') or {}
+              asset_name = PurePosixPath(image.get('path', '')).name
+              if not asset_name or asset_name not in published_assets:
+                  continue
+              en = (dish.get('name') or {}).get('en')
+              zh = (dish.get('name') or {}).get('zhHant')
+              if not en or not zh:
+                  continue
+              code_name = f'{en} · {zh}'
+              if code_name in used:
+                  continue
+              tag = next(
+                  release['tag_name']
+                  for release in releases
+                  if str(release.get('tag_name', '')).startswith('catalog-v1')
+                  and any(asset.get('name') == asset_name for asset in release.get('assets', []))
+              )
+              url = f'https://github.com/Ding-Ding-Projects/dim-sum-photos/releases/download/{tag}/{asset_name}'
+              with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+                  output.write(f'name={code_name}\n')
+                  output.write(f'photo_url={url}\n')
+              break
+          else:
+              with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+                  output.write('name=No public code name resolved\n')
+                  output.write('photo_url=\n')
+          PY
+
+      - name: Create the immutable GitHub release
+        shell: bash
+        env:
+          RELEASE_TAG: v0.1.${{ github.run_number }}
+          DIM_SUM_NAME: ${{ steps.dimsum.outputs.name }}
+          DIM_SUM_PHOTO_URL: ${{ steps.dimsum.outputs.photo_url }}
+        run: |
+          set -euo pipefail
+          {
+            echo "# Home Assistant AC Defender ${RELEASE_TAG}"
+            echo
+            echo "Verified from commit \`${GITHUB_SHA}\`. The Docker image archive is the installable artifact for this server application; decompress it with \`gunzip ac-defender-docker-${GITHUB_SHA}.tar.gz\` and load it with \`docker load --input ac-defender-docker-${GITHUB_SHA}.tar\`, then run it with the documented Compose configuration."
+            echo
+            echo "## Release code name"
+            echo
+            echo "**${DIM_SUM_NAME}**"
+            if [[ -n "${DIM_SUM_PHOTO_URL}" ]]; then
+              echo
+              echo "[Public catalog photo](${DIM_SUM_PHOTO_URL}) (linked, never copied into this repository)."
+            else
+              echo
+              echo "No unused public photo was available at release time; the software release is not blocked by catalog availability."
+            fi
+            echo
+            echo "## CI line-count report"
+            cat release-assets/line-count.md
+            echo
+            echo "## Checks"
+            echo
+            echo "- \`dotnet build HomeAssistantAcDefender.Tests/HomeAssistantAcDefender.Tests.csproj --configuration Release\`"
+            echo "- Regression suite: passed in this workflow before publication."
+            echo "- Docker image: built from this commit and archived as \`ac-defender-docker-${GITHUB_SHA}.tar.gz\`."
+          } > release-assets/release-notes.md
+          gh release create "${RELEASE_TAG}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "Home Assistant AC Defender ${RELEASE_TAG} — ${DIM_SUM_NAME}" \
+            --notes-file release-assets/release-notes.md \
+            release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz \
+            release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz.sha256

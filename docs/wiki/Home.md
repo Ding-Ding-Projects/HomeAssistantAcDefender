@@ -28,6 +28,7 @@ Assistant climate entity or returns a real error.
 | **[API](API.html)** | The JSON endpoints and SSE stream |
 | **[Architecture](Architecture.html)** | How the code is put together |
 | **[Deployment](Deployment.html)** | Docker hosting |
+| **[Release operations](release/README.html)** | CI verification, Docker release archives, checksums, and line-count reports |
 
 ## The big ideas
 
