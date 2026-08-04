@@ -195,6 +195,8 @@
 
 @code {
     private bool _isDarkMode = true;
+    private DotNetObjectReference<MainLayout>? _appearanceReference;
+    private int _appearanceSubscriptionId;
     private string _clockText = "--:--:--";
     private System.Threading.Timer? _clock;
     private int _bootStep;
@@ -552,7 +554,9 @@
         _isDarkMode = !_isDarkMode;
         try
         {
-            await JS.InvokeVoidAsync("localStorage.setItem", "ac-defender-theme", _isDarkMode ? "dark" : "light");
+            var appearance = AppearancePreferences.Normalize(await JS.InvokeAsync<AppearancePreferences?>("acAppearance.read"));
+            appearance.Theme = _isDarkMode ? "dark" : "light";
+            await JS.InvokeVoidAsync("acAppearance.save", appearance);
         }
         catch
         {
@@ -670,11 +674,10 @@
 
         try
         {
-            var savedTheme = await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-theme");
-            if (!string.IsNullOrWhiteSpace(savedTheme))
-            {
-                _isDarkMode = string.Equals(savedTheme, "dark", StringComparison.OrdinalIgnoreCase);
-            }
+            var appearance = AppearancePreferences.Normalize(await JS.InvokeAsync<AppearancePreferences?>("acAppearance.read"));
+            _isDarkMode = string.Equals(appearance.Theme, "dark", StringComparison.Ordinal);
+            _appearanceReference = DotNetObjectReference.Create(this);
+            _appearanceSubscriptionId = await JS.InvokeAsync<int>("acAppearance.subscribe", _appearanceReference);
 
             var savedLang = await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-lang");
             if (!string.IsNullOrWhiteSpace(savedLang))
@@ -709,6 +712,13 @@
         catch
         {
         }
+    }
+
+    [JSInvokable]
+    public Task OnAppearanceChanged(AppearancePreferences preferences)
+    {
+        _isDarkMode = string.Equals(AppearancePreferences.Normalize(preferences).Theme, "dark", StringComparison.Ordinal);
+        return InvokeAsync(StateHasChanged);
     }
 
     private void TickClock()
@@ -774,5 +784,11 @@
         State.Changed -= OnStateChanged;
         Nav.LocationChanged -= OnLocationChanged;
         _clock?.Dispose();
+        if (_appearanceSubscriptionId != 0)
+        {
+            _ = JS.InvokeVoidAsync("acAppearance.unsubscribe", _appearanceSubscriptionId);
+        }
+
+        _appearanceReference?.Dispose();
     }
 }
