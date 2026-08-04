@@ -33,6 +33,11 @@ does not log request bodies, tokens, or passwords.
   downloads an arbitrary URL, or executes an unverified installer. Only the `update-downloaded`
   event creates the non-blocking **Restart to install update** banner, and installation runs only
   after the user presses that action.
+- Every controller search surface (Settings, Notifications, and the `Ctrl+Shift+F` command palette)
+  has its own anchored regex builder. It is plain-text-first, with guided literal/class/anchor/
+  group/alternation/quantifier blocks, a bounded raw pattern and flags editor, sample text, syntax
+  feedback, live matches and capture groups, plus copy and **Use in search** actions. Patterns are
+  evaluated locally in the renderer and are never sent to the defender API.
 
 Errors from the host are shown as errors. A disconnected or unavailable API never produces a
 made-up temperature, HVAC state, success message, or fallback command.
