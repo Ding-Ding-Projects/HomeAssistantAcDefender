@@ -6,7 +6,7 @@ The CI and documentation audit is intentionally limited to workflow files,
 release tooling, and documentation. No `Components/`, `Services/`, or other
 runtime control code was changed here.
 
-## Change set awaiting integration
+## CI and documentation slice
 
 - `.github/workflows/release.yml` restores, builds, and runs the regression suite;
   creates a Docker image archive and checksum; counts lines with the committed
@@ -33,10 +33,10 @@ directories. No Docker build or deployment was run from this docs-only branch.
 
 ## Integration and deployment notes
 
-The parent task should merge this branch into the default branch, run the full
-`dotnet build` and browser checks required by `AGENTS.md`, then let the release
-workflow create its first verified release. Only after that remote evidence is
-available should the Docker Compose stack be rebuilt on the deployment host.
+After this slice is integrated into the default branch, run the full `dotnet
+build` and browser checks required by `AGENTS.md`, then let the release workflow
+create its first verified release. Only after that remote evidence is available
+should the Docker Compose stack be rebuilt on the deployment host.
 Keep `.env`, `App_Data`, access tokens, and host state outside Git.
 
 ## Open issues
