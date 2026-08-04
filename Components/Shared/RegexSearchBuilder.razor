@@ -16,7 +16,7 @@
                     </select>
                 </label>
                 <label>Pattern
-                    <input value="@Value" @oninput="OnValueChanged" spellcheck="false" autocomplete="off" aria-describedby="@HelpId" />
+                    <input value="@Value" @oninput="OnValueChanged" spellcheck="false" autocomplete="off" maxlength="@RegexSearchMatcher.MaxPatternLength" aria-describedby="@HelpId" />
                 </label>
                 <label>Flags
                     <input value="@Flags" @oninput="OnFlagsChanged" spellcheck="false" autocomplete="off" placeholder="im" aria-describedby="@HelpId" />
@@ -39,7 +39,7 @@
                 </label>
                 <button type="button" class="regex-search-builder__button" @onclick="InsertSnippet" disabled="@string.IsNullOrWhiteSpace(_snippet)">Insert block</button>
             </div>
-            <p id="@HelpId" class="regex-search-builder__help">Plain text is the default. Regex uses the .NET engine with a 100 ms timeout. Supported flags: <code>i</code> ignore case, <code>m</code> multiline, <code>s</code> singleline.</p>
+            <p id="@HelpId" class="regex-search-builder__help">Plain text is the default. Regex uses the .NET engine with a 100 ms timeout and a @RegexSearchMatcher.MaxPatternLength-character pattern limit. Supported flags: <code>i</code> ignore case, <code>m</code> multiline, <code>s</code> singleline.</p>
             <p class="regex-search-builder__status" role="status" aria-live="polite">@Status</p>
             <div class="regex-search-builder__actions">
                 <button type="button" class="regex-search-builder__button" @onclick="UsePattern" disabled="@(!CanUsePattern)">Use pattern</button>
@@ -64,7 +64,7 @@
     private string BuilderId => string.IsNullOrWhiteSpace(Id) ? "regex-search-builder" : $"{Id}-builder";
     private string HelpId => $"{BuilderId}-help";
     private bool IsRegex => string.Equals(Mode, "regex", StringComparison.OrdinalIgnoreCase);
-    private bool CanUsePattern => !string.IsNullOrWhiteSpace(Value) && (!IsRegex || TryBuildRegex(Value, Flags, out _));
+    private bool CanUsePattern => !string.IsNullOrWhiteSpace(Value) && (!IsRegex || RegexSearchMatcher.TryBuild(Value, Flags, out _));
 
     private string Status
     {
@@ -78,6 +78,11 @@
             if (string.IsNullOrWhiteSpace(Value))
             {
                 return "Enter a pattern to validate it.";
+            }
+
+            if (Value.Length > RegexSearchMatcher.MaxPatternLength)
+            {
+                return $"Pattern is limited to {RegexSearchMatcher.MaxPatternLength} characters.";
             }
 
             if (!TryBuildRegex(Value, Flags, out var regex, out var error))
