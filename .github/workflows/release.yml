@@ -2,6 +2,13 @@ name: Verify and publish release
 
 on:
   push:
+    # Release publication creates a v0.1.* tag. Ignore those generated tag
+    # pushes so one verified release cannot recursively start another release.
+    # All branch pushes still run the verification and publication pipeline.
+    branches:
+      - '**'
+    tags-ignore:
+      - 'v0.1.*'
   workflow_dispatch:
 
 permissions:

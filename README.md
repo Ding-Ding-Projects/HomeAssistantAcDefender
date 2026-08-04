@@ -52,12 +52,14 @@ The full documentation lives in the **[wiki](docs/wiki/Home.md)** — start with
 anyone can follow.
 
 The [GitHub Pages landing page](https://ding-ding-projects.github.io/HomeAssistantAcDefender/)
-is built from `docs/` on every documentation change. Verified pushes to `master` also run the
-release workflow: it builds the regression suite and Docker image, publishes an immutable
+is built from `docs/` on every documentation change. Every branch push and manual dispatch run
+the release workflow: it builds the regression suite and Docker image, publishes an immutable
 release with the image archive and checksum, and records the CI-generated line-count table.
 It also builds the separate Windows controller with Squirrel.Windows and attaches its Setup.exe,
 `.nupkg`, and `RELEASES` update-feed artifacts after static and non-empty-file checks. Release
-notes include measured workflow start, completion, and duration values. The [release and
+notes include measured workflow start, completion, and duration values. The workflow ignores
+its generated `v0.1.*` tag pushes so release publication cannot recursively create more releases.
+The [release and
 line-count guide](docs/wiki/release/line-counts.md) explains the artifact boundaries and how to
 load the server image.
 

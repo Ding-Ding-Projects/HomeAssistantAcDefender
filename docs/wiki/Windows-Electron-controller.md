@@ -56,6 +56,11 @@ them. A Lowlevel headless Windows launch also verified the branded frameless tit
 loopback sign-in field. Opening the installer and enabling a signed background update feed remain
 separate gates and must not be described as passed until their corresponding evidence exists.
 
+The landing page exposes the exact verified installer asset from release `v0.1.876`:
+[Download the Windows controller v0.1.876 Setup.exe](https://github.com/Ding-Ding-Projects/HomeAssistantAcDefender/releases/download/v0.1.876/AC.Defender.Controller.Setup.0.1.0.exe).
+The link names its version and platform and is intentionally pinned to that immutable release
+asset; it is not a claim that a newer release has passed the installer gate.
+
 ## Suggested articles
 
 - [API](API.md) — the authenticated service routes used by the controller.

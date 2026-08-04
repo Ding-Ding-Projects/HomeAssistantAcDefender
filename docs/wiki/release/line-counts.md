@@ -7,10 +7,13 @@ title: "Line counts and release archives"
 
 ## What CI publishes
 
-Every push to `master` and every manual release dispatch runs the verification
+Every branch push and every manual release dispatch runs the verification
 workflow. It restores and builds the application and regression suite, runs the
 real Home Assistant HTTP regression checks, builds the Docker image from that
 same commit, and publishes an immutable release only after those checks pass.
+The workflow ignores its own generated `v0.1.*` tag pushes; this guard prevents
+release publication from recursively starting another release while keeping
+ordinary branch pushes covered.
 
 The release includes:
 
@@ -69,8 +72,8 @@ excluded because they do not represent project source lines. The report keeps a
 grand total of counted text beside the project total so those boundaries stay
 visible.
 
-The latest checked-in refresh at the `435767a` integration boundary reported
-393 counted text files, 74,379 total lines, and 66,466 non-blank lines. CI remains
+The latest checked-in refresh at the current release-workflow audit boundary reported
+393 counted text files, 74,397 total lines, and 66,483 non-blank lines. CI remains
 the release record; this copy is only a handoff convenience and must be refreshed
 from the committed script after a later change.
 
