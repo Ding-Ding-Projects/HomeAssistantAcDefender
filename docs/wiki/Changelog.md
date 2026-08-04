@@ -17,6 +17,10 @@ in the HomeAssistantAcDefender repository. The committed catalog is regenerated 
 current published non-draft release API before a release build, so the viewer stays current
 without reaching the network at runtime.
 
+At this 2026-08-04 regeneration checkpoint, 220 unique published tags were visible. Releases
+published after the query are intentionally outside this immutable snapshot and are included
+by the next catalog regeneration.
+
 Some historical releases reuse a dim-sum code name or completing SHA because that is what
 their published metadata says. Those entries are marked as legacy metadata in the viewer and
 Markdown export; the app preserves the exact tag, date, name, and SHA instead of silently
