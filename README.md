@@ -72,11 +72,12 @@ load the server image.
 | [Defender Logic](docs/wiki/Defender-Logic.md) | The decision cycle and every guard's exact rules |
 | [Settings](docs/wiki/Settings.md) | Every knob on the Settings page |
 | [Command palette](docs/wiki/Command-palette.md) | `Ctrl+Shift+F` keyboard navigation to every real app area |
+| [Regex search builder](docs/wiki/Regex-search.md) | Bounded plain-text and opt-in .NET regex search on core navigation surfaces |
 | [App tabs](docs/wiki/App-tabs.md) | Persisted browser-style route tabs with keyboard navigation and overflow-safe scrolling |
 | [Changelog](docs/wiki/Changelog.md) | Every published version, date/regex filters, Markdown export, and commit traceability |
 | [Notification history](docs/wiki/Notification-history.md) | Review, dismiss, and restore activity notices without losing the audit trail |
 | [Thermostat OFF super-confirmation](docs/wiki/Super-confirmation.md) | Native two-key, full-slider gate for the real destructive OFF command |
-| [Appearance editor](docs/wiki/Appearance-editor.md) | Persisted light/dark theme, density, accent, CJK-safe typography, live preview, and reset |
+| [Appearance editor](docs/wiki/Appearance-editor.md) | Persisted theme, density, HEX/RGB/HSL/alpha color translation, contrast readouts, CJK-safe typography, live preview, and reset |
 | [Dim-sum startup surprise](docs/wiki/Dim-sum-surprise.md) | One exact 10% post-boot delight using public catalog metadata and immutable photo URLs |
 | [API](docs/wiki/API.md) | JSON endpoints and the `/api/status/stream` SSE feed |
 | [Architecture](docs/wiki/Architecture.md) | How the code is put together |
@@ -141,7 +142,10 @@ snapshot — no refreshing, ever:
   bypassing authentication or thermostat safety gates.
 - **Open tabs** — persisted browser-style route tabs complement the full rail, keep the active
   route visible through overflow, expose arrow/Home/End keyboard navigation, and support a stable
-  pinned region plus bounded local group labels.
+  pinned region plus bounded local group labels, four independent searches, and protected
+  containing/inverse bulk-close previews.
+- **Regex search builder** — plain text remains the default while the command palette, Defense
+  roster, and Field Manual expose bounded local .NET regex builders with timeout protection.
 - **Release changelog** (`/changelog`) — every published version with date and regex filters,
   exact commit links, legacy-metadata warnings, and filtered Markdown export.
 - **Notification history** (`/notifications`, backed by `/api/notifications`) — authenticated

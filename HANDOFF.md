@@ -12,7 +12,12 @@ state.
 - `.github/workflows/release.yml` restores, builds, and runs the regression suite;
   creates a Docker image archive and checksum; counts lines with the committed
   script; resolves a public dim-sum code name without copying photos; and creates
-  an immutable release only after verification passes.
+  an immutable release only after verification passes. Its trigger covers every
+  branch push and manual dispatch while ignoring generated `v0.1.*` tag pushes,
+  preventing a release from recursively starting another release.
+- The Day Teet Hui landing page carries a pinned, version-labelled download link
+  for the verified `v0.1.876` Windows Setup.exe asset; newer installer versions
+  must replace it only after their own release verification passes.
 - `scripts/count_lines.py` is the reproducible line-count implementation used by
   CI and release notes.
 - `docs/wiki/release/` documents release artifacts, count boundaries, provenance,
@@ -28,6 +33,10 @@ state.
   `.nupkg`, and `RELEASES` feed under `desktop-electron/dist/squirrel-windows`.
   Keep this verification boundary explicit until a Windows packaging host opens the real
   installer and a signed background update feed plus restart banner are verified.
+- The update contract rejects non-HTTPS, credential-bearing, query-bearing, fragment-bearing,
+  and GitHub Pages feed URLs; it bounds and validates the direct RELEASES manifest before
+  Electron asks Squirrel.Windows to check for updates. Local packaging is unsigned until a
+  private signing certificate is supplied.
 - The controller uses a frameless Material title bar with real minimize, maximize,
   and close IPC controls. Headless packaged-app capture verified the branded frame.
 - Dashboard, Notifications, and Settings are persisted browser-style tabs with
@@ -37,14 +46,20 @@ state.
 - Settings, schedule rules, settings-repository history, documentation search, and
   changelog search each expose a full anchored regex builder with plain text as the
   default and a bounded .NET/browser engine as documented.
+- The command palette, Defense roster, and Field Manual now also expose anchored regex
+  builders with the same 512-character / 100 ms local matcher bounds. Their regex mode is
+  opt-in and plain text remains the default.
 - The server tab strip persists pinned order and bounded local group labels while preserving
-  the older localStorage format. Remaining global-memory tab work includes four-way search and
-  bulk-close actions.
+  the older localStorage format. It now provides four independent tab searches and containing
+  or inverse bulk-close previews with pinned, active, and command-tab protection.
 - Dashboard and Controls route real thermostat OFF actions through the native two-key/full-slider
   super-confirmation with Emergency exit, Escape, focus return, reduced-motion handling, and no
   fake Home Assistant state.
 - Notification history now composes regex search with typed UTC date windows, Today/7d/30d
   presets, journal-derived action counts, validated API bounds, and filter-complete exports.
+- Appearance settings now persist a bounded HEX/RGB/HSL/alpha translator, WCAG contrast
+  readouts, and scoped shell/header/rail/main accent targets. Word-depth typography,
+  advanced color spaces, and per-control editors remain explicitly documented follow-up work.
 
 ## Changelog viewer
 
@@ -64,8 +79,8 @@ From this checkout:
 python scripts/count_lines.py
 ```
 
-The script completed successfully at the current release-workflow audit boundary and reported 393
-counted text files, 74,397 total lines, and 66,483 non-blank lines. The report
+The script completed successfully at the `pending documentation refresh` integration boundary and reported 398
+counted text files, 74,777 total lines, and 66,810 non-blank lines. The report
 also listed 38 tracked binary/non-text files and the excluded build/runtime/vendor
  directories. The Electron controller's 86,642-byte icon is binary and is not
 inflated into the source-line total.

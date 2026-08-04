@@ -74,8 +74,8 @@ excluded because they do not represent project source lines. The report keeps a
 grand total of counted text beside the project total so those boundaries stay
 visible.
 
-The latest checked-in refresh at the current release-workflow audit boundary reported
-393 counted text files, 74,397 total lines, and 66,483 non-blank lines. CI remains
+The latest checked-in refresh at the `pending documentation refresh` integration boundary reported
+398 counted text files, 74,777 total lines, and 66,810 non-blank lines. CI remains
 the release record; this copy is only a handoff convenience and must be refreshed
 from the committed script after a later change.
 
