@@ -70,6 +70,7 @@ load the server image.
 | [Defender Logic](docs/wiki/Defender-Logic.md) | The decision cycle and every guard's exact rules |
 | [Settings](docs/wiki/Settings.md) | Every knob on the Settings page |
 | [Command palette](docs/wiki/Command-palette.md) | `Ctrl+Shift+F` keyboard navigation to every real app area |
+| [Changelog](docs/wiki/Changelog.md) | Every published version, date/regex filters, Markdown export, and commit traceability |
 | [Notification history](docs/wiki/Notification-history.md) | Review, dismiss, and restore activity notices without losing the audit trail |
 | [API](docs/wiki/API.md) | JSON endpoints and the `/api/status/stream` SSE feed |
 | [Architecture](docs/wiki/Architecture.md) | How the code is put together |
@@ -132,6 +133,8 @@ snapshot — no refreshing, ever:
   the schedule editor.
 - **Command palette** (`Ctrl+Shift+F`) — keyboard navigation to each real destination without
   bypassing authentication or thermostat safety gates.
+- **Release changelog** (`/changelog`) — every published version with date and regex filters,
+  exact commit links, legacy-metadata warnings, and filtered Markdown export.
 - **Notification history** (`/api/notifications`) — authenticated review and restore of real
   activity notices; it never invents thermostat state.
 - **Windows Electron controller** (`desktop-electron/`) — a separate Windows client for the
