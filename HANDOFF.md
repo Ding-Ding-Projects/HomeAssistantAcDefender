@@ -52,6 +52,11 @@ state.
 - The server tab strip persists pinned order and bounded local group labels while preserving
   the older localStorage format. It now provides four independent tab searches and containing
   or inverse bulk-close previews with pinned, active, and command-tab protection.
+- The signed-in shell now owns right-click context menus for tabs, groups, controls, cards,
+  navigation targets, and page surfaces. `Shift+F10` opens the focused target menu, `Shift+Alt+A`
+  opens appearance editing, and a cancelled-motion 620 ms touch/pen long press edits mobile tabs.
+  Each menu has its own bounded regex builder, opaque scrollable surface, and repeated tab-close
+  protection at execution time.
 - Dashboard and Controls route real thermostat OFF actions through the native two-key/full-slider
   super-confirmation with Emergency exit, Escape, focus return, reduced-motion handling, and no
   fake Home Assistant state.

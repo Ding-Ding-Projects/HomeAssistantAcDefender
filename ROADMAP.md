@@ -17,6 +17,8 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
       documentation, configuration, and exclusion rows.
 - [x] Link a verified public dim-sum catalog photo when selecting a release code name;
       keep the photo outside this repository.
+- [x] Provide searchable application-owned context menus across signed-in surfaces, with
+      `Shift+F10`, truthful shortcut labels, and mobile press-and-hold tab editing.
 - [ ] Re-run browser checks on the dashboard, Defense, Energy, Settings, and
       narrow layouts for each user-facing change.
 - [ ] Re-deploy the verified default-branch commit to the production Docker host
