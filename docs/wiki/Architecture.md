@@ -102,3 +102,18 @@ Alectra Peak Power Saver is another persisted `DefenderStateStore` timing guard 
 The Energy page is a read-only MudBlazor view over `HomeAssistantClient.GetLiveUsageAsync` and `GetUsageHistoryAsync`. Its Alectra Hui tabs, search, filters, tables, and charts do not call thermostat command APIs.
 
 Front-door Guard Post is a real detector kill switch. `HomeAssistantClient` reads configured front-door person detector entities, or auto-discovers likely `binary_sensor`/`sensor` entities whose names look like front-door, porch, entry, or entrance person detection. `AcDefenderService` checks it immediately after real thermostat and detector refreshes. If any detector reports a person, `DefenderStateStore` pauses the defender and the worker sends `climate.set_hvac_mode` `off` when enabled. The off command is tagged as `front-door-kill-switch`, so a later Home Assistant state echo is not logged as a wall-control touch.
+
+## Failure modes
+
+If **Architecture** cannot obtain one of its required real inputs, it reports a blocked, held, or unavailable result and leaves the background worker's Home Assistant refresh running. It never fills a missing room reading, audit event, weather sample, usage value, or device state with a simulator value. If a real Home Assistant command is rejected, the user sees the service's actual error and the article's surface remains available for recovery.
+## Security considerations
+
+This feature consumes only the configured Home Assistant entity data, local settings, and the audit context named above. Tokens and credentials stay in the server environment; the static documentation site does not collect analytics, transmit search text, or embed third-party assets. Logs and exports should be reviewed before sharing because real entity names and timestamps can identify a household.
+## Verification
+
+Verify the shipped behavior at the feature's live page or endpoint, then run the repository's documented build and test commands. Confirm the real-input and real-error paths, keyboard access, reduced-motion behavior, and a 390 px viewport without horizontal overflow. Record the exact commit and workflow result when publishing a release; a static screenshot alone is not proof of a live Home Assistant command.
+## Suggested articles
+
+- [Feature briefs](Feature-briefs.html) — find every documented surface and guard.
+- [Defender Logic](Defender-Logic.html) — follow the complete decision cycle and its bypass rules.
+- [Settings](Settings.html) — inspect persisted configuration, language modes, and safety limits.

@@ -35,6 +35,16 @@ thermostat control path.
 
 ## Suggested articles
 
-- [Settings repository](Settings.md) — local Git-backed settings history.
-- [API](API.md) — authenticated real-device endpoints.
-- [Website tour](Website-Tour.md) — the full navigation map.
+- [Settings repository](Settings-history-filters.html) — local Git-backed settings history.
+- [API](API.html) — authenticated real-device endpoints.
+- [Website tour](Website-Tour.html) — the full navigation map.
+
+## Failure modes
+
+If **Command palette** cannot obtain one of its required real inputs, it reports a blocked, held, or unavailable result and leaves the background worker's Home Assistant refresh running. It never fills a missing room reading, audit event, weather sample, usage value, or device state with a simulator value. If a real Home Assistant command is rejected, the user sees the service's actual error and the article's surface remains available for recovery.
+## Security considerations
+
+This feature consumes only the configured Home Assistant entity data, local settings, and the audit context named above. Tokens and credentials stay in the server environment; the static documentation site does not collect analytics, transmit search text, or embed third-party assets. Logs and exports should be reviewed before sharing because real entity names and timestamps can identify a household.
+## Verification
+
+Verify the shipped behavior at the feature's live page or endpoint, then run the repository's documented build and test commands. Confirm the real-input and real-error paths, keyboard access, reduced-motion behavior, and a 390 px viewport without horizontal overflow. Record the exact commit and workflow result when publishing a release; a static screenshot alone is not proof of a live Home Assistant command.

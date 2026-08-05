@@ -52,6 +52,62 @@
   .skip-link:focus { transform: translateY(0); }
   .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
 
+  .dispatch-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 9px 0;
+    border-top: 1px solid rgba(255,255,255,.28);
+    color: rgba(255,255,255,.78);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+  }
+  .dispatch-strip strong { color: #fff; }
+  .dispatch-strip time { font-variant-numeric: tabular-nums; }
+  .voice-panel {
+    position: absolute;
+    right: 24px;
+    top: 58px;
+    z-index: 6;
+  }
+  .voice-panel summary {
+    cursor: pointer;
+    list-style: none;
+    border: 1px solid rgba(255,255,255,.62);
+    border-radius: 999px;
+    padding: 6px 11px;
+    color: #fff;
+    background: rgba(7,17,31,.46);
+    font-size: 12px;
+    font-weight: 900;
+  }
+  .voice-panel summary::-webkit-details-marker { display: none; }
+  .voice-panel-body {
+    width: min(330px, calc(100vw - 36px));
+    margin-top: 8px;
+    padding: 14px;
+    border: 1px solid rgba(255,255,255,.38);
+    border-radius: 14px;
+    background: #fff;
+    color: var(--ink);
+    box-shadow: var(--shadow);
+  }
+  .voice-panel-body label { display: grid; gap: 5px; margin-top: 9px; font-size: 12px; font-weight: 900; }
+  .voice-panel-body input,
+  .voice-panel-body select { width: 100%; accent-color: var(--teal); }
+  .voice-panel-body p { color: var(--sub); font-size: 13px; line-height: 1.4; }
+  .voice-panel-body small { display: block; margin-top: 8px; color: var(--sub); }
+  .dispatch-section { background: #0b1728; color: #fff; }
+  .dispatch-section .section-kicker { color: #a7f3d0; }
+  .dispatch-section h2 { color: #fff; }
+  .dispatch-section .lead { color: rgba(255,255,255,.78); }
+  .dispatch-card { border-color: rgba(255,255,255,.2); background: rgba(255,255,255,.06); }
+  .dispatch-card h3 a { color: #fff; }
+  .dispatch-card p { color: rgba(255,255,255,.76); }
+
   .hero {
     position: relative;
     min-height: 82svh;
@@ -425,6 +481,8 @@
     section { padding: 58px 0; }
     .flow-strip { grid-template-columns: 1fr; }
     .battle-visual { min-height: 330px; }
+    .dispatch-strip { align-items: flex-start; flex-direction: column; gap: 5px; }
+    .voice-panel { right: 18px; top: 94px; }
   }
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -449,12 +507,35 @@
       <div class="navlinks">
         <a href="wiki/Website-Tour.html">Tour</a>
         <a href="wiki/Algorithms.html">Algorithms</a>
+        <a href="wiki/Feature-briefs.html">Features</a>
         <a href="wiki/Defender-Logic.html">Logic</a>
         <a href="wiki/Windows-Electron-controller.html">Windows controller</a>
-        <a href="https://github.com/codingmachineedge/HomeAssistantAcDefender">GitHub</a>
+        <a href="https://github.com/Ding-Ding-Projects/HomeAssistantAcDefender">GitHub</a>
       </div>
     </div>
+    <div class="wrap dispatch-strip"><span><strong>AC Defender Dispatch</strong> · a news-style field guide to a real thermostat</span><time datetime="2026-08-04">04 Aug 2026 · edition 01</time></div>
   </nav>
+
+  <details class="voice-panel">
+    <summary id="landing-voice-summary">Language &amp; voice</summary>
+    <div class="voice-panel-body">
+      <p data-landing-voice-note>Choose the shell language and two independent funny levels. Safety facts and climate commands stay precise.</p>
+      <label for="landing-language">Language mode
+        <select id="landing-language" data-landing-language>
+          <option value="en">English</option>
+          <option value="yue">Playful Hong Kong Cantonese</option>
+          <option value="both">Bilingual / 雙語</option>
+        </select>
+      </label>
+      <label for="landing-funny-en">English funny level <output id="landing-funny-en-value">2</output>
+        <input id="landing-funny-en" data-landing-funny="en" type="range" min="1" max="5" value="2">
+      </label>
+      <label for="landing-funny-yue">Cantonese funny level <output id="landing-funny-yue-value">3</output>
+        <input id="landing-funny-yue" data-landing-funny="yue" type="range" min="1" max="5" value="3">
+      </label>
+      <small>Preferences persist in this browser. The article language is currently English; labels and the surrounding voice follow your choice.</small>
+    </div>
+  </details>
 
   <div class="wrap">
     <div class="hero-copy">
@@ -536,6 +617,24 @@
   </div>
 </section>
 
+<section class="dispatch-section">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-kicker">The complete newsroom index</div>
+        <h2>Every feature gets a byline, a boundary, and a way to verify it.</h2>
+      </div>
+      <p class="lead">The feature desk treats guards, pages, controls, APIs, releases, and the Windows controller as first-class articles. No feature is left as a mystery card with no failure or security note.</p>
+    </div>
+    <div class="cards">
+      <div class="card dispatch-card"><h3><a href="wiki/Feature-briefs.html">Feature briefs</a></h3><p>Search every article in one index, including all algorithm field notes and operator surfaces.</p></div>
+      <div class="card dispatch-card"><h3><a href="wiki/Changelog.html">Release desk</a></h3><p>Read every released version, date, category, commit link, and exportable change note.</p></div>
+      <div class="card dispatch-card"><h3><a href="wiki/Windows-Electron-controller.html">Windows desk</a></h3><p>Control the hosted service from a separate Material 3 client while the defender remains server-side.</p></div>
+    </div>
+    <img class="product-shot" src="assets/newsroom-wire.svg" alt="Editorial wire graphic showing evidence becoming a bounded decision and a safe action">
+  </div>
+</section>
+
 <section>
   <div class="wrap">
     <div class="section-head">
@@ -569,6 +668,43 @@
     <div>AC Defender · real Home Assistant climate control · no dummy thermostat</div>
   </div>
 </footer>
+
+<script>
+(function () {
+  var prefix = "ac-defender-doc-";
+  var languageInput = document.querySelector("[data-landing-language]");
+  var language = localStorage.getItem(prefix + "language") || "en";
+  var summary = document.getElementById("landing-voice-summary");
+  var labels = { en: "Language & voice", yue: "語言同語氣", both: "Language / 語言" };
+  var en = Number(localStorage.getItem(prefix + "funny-en") || 2);
+  var yue = Number(localStorage.getItem(prefix + "funny-yue") || 3);
+  function bounded(value, fallback) { var n = Number(value); return Number.isFinite(n) ? Math.min(5, Math.max(1, n)) : fallback; }
+  en = bounded(en, 2); yue = bounded(yue, 3);
+  function apply() {
+    if (languageInput) { languageInput.value = language; }
+    if (summary) { summary.textContent = labels[language] || labels.en; }
+    document.body.dataset.docLanguage = language;
+    document.body.dataset.funnyEn = String(en);
+    document.body.dataset.funnyYue = String(yue);
+  }
+  if (languageInput) {
+    languageInput.addEventListener("change", function () { language = languageInput.value; localStorage.setItem(prefix + "language", language); apply(); });
+  }
+  document.querySelectorAll("[data-landing-funny]").forEach(function (input) {
+    var value = input.dataset.landingFunny === "yue" ? yue : en;
+    var output = document.getElementById(input.id + "-value");
+    input.value = String(value); if (output) { output.textContent = String(value); output.value = String(value); }
+    input.addEventListener("input", function () {
+      value = bounded(input.value, 2);
+      if (input.dataset.landingFunny === "yue") { yue = value; localStorage.setItem(prefix + "funny-yue", String(value)); }
+      else { en = value; localStorage.setItem(prefix + "funny-en", String(value)); }
+      if (output) { output.textContent = String(value); output.value = String(value); }
+      apply();
+    });
+  });
+  apply();
+})();
+</script>
 
 </body>
 </html>

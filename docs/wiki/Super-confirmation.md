@@ -68,3 +68,9 @@ and confirm focus returns to the OFF button. Repeat from the Dashboard thermosta
 Suggested articles: [Controls](Website-Tour.html), [Emergency protocols](Algorithm-emergency-protocols.html),
 [Accessibility](Accessibility.html), [Command palette](Command-palette.html), and
 [Architecture](Architecture.html).
+
+## Suggested articles
+
+- [Feature briefs](Feature-briefs.html) — find every documented surface and guard.
+- [Defender Logic](Defender-Logic.html) — follow the complete decision cycle and its bypass rules.
+- [Settings](Settings.html) — inspect persisted configuration, language modes, and safety limits.

@@ -33,6 +33,12 @@
     font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     line-height: 1.65;
   }
+  body::before {
+    content: "";
+    display: block;
+    height: 5px;
+    background: linear-gradient(90deg, var(--teal), var(--blue), var(--coral));
+  }
   a { color: var(--teal); }
   a:hover { color: var(--coral); }
   :focus-visible {
@@ -56,7 +62,7 @@
   .skip-link:focus { transform: translateY(0); }
 
   .topbar {
-    background: rgba(255, 255, 255, .94);
+    background: rgba(255, 255, 255, .96);
     border-bottom: 1px solid var(--line);
     position: sticky;
     top: 0;
@@ -66,7 +72,7 @@
   .topbar .inner {
     max-width: 1160px;
     margin: 0 auto;
-    padding: 12px 24px;
+    padding: 14px 24px 10px;
     display: flex;
     align-items: center;
     gap: 18px;
@@ -78,10 +84,19 @@
     font-size: 18px;
     color: var(--ink);
     text-decoration: none;
+    letter-spacing: -.02em;
+  }
+  .masthead-note {
+    color: var(--muted);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    white-space: nowrap;
   }
   .topbar nav {
     display: flex;
-    gap: 14px;
+    gap: 8px;
     flex-wrap: wrap;
     margin-left: auto;
   }
@@ -90,9 +105,96 @@
     text-decoration: none;
     font-size: 14px;
     font-weight: 700;
+    padding: 6px 10px;
+    border: 1px solid transparent;
+    border-radius: 999px;
   }
   .topbar nav a:hover,
-  .topbar nav a.active { color: var(--teal); }
+  .topbar nav a.active {
+    color: var(--teal);
+    border-color: #9dd4cf;
+    background: var(--teal-soft);
+  }
+
+  .edition-bar {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 7px 24px 9px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .edition-bar strong { color: var(--ink); }
+  .edition-bar time { font-variant-numeric: tabular-nums; }
+  .palette-open {
+    min-height: 30px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    padding: 4px 10px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+  .palette-open:hover { background: var(--teal); }
+  .docs-palette {
+    width: min(680px, calc(100vw - 28px));
+    max-height: min(680px, calc(100vh - 36px));
+    padding: 20px;
+    border: 1px solid var(--line-strong);
+    border-radius: 18px;
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 28px 80px rgba(17, 24, 39, .28);
+  }
+  .docs-palette::backdrop { background: rgba(7, 17, 31, .54); }
+  .docs-palette h2 { border: 0; margin: 0 0 4px; padding: 0; }
+  .docs-palette .palette-subtitle { color: var(--sub); font-size: 13px; }
+  .palette-results { max-height: 430px; overflow: auto; margin-top: 14px; display: grid; gap: 8px; }
+  .palette-result { display: block; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); text-decoration: none; }
+  .palette-result:hover { border-color: var(--teal); background: var(--teal-soft); }
+  .palette-result strong { display: block; font-family: Georgia, "Times New Roman", serif; }
+  .palette-result span { display: block; margin-top: 2px; color: var(--sub); font-size: 12px; }
+  .palette-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
+  .palette-actions button { min-height: 38px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 0 12px; background: var(--paper); color: var(--ink); font-weight: 900; cursor: pointer; }
+
+  .language-desk { margin-left: auto; position: relative; }
+  .language-desk summary {
+    cursor: pointer;
+    list-style: none;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    padding: 5px 10px;
+    color: var(--ink);
+    background: var(--paper);
+    font-size: 12px;
+    font-weight: 900;
+  }
+  .language-desk summary::-webkit-details-marker { display: none; }
+  .language-panel {
+    position: absolute;
+    z-index: 40;
+    right: 0;
+    top: calc(100% + 8px);
+    width: min(330px, calc(100vw - 36px));
+    padding: 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    background: var(--paper);
+    box-shadow: var(--shadow);
+  }
+  .language-panel label { display: grid; gap: 5px; margin-top: 9px; color: var(--ink); font-size: 12px; font-weight: 900; }
+  .language-panel select,
+  .language-panel input { width: 100%; accent-color: var(--teal); }
+  .language-panel small { display: block; margin-top: 8px; color: var(--sub); line-height: 1.4; }
+  .voice-note { margin: 0; color: var(--sub); font-size: 13px; }
 
   .langbar {
     display: flex;
@@ -115,7 +217,7 @@
   .doc {
     max-width: 1060px;
     margin: 0 auto;
-    padding: 42px 24px 88px;
+    padding: 24px 24px 88px;
   }
   .backhome {
     display: inline-block;
@@ -126,6 +228,94 @@
     color: var(--sub);
   }
   .backhome:hover { color: var(--teal); }
+
+  .newsroom-masthead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 390px);
+    gap: 30px;
+    align-items: end;
+    margin: 0 0 30px;
+    padding: 28px 0 32px;
+    border-top: 4px solid var(--ink);
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .newsroom-masthead .article-kicker { margin-bottom: 8px; }
+  .newsroom-masthead h1 {
+    margin: 0 0 12px;
+    max-width: 760px;
+    font-size: clamp(38px, 6vw, 70px);
+    letter-spacing: -.035em;
+  }
+  .newsroom-deck {
+    max-width: 720px;
+    color: var(--sub);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(18px, 2.2vw, 24px);
+    line-height: 1.35;
+  }
+  .newsroom-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 18px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+  }
+  .newsroom-art {
+    width: 100%;
+    margin: 0 !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--shadow) !important;
+    background: var(--paper);
+  }
+  .article-layout {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr) 180px;
+    gap: 24px;
+    align-items: start;
+  }
+  .story-index,
+  .story-note {
+    position: sticky;
+    top: 108px;
+    border-top: 3px solid var(--ink);
+    padding-top: 10px;
+  }
+  .story-index h2,
+  .story-note h2 {
+    border: 0;
+    margin: 0 0 10px;
+    padding: 0;
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .story-index ol { margin: 0; padding: 0; list-style: none; }
+  .story-index li { margin: 0 0 8px; line-height: 1.3; }
+  .story-index a { color: var(--sub); font-size: 12px; text-decoration: none; }
+  .story-index a:hover { color: var(--teal); }
+  .story-note { background: var(--paper); padding: 12px; border: 1px solid var(--line); border-top: 3px solid var(--coral); border-radius: 10px; }
+  .story-note p { margin: 0 0 10px; color: var(--sub); font-size: 12px; line-height: 1.45; }
+  .story-note a { font-size: 12px; font-weight: 900; }
+  .article-copy { min-width: 0; }
+  .article-copy > h1:first-child { display: none; }
+  .article-copy > .article-kicker:first-child { margin-top: 0; }
+  .suggested-articles {
+    margin-top: 42px;
+    padding-top: 18px;
+    border-top: 3px solid var(--ink);
+  }
+  .suggested-articles h2 { margin-top: 0; border: 0; padding-top: 0; }
+  .suggested-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .suggested-card { display: block; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); text-decoration: none; }
+  .suggested-card:hover { border-color: var(--teal); color: var(--teal); }
+  .suggested-card strong { display: block; font-family: Georgia, "Times New Roman", serif; font-size: 16px; }
+  .suggested-card span { display: block; margin-top: 4px; color: var(--sub); font-size: 12px; line-height: 1.35; }
 
   .doc h1,
   .doc h2,
@@ -651,10 +841,19 @@
     .topbar .inner { align-items: flex-start; }
     .topbar nav { width: 100%; margin-left: 0; }
     .doc { padding: 32px 18px 72px; }
+    .edition-bar { padding-left: 18px; padding-right: 18px; }
     .doc-hero,
     .algorithm-article-hero,
     .logic-section-head { grid-template-columns: 1fr; }
     .logic-columns { grid-template-columns: 1fr; }
+    .article-layout { grid-template-columns: 1fr; }
+    .story-index,
+    .story-note { position: static; }
+    .story-index { order: 2; padding: 12px; border: 1px solid var(--line); border-top: 3px solid var(--ink); border-radius: 10px; }
+    .story-index ol { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 2px; }
+    .story-index li { flex: 0 0 auto; margin: 0; }
+    .story-note { order: 3; }
+    .article-copy { order: 1; }
   }
   @media (max-width: 560px) {
     .search-row { grid-template-columns: 1fr; }
@@ -664,6 +863,11 @@
     .motion-track,
     .thermostat-mini { display: none; }
     .motion-node { min-height: 64px; }
+    .newsroom-masthead { grid-template-columns: 1fr; padding-top: 22px; }
+    .newsroom-art { max-width: 520px; }
+    .suggested-grid { grid-template-columns: 1fr; }
+    .edition-bar { align-items: flex-start; flex-direction: column; gap: 8px; }
+    .language-desk { margin-left: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -682,35 +886,174 @@
 
 <div class="topbar">
   <div class="inner">
-    <a class="brand" href="../index.html">AC Defender</a>
+    <a class="brand" href="{{ '/' | relative_url }}">AC Defender</a>
+    <span class="masthead-note">Defender Dispatch · field notes for a real thermostat</span>
     <nav id="docnav">
-      <a href="Website-Tour.html" data-en="Tour" data-yue="導覽">Tour</a>
-      <a href="Algorithms.html" data-en="Algorithms" data-yue="算法">Algorithms</a>
-      <a href="Every-Guard-Explained.html" data-en="Guards" data-yue="衛兵">Guards</a>
-      <a href="Defender-Logic.html" data-en="Logic" data-yue="邏輯">Logic</a>
-      <a href="Energy-and-Costs.html" data-en="Energy" data-yue="能源">Energy</a>
-      <a href="Settings.html" data-en="Settings" data-yue="設定">Settings</a>
-      <a href="API.html" data-en="API" data-yue="API">API</a>
-      <a href="Deployment.html" data-en="Deploy" data-yue="部署">Deploy</a>
+      <a href="{{ '/wiki/Website-Tour.html' | relative_url }}" data-en="Tour" data-yue="導覽">Tour</a>
+      <a href="{{ '/wiki/Algorithms.html' | relative_url }}" data-en="Algorithms" data-yue="算法">Algorithms</a>
+      <a href="{{ '/wiki/Every-Guard-Explained.html' | relative_url }}" data-en="Guards" data-yue="衛兵">Guards</a>
+      <a href="{{ '/wiki/Defender-Logic.html' | relative_url }}" data-en="Logic" data-yue="邏輯">Logic</a>
+      <a href="{{ '/wiki/Energy-and-Costs.html' | relative_url }}" data-en="Energy" data-yue="能源">Energy</a>
+      <a href="{{ '/wiki/Settings.html' | relative_url }}" data-en="Settings" data-yue="設定">Settings</a>
+      <a href="{{ '/wiki/Feature-briefs.html' | relative_url }}" data-en="Features" data-yue="功能">Features</a>
+      <a href="{{ '/wiki/API.html' | relative_url }}" data-en="API" data-yue="API">API</a>
+      <a href="{{ '/wiki/Deployment.html' | relative_url }}" data-en="Deploy" data-yue="部署">Deploy</a>
     </nav>
+  </div>
+  <div class="edition-bar">
+    <span><strong>Newsroom edition</strong> · operational documentation, updated with each release</span>
+    <time datetime="2026-08-04">04 Aug 2026</time>
+    <button class="palette-open" type="button" data-doc-palette-open aria-haspopup="dialog">Find a feature <kbd>Ctrl+Shift+F</kbd></button>
+    <details class="language-desk">
+      <summary id="language-summary">Language &amp; voice</summary>
+      <div class="language-panel">
+        <p class="voice-note" data-voice-note>Choose English, playful Hong Kong Cantonese, or bilingual labels. Funny levels style the surrounding voice; safety facts never change.</p>
+        <label for="doc-language">Language mode
+          <select id="doc-language" data-doc-language>
+            <option value="en">English</option>
+            <option value="yue">Playful Hong Kong Cantonese</option>
+            <option value="both">Bilingual / 雙語</option>
+          </select>
+        </label>
+        <label for="doc-funny-en">English funny level <output id="doc-funny-en-value">2</output>
+          <input id="doc-funny-en" data-doc-funny="en" type="range" min="1" max="5" step="1" value="2">
+        </label>
+        <label for="doc-funny-yue">Cantonese funny level <output id="doc-funny-yue-value">3</output>
+          <input id="doc-funny-yue" data-doc-funny="yue" type="range" min="1" max="5" step="1" value="3">
+        </label>
+        <small>These preferences stay in this browser. Article names, dates, commands, and safety boundaries remain factual.</small>
+      </div>
+    </details>
   </div>
 </div>
 
 <main id="main-content" class="doc" tabindex="-1">
-  <a class="backhome" href="../index.html">Back to home</a>
-  {{ content }}
+  <a class="backhome" href="{{ '/' | relative_url }}">Back to home</a>
+  <header class="newsroom-masthead">
+    <div>
+      <p class="article-kicker">AC Defender Dispatch · {{ page.section | default: "Field report" }}</p>
+      <h1>{{ page.title }}</h1>
+      <p class="newsroom-deck">{{ page.description | default: site.description }}</p>
+      <div class="newsroom-meta">
+        <span>Reported for operators</span>
+        <span>Evidence-led</span>
+        <span>Updated with the shipped tree</span>
+      </div>
+    </div>
+    <img class="newsroom-art" src="{{ '/assets/newsroom-wire.svg' | relative_url }}" alt="Editorial wire graphic showing real inputs becoming a bounded decision and a safe Home Assistant action">
+  </header>
+  <div class="article-layout">
+    <aside class="story-index" aria-label="In this article">
+      <h2>In this article</h2>
+      <ol data-story-index></ol>
+    </aside>
+    <article class="article-copy">
+      {{ content }}
+      <section class="suggested-articles" aria-labelledby="suggested-title">
+        <h2 id="suggested-title">Suggested next reads</h2>
+        <div class="suggested-grid">
+          <a class="suggested-card" href="{{ '/wiki/Algorithms.html' | relative_url }}"><strong>Algorithms desk</strong><span>Search every guard and open its full field note.</span></a>
+          <a class="suggested-card" href="{{ '/wiki/Defender-Logic.html' | relative_url }}"><strong>Logic notebook</strong><span>Trace the complete safety-first decision cycle.</span></a>
+          <a class="suggested-card" href="{{ '/wiki/Settings.html' | relative_url }}"><strong>Settings briefing</strong><span>Find the controls, language modes, and persisted preferences.</span></a>
+        </div>
+      </section>
+    </article>
+    <aside class="story-note" aria-label="Editorial note">
+      <h2>Editorial note</h2>
+      <p>This article describes the shipped behavior. If the real service cannot read an input or call Home Assistant, it reports the failure; it never invents thermostat state.</p>
+      <a href="{{ '/wiki/Deployment.html' | relative_url }}">Read the deployment contract →</a>
+    </aside>
+  </div>
 </main>
+
+<dialog class="docs-palette" id="docs-command-palette" aria-labelledby="docs-palette-title">
+  <div class="search-panel" data-search-root>
+    <p class="article-kicker">Keyboard desk</p>
+    <h2 id="docs-palette-title">Find a feature</h2>
+    <p class="palette-subtitle">Search every docs destination. Press <kbd>Escape</kbd> to close; plain text is the default and the builder is available beside this field.</p>
+    <div class="search-row"><input id="docs-palette-search" data-search-input type="search" autocomplete="off" placeholder="Try energy, guard, updates, API, settings"><button type="button" data-search-clear aria-label="Clear feature search">Clear</button></div>
+    <p><span data-search-count>0</span> destinations shown</p>
+    <p data-search-empty hidden>No destination matches that search.</p>
+    <div class="palette-results">
+      {% assign palette_pages = site.pages | where_exp: "page", "page.path contains 'wiki/'" | sort: "title" %}
+      {% for destination in palette_pages %}
+        {% unless destination.name == "Feature-briefs.md" or destination.title == nil %}
+        <a class="palette-result" data-search-item data-search-text="{{ destination.title }} {{ destination.description | default: '' | escape }}" href="{{ destination.url | relative_url }}"><strong>{{ destination.title }}</strong><span>{{ destination.description | default: "Open the documented feature brief." }}</span></a>
+        {% endunless %}
+      {% endfor %}
+    </div>
+    <div class="palette-actions"><button type="button" data-doc-palette-close>Close</button></div>
+  </div>
+</dialog>
 
 <footer>
   <div class="inner">
     AC Defender · watches a real thermostat, tells no lies ·
-    <a href="../index.html">Home</a> ·
-    <a href="Algorithms.html">Algorithms</a> ·
-    <a href="https://github.com/codingmachineedge/HomeAssistantAcDefender">GitHub</a>
+    <a href="{{ '/' | relative_url }}">Home</a> ·
+    <a href="{{ '/wiki/Algorithms.html' | relative_url }}">Algorithms</a> ·
+    <a href="https://github.com/Ding-Ding-Projects/HomeAssistantAcDefender">GitHub</a>
   </div>
 </footer>
 
 <script>
+(function () {
+  var langKey = "ac-defender-doc-language";
+  var funnyEnKey = "ac-defender-doc-funny-en";
+  var funnyYueKey = "ac-defender-doc-funny-yue";
+  var language = localStorage.getItem(langKey) || "en";
+  var funnyEn = Number(localStorage.getItem(funnyEnKey) || 2);
+  var funnyYue = Number(localStorage.getItem(funnyYueKey) || 3);
+  var languageInput = document.querySelector("[data-doc-language]");
+  var funnyInputs = document.querySelectorAll("[data-doc-funny]");
+  var summary = document.getElementById("language-summary");
+  var labels = { en: "Language & voice", yue: "語言同語氣", both: "Language / 語言" };
+  function safeFunny(value, fallback) {
+    var number = Number(value);
+    return Number.isFinite(number) ? Math.min(5, Math.max(1, number)) : fallback;
+  }
+  funnyEn = safeFunny(funnyEn, 2);
+  funnyYue = safeFunny(funnyYue, 3);
+  function applyLanguage() {
+    document.documentElement.lang = language === "yue" ? "zh-Hant" : "en";
+    if (languageInput) { languageInput.value = language; }
+    if (summary) { summary.textContent = labels[language] || labels.en; }
+    document.querySelectorAll("#docnav a[data-en]").forEach(function (link) {
+      var en = link.getAttribute("data-en") || link.textContent;
+      var yue = link.getAttribute("data-yue") || en;
+      link.textContent = language === "yue" ? yue : (language === "both" ? en + " · " + yue : en);
+    });
+    document.body.dataset.docLanguage = language;
+    document.body.dataset.funnyEn = String(funnyEn);
+    document.body.dataset.funnyYue = String(funnyYue);
+  }
+  if (languageInput) {
+    languageInput.addEventListener("change", function () {
+      language = languageInput.value;
+      localStorage.setItem(langKey, language);
+      applyLanguage();
+    });
+  }
+  funnyInputs.forEach(function (input) {
+    var value = input.dataset.docFunny === "yue" ? funnyYue : funnyEn;
+    input.value = String(value);
+    var output = document.getElementById(input.id + "-value");
+    if (output) { output.value = String(value); output.textContent = String(value); }
+    input.addEventListener("input", function () {
+      var next = safeFunny(input.value, 2);
+      if (input.dataset.docFunny === "yue") {
+        funnyYue = next;
+        localStorage.setItem(funnyYueKey, String(next));
+      } else {
+        funnyEn = next;
+        localStorage.setItem(funnyEnKey, String(next));
+      }
+      if (output) { output.value = String(next); output.textContent = String(next); }
+      applyLanguage();
+    });
+  });
+  applyLanguage();
+})();
+
 (function () {
   var current = location.pathname.split("/").pop();
   document.querySelectorAll("#docnav a").forEach(function (a) {
@@ -718,6 +1061,54 @@
       a.classList.add("active");
       a.setAttribute("aria-current", "page");
     }
+  });
+})();
+
+(function () {
+  var list = document.querySelector("[data-story-index]");
+  if (!list) { return; }
+  var headings = Array.prototype.slice.call(document.querySelectorAll(".article-copy h2, .article-copy h3"));
+  headings.forEach(function (heading, index) {
+    if (!heading.id) { heading.id = "story-" + (index + 1); }
+    var item = document.createElement("li");
+    var link = document.createElement("a");
+    link.href = "#" + heading.id;
+    link.textContent = heading.textContent;
+    item.appendChild(link);
+    list.appendChild(item);
+  });
+  if (!headings.length) {
+    var empty = document.createElement("li");
+    empty.textContent = "A concise field note.";
+    list.appendChild(empty);
+  }
+})();
+
+(function () {
+  var palette = document.getElementById("docs-command-palette");
+  var open = document.querySelector("[data-doc-palette-open]");
+  var close = document.querySelector("[data-doc-palette-close]");
+  var search = document.getElementById("docs-palette-search");
+  if (!palette || !open) { return; }
+  function show() {
+    if (typeof palette.showModal === "function") { palette.showModal(); }
+    else { palette.setAttribute("open", "open"); }
+    if (search) { search.focus(); search.select(); }
+  }
+  function hide() {
+    if (typeof palette.close === "function") { palette.close(); }
+    else { palette.removeAttribute("open"); }
+    open.focus();
+  }
+  open.addEventListener("click", show);
+  if (close) { close.addEventListener("click", hide); }
+  palette.addEventListener("click", function (event) { if (event.target === palette) { hide(); } });
+  document.addEventListener("keydown", function (event) {
+    if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "f") {
+      event.preventDefault();
+      show();
+    }
+    if (event.key === "Escape" && palette.hasAttribute("open")) { hide(); }
   });
 })();
 
