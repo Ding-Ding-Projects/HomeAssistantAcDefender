@@ -67,6 +67,10 @@ asset; it is not a claim that a newer release has passed the installer gate.
 
 ## Suggested articles
 
-- [API](API.md) — the authenticated service routes used by the controller.
-- [Notification history](Notification-history.md) — the server-side journal behind its review tab.
-- [Command palette](Command-palette.md) — keyboard navigation in the hosted app.
+- [API](API.html) — the authenticated service routes used by the controller.
+- [Notification history](Notification-history.html) — the server-side journal behind its review tab.
+- [Command palette](Command-palette.html) — keyboard navigation in the hosted app.
+
+## Security considerations
+
+This feature consumes only the configured Home Assistant entity data, local settings, and the audit context named above. Tokens and credentials stay in the server environment; the static documentation site does not collect analytics, transmit search text, or embed third-party assets. Logs and exports should be reviewed before sharing because real entity names and timestamps can identify a household.

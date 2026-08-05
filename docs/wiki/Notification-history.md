@@ -73,3 +73,10 @@ the valid prefix survives without inventing thermostat state. Browser verificati
 - [Settings repository](Settings.html) — local Git-backed snapshots for editable settings.
 - [API](API.html) — authenticated JSON endpoints and the status stream.
 - [Windows Electron controller](Windows-Electron-controller.html) — the companion Windows review surface.
+
+## Failure modes
+
+If **Notification history** cannot obtain one of its required real inputs, it reports a blocked, held, or unavailable result and leaves the background worker's Home Assistant refresh running. It never fills a missing room reading, audit event, weather sample, usage value, or device state with a simulator value. If a real Home Assistant command is rejected, the user sees the service's actual error and the article's surface remains available for recovery.
+## Security considerations
+
+This feature consumes only the configured Home Assistant entity data, local settings, and the audit context named above. Tokens and credentials stay in the server environment; the static documentation site does not collect analytics, transmit search text, or embed third-party assets. Logs and exports should be reviewed before sharing because real entity names and timestamps can identify a household.

@@ -69,3 +69,9 @@ Assistant state and that no appearance action emits a defender command.
 
 Suggested articles: [Settings](Settings.html), [Accessibility](Accessibility.html),
 [Architecture](Architecture.html), and [Deployment](Deployment.html).
+
+## Suggested articles
+
+- [Feature briefs](Feature-briefs.html) — find every documented surface and guard.
+- [Defender Logic](Defender-Logic.html) — follow the complete decision cycle and its bypass rules.
+- [Settings](Settings.html) — inspect persisted configuration, language modes, and safety limits.

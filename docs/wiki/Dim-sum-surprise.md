@@ -72,3 +72,10 @@ the card auto-dismisses, and a blocked image removes the card without a fallback
 - [Notification history](Notification-history.html) — review notices after a card or image failure.
 - [Settings](Settings.html) — change language mode and the two funny-level controls.
 - [Architecture](Architecture.html) — understand the layout lifecycle and live state pump.
+
+## Failure modes
+
+If **Dim-sum startup surprise** cannot obtain one of its required real inputs, it reports a blocked, held, or unavailable result and leaves the background worker's Home Assistant refresh running. It never fills a missing room reading, audit event, weather sample, usage value, or device state with a simulator value. If a real Home Assistant command is rejected, the user sees the service's actual error and the article's surface remains available for recovery.
+## Security considerations
+
+This feature consumes only the configured Home Assistant entity data, local settings, and the audit context named above. Tokens and credentials stay in the server environment; the static documentation site does not collect analytics, transmit search text, or embed third-party assets. Logs and exports should be reviewed before sharing because real entity names and timestamps can identify a household.
