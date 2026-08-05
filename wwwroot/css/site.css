@@ -2810,8 +2810,106 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
     .ops-classified { position: static; letter-spacing: 0.16em; }
     .ops-app-tabs { padding: 5px 8px; }
     .ops-app-tabs__title { display: none; }
-    .ops-app-tab { max-width: 58vw; padding-inline: 10px; }
+    .ops-app-tab { min-height: 44px; max-width: 58vw; padding-inline: 10px; touch-action: pan-x; }
+    .ops-app-tab__pin { min-width: 44px; min-height: 44px; }
     .ops-app-tabs__group-editor { display: none; }
+}
+
+/* Application-owned context menu. It paints an opaque M3 surface, searches only its
+   own actions, and keeps itself inside the viewport instead of clipping at an edge. */
+.ops-context-menu {
+    position: fixed;
+    z-index: 10000;
+    display: flex;
+    width: min(328px, calc(100vw - 16px));
+    max-height: min(78vh, 430px);
+    box-sizing: border-box;
+    flex-direction: column;
+    gap: 9px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 12px;
+    border: 1px solid var(--line2);
+    border-radius: 12px;
+    color: var(--ink);
+    background: var(--panel);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, .42);
+    isolation: isolate;
+    scrollbar-width: thin;
+}
+.ops-context-menu__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ops-context-menu__heading { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.ops-context-menu__heading strong { overflow: hidden; font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
+.ops-context-menu__eyebrow,
+.ops-context-menu__search-label,
+.ops-context-menu__group-editor > label { color: var(--sub); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.ops-context-menu__close {
+    display: inline-grid;
+    min-width: 40px;
+    min-height: 40px;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--line2);
+    border-radius: 50%;
+    color: var(--ink);
+    background: var(--panel2);
+    cursor: pointer;
+    font-size: 21px;
+}
+.ops-context-menu__search { width: 100%; box-sizing: border-box; margin: 0; }
+.ops-context-menu .regex-search-builder { margin: 0; }
+.ops-context-menu .regex-search-builder__panel {
+    position: static;
+    width: 100%;
+    max-height: min(46vh, 330px);
+    box-sizing: border-box;
+    overflow: auto;
+    border-color: var(--line2);
+    background: var(--panel2);
+    box-shadow: none;
+}
+.ops-context-menu__error { padding: 7px 8px; border-left: 3px solid var(--bad); color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--panel)); font-size: 10px; line-height: 1.4; }
+.ops-context-menu__actions { display: flex; flex-direction: column; gap: 4px; }
+.ops-context-menu__action-row { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.ops-context-menu__action {
+    display: grid;
+    min-height: 44px;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--ink);
+    background: var(--panel2);
+    cursor: pointer;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: left;
+}
+.ops-context-menu__action:hover,
+.ops-context-menu__action:focus-visible { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); outline: none; }
+.ops-context-menu__action:disabled { cursor: not-allowed; opacity: .58; }
+.ops-context-menu__action kbd { padding: 2px 5px; border: 1px solid var(--line2); border-radius: 4px; color: var(--sub); background: var(--panel); font-size: 8px; white-space: nowrap; }
+.ops-context-menu__reason { padding: 0 8px 5px; color: var(--sub); font-size: 9px; line-height: 1.35; }
+.ops-context-menu__empty,
+.ops-context-menu__hint { margin: 0; color: var(--sub); font-size: 9px; line-height: 1.45; }
+.ops-context-menu__group-editor { display: flex; flex-direction: column; gap: 5px; padding-top: 8px; border-top: 1px solid var(--line2); }
+.ops-context-menu__group-editor > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
+.ops-context-menu__group-editor .ops-input { min-width: 0; margin: 0; }
+
+@media (max-width: 420px) {
+    .ops-context-menu {
+        max-height: calc(100dvh - 16px);
+        border-radius: 10px;
+        padding: 10px;
+    }
+    .ops-context-menu__group-editor > div { grid-template-columns: 1fr; }
+    .ops-context-menu__group-editor .ops-btn { min-height: 44px; }
 }
 
 /* mobile master toggle appended to the bottom nav */

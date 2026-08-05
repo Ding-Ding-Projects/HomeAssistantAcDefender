@@ -13,7 +13,11 @@
 <MudSnackbarProvider />
 
 <CascadingValue Value="_langMode" Name="LangMode">
-<div class="@RootClass">
+<div id="ac-defender-app-root"
+     class="@RootClass"
+     data-context-kind="surface"
+     data-context-id="app-shell"
+     data-context-label="@L("AC Defender application shell")">
     <a class="ops-skip-link" href="#main-content">Skip to main content</a>
 
     @* ═════════ COMMAND BAR ═════════ *@
@@ -78,7 +82,12 @@
                        tabindex="@(active ? "0" : "-1")"
                        data-app-tab="@item.Href"
                        data-active-app-tab="@(active ? "true" : "false")"
+                       data-context-kind="tab"
+                       data-context-id="@item.Href"
+                       data-context-href="@item.Href"
+                       data-context-label="@Lang.TInline(_langMode, item.Label)"
                        aria-label="@($"{Lang.TInline(_langMode, item.Label)} tab")"
+                       aria-description="@L("Right-click, press Shift+F10, or press and hold to edit this tab.")"
                        @onkeydown="@(args => HandleAppTabKeyDown(args, item.Href))">
                         <span class="ops-app-tab__glyph" aria-hidden="true">@item.Glyph</span>
                         <span>@Lang.TInline(_langMode, item.Label)</span>
@@ -88,7 +97,11 @@
                         }
                         @if (GroupFor(item.Href) is { } group)
                         {
-                            <span class="ops-app-tab__group" title="@($"Group: {group}")">@group</span>
+                            <span class="ops-app-tab__group"
+                                  title="@($"Group: {group}")"
+                                  data-context-kind="group"
+                                  data-context-id="@group"
+                                  data-context-label="@($"{group} tab group")">@group</span>
                         }
                     </a>
                     <button type="button"
@@ -297,7 +310,14 @@
         </nav>
 
         @* ═════════ MAIN ═════════ *@
-        <main id="main-content" class="ops-main" tabindex="-1" role="tabpanel" aria-labelledby="@ActiveAppTabId">
+        <main id="main-content"
+              class="ops-main"
+              tabindex="-1"
+              role="tabpanel"
+              aria-labelledby="@ActiveAppTabId"
+              data-context-kind="surface"
+              data-context-id="@CurrentStationHref"
+              data-context-label="@L(PageTitle)">
 
             @if (BannerVisible)
             {
@@ -372,6 +392,99 @@
         </button>
     </nav>
 
+    @if (_contextMenuTarget is not null)
+    {
+        <aside id="app-context-menu"
+               class="ops-context-menu"
+               style="@ContextMenuStyle"
+               role="dialog"
+               aria-modal="false"
+               aria-labelledby="app-context-menu-title"
+               tabindex="-1">
+            <header class="ops-context-menu__header">
+                <div class="ops-context-menu__heading">
+                    <span class="ops-context-menu__eyebrow">@L(ContextMenuKindLabel)</span>
+                    <strong id="app-context-menu-title">@_contextMenuTarget.Label</strong>
+                </div>
+                <button type="button"
+                        class="ops-context-menu__close"
+                        @onclick="DismissContextMenu"
+                        aria-label="@L("Close context menu")"
+                        title="@L("Close context menu")">×</button>
+            </header>
+
+            <label class="ops-context-menu__search-label" for="app-context-menu-search">@L("Search this menu")</label>
+            <input id="app-context-menu-search"
+                   class="ops-input ops-context-menu__search"
+                   value="@_contextMenuSearch"
+                   @oninput="OnContextMenuSearchChanged"
+                   maxlength="@RegexSearchMatcher.MaxPatternLength"
+                   autocomplete="off"
+                   placeholder="@L("Filter visible actions…")" />
+            <RegexSearchBuilder Id="app-context-menu-search-builder"
+                                Value="@_contextMenuSearch"
+                                ValueChanged="SetContextMenuSearch"
+                                Mode="@_contextMenuSearchMode"
+                                ModeChanged="SetContextMenuSearchMode"
+                                Flags="@_contextMenuSearchFlags"
+                                FlagsChanged="SetContextMenuSearchFlags" />
+
+            @if (ContextMenuSearchError is { Length: > 0 } contextSearchError)
+            {
+                <div class="ops-context-menu__error" role="alert">@contextSearchError</div>
+            }
+
+            <div class="ops-context-menu__actions" role="menu" aria-label="@L("Context actions")">
+                @if (FilteredContextMenuActions.Count == 0)
+                {
+                    <p class="ops-context-menu__empty" role="status">@L("No menu actions match this search.")</p>
+                }
+                @foreach (var action in FilteredContextMenuActions)
+                {
+                    <div class="ops-context-menu__action-row">
+                        <button type="button"
+                                class="ops-context-menu__action"
+                                role="menuitem"
+                                disabled="@(!action.Enabled)"
+                                aria-keyshortcuts="@action.Shortcut"
+                                title="@(action.Enabled ? null : action.DisabledReason)"
+                                @onclick="@(() => RunContextMenuActionAsync(action.Id))">
+                            <span>@L(action.Label)</span>
+                            @if (!string.IsNullOrWhiteSpace(action.Shortcut))
+                            {
+                                <kbd aria-hidden="true">@action.Shortcut</kbd>
+                            }
+                        </button>
+                        @if (!action.Enabled && !string.IsNullOrWhiteSpace(action.DisabledReason))
+                        {
+                            <span class="ops-context-menu__reason">@L(action.DisabledReason)</span>
+                        }
+                    </div>
+                }
+            </div>
+
+            @if (ContextMenuKind is "tab" or "group")
+            {
+                <div class="ops-context-menu__group-editor">
+                    <label for="app-context-menu-group">@(ContextMenuKind == "group" ? L("Rename tab group") : L("Tab group"))</label>
+                    <div>
+                        <input id="app-context-menu-group"
+                               class="ops-input"
+                               value="@_contextGroupInput"
+                               @oninput="OnContextGroupInputChanged"
+                               maxlength="48"
+                               placeholder="@L("Optional group name")" />
+                        <button type="button" class="ops-btn ops-btn--outline" @onclick="ApplyContextGroupAsync">@L("Apply group")</button>
+                    </div>
+                </div>
+            }
+
+            <p class="ops-context-menu__hint">
+                @L("Keyboard: Shift+F10 opens this menu. Shift+Alt+A opens appearance editing. On touch, press and hold a tab.")
+            </p>
+        </aside>
+    }
+
     @* atmosphere overlays *@
     <div class="ops-scanlines" aria-hidden="true"></div>
     <div class="ops-vignette" aria-hidden="true"></div>
@@ -417,6 +530,11 @@
     private int _cantoneseFunnyLevel = 1;
     private AppTabState? _appTabs;
     private bool _appTabsHydrated;
+    private AppContextMenuRequest? _contextMenuTarget;
+    private string _contextMenuSearch = "";
+    private string _contextMenuSearchMode = "plain";
+    private string _contextMenuSearchFlags = "im";
+    private string _contextGroupInput = "";
     private DimSumDish? _dimSumSurprise;
     private CancellationTokenSource? _dimSumDismissCancellation;
     private bool _dimSumDrawAttempted;
@@ -845,6 +963,252 @@
         await InvokeAsync(StateHasChanged);
     }
 
+    // ---------- global searchable context menu ----------
+
+    private string ContextMenuKind => AppContextMenuPolicy.NormalizeKind(_contextMenuTarget?.Kind);
+
+    private string ContextMenuKindLabel => ContextMenuKind switch
+    {
+        "tab" => "Tab context menu",
+        "group" => "Tab group context menu",
+        "interactive" => "Control context menu",
+        _ => "Surface context menu"
+    };
+
+    private string ContextMenuStyle => _contextMenuTarget is null
+        ? ""
+        : $"left:{_contextMenuTarget.X.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}px;top:{_contextMenuTarget.Y.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}px";
+
+    private string? ContextMenuSearchError =>
+        string.Equals(_contextMenuSearchMode, "regex", StringComparison.OrdinalIgnoreCase)
+        && !string.IsNullOrWhiteSpace(_contextMenuSearch)
+        && !RegexSearchMatcher.TryBuild(_contextMenuSearch, _contextMenuSearchFlags, out _)
+            ? "Invalid regular expression. Correct the pattern to filter these menu actions."
+            : null;
+
+    private IReadOnlyList<AppContextMenuAction> FilteredContextMenuActions
+    {
+        get
+        {
+            if (_contextMenuTarget is null)
+            {
+                return [];
+            }
+
+            var href = _contextMenuTarget.Href ?? _contextMenuTarget.TargetId;
+            var pinned = ContextMenuKind == "tab" && _appTabs?.IsPinned(href) == true;
+            var active = ContextMenuKind == "tab"
+                && string.Equals(
+                    AppTabState.NormalizeHref(href),
+                    AppTabState.NormalizeHref(CurrentStationHref),
+                    StringComparison.OrdinalIgnoreCase);
+            return AppContextMenuPolicy.Filter(
+                AppContextMenuPolicy.Build(_contextMenuTarget, pinned, active),
+                _contextMenuSearch,
+                _contextMenuSearchMode,
+                _contextMenuSearchFlags);
+        }
+    }
+
+    [JSInvokable]
+    public async Task ShowContextMenu(AppContextMenuRequest request)
+    {
+        request.Kind = AppContextMenuPolicy.NormalizeKind(request.Kind);
+        request.Label = string.IsNullOrWhiteSpace(request.Label) ? "Unnamed interface element" : request.Label.Trim()[..Math.Min(request.Label.Trim().Length, 160)];
+        request.TargetId = string.IsNullOrWhiteSpace(request.TargetId) ? "app-shell" : request.TargetId.Trim()[..Math.Min(request.TargetId.Trim().Length, 180)];
+        request.X = Math.Clamp(request.X, 8, 8192);
+        request.Y = Math.Clamp(request.Y, 8, 8192);
+
+        if (request.Kind == "tab")
+        {
+            request.Href = AppTabState.NormalizeHref(request.Href ?? request.TargetId);
+            if (_appTabs?.Contains(request.Href) != true)
+            {
+                return;
+            }
+        }
+
+        _contextMenuTarget = request;
+        _contextMenuSearch = "";
+        _contextMenuSearchMode = "plain";
+        _contextMenuSearchFlags = "im";
+        _contextGroupInput = request.Kind switch
+        {
+            "tab" => _appTabs?.GroupFor(request.Href ?? request.TargetId) ?? "",
+            "group" => request.TargetId,
+            _ => ""
+        };
+
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await JS.InvokeVoidAsync("acContextMenus.focusSearch");
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    [JSInvokable]
+    public Task DismissContextMenu()
+    {
+        _contextMenuTarget = null;
+        _contextMenuSearch = "";
+        return InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task RunContextMenuShortcut(AppContextMenuRequest request)
+    {
+        request.Kind = AppContextMenuPolicy.NormalizeKind(request.Kind);
+        _contextMenuTarget = request;
+        await OpenAppearanceEditorAsync(request);
+    }
+
+    private void OnContextMenuSearchChanged(ChangeEventArgs args) => _contextMenuSearch = args.Value?.ToString() ?? "";
+    private Task SetContextMenuSearch(string value) { _contextMenuSearch = value; return Task.CompletedTask; }
+    private Task SetContextMenuSearchMode(string value) { _contextMenuSearchMode = value; return Task.CompletedTask; }
+    private Task SetContextMenuSearchFlags(string value) { _contextMenuSearchFlags = value; return Task.CompletedTask; }
+    private void OnContextGroupInputChanged(ChangeEventArgs args) => _contextGroupInput = args.Value?.ToString() ?? "";
+
+    private async Task RunContextMenuActionAsync(string actionId)
+    {
+        var target = _contextMenuTarget;
+        if (target is null)
+        {
+            return;
+        }
+
+        var href = target.Href ?? target.TargetId;
+        switch (actionId)
+        {
+            case "activate-tab":
+                Nav.NavigateTo(AppTabState.NormalizeHref(href));
+                break;
+            case "toggle-pin":
+                await ToggleTabPinned(href);
+                break;
+            case "edit-tab-appearance":
+            case "edit-group-appearance":
+            case "edit-appearance":
+                await OpenAppearanceEditorAsync(target);
+                return;
+            case "close-tab":
+                await CloseContextTabAsync(href);
+                break;
+            case "focus-group":
+                _tabGroupScope = target.TargetId;
+                try
+                {
+                    await JS.InvokeVoidAsync("acContextMenus.openTabTools");
+                }
+                catch (JSException)
+                {
+                }
+                break;
+            case "remove-group":
+                if (_appTabs is not null)
+                {
+                    foreach (var record in _appTabs.Records.Where(record => string.Equals(record.Group, target.TargetId, StringComparison.OrdinalIgnoreCase)).ToArray())
+                    {
+                        _appTabs.SetGroup(record.Href, null);
+                    }
+                    await PersistAppTabsAsync();
+                    Snackbar.Add($"Removed the {target.TargetId} group assignment; its tabs stayed open.", Severity.Info);
+                }
+                break;
+            case "copy-label":
+                try
+                {
+                    await JS.InvokeVoidAsync("acContextMenus.copyText", target.Label);
+                    Snackbar.Add("Accessible label copied.", Severity.Success);
+                }
+                catch (JSException)
+                {
+                    Snackbar.Add("Clipboard access was refused; the label is still visible in the menu.", Severity.Warning);
+                }
+                break;
+            case "open-new-tab":
+                try
+                {
+                    var opened = await JS.InvokeAsync<bool>("acContextMenus.openLink", target.Href);
+                    Snackbar.Add(opened ? "Link opened in a new browser tab." : "Only same-site links can open from this menu.", opened ? Severity.Success : Severity.Warning);
+                }
+                catch (JSException)
+                {
+                    Snackbar.Add("The browser blocked the new tab; use the visible link instead.", Severity.Warning);
+                }
+                break;
+        }
+
+        _contextMenuTarget = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CloseContextTabAsync(string href)
+    {
+        if (_appTabs is null)
+        {
+            return;
+        }
+
+        var normalized = AppTabState.NormalizeHref(href);
+        var active = string.Equals(normalized, AppTabState.NormalizeHref(CurrentStationHref), StringComparison.OrdinalIgnoreCase);
+        if (_appTabs.IsPinned(normalized) || active || string.Equals(normalized, "/", StringComparison.Ordinal))
+        {
+            Snackbar.Add("That tab is protected because it is pinned, active, or the command fallback.", Severity.Warning);
+            return;
+        }
+
+        if (_appTabs.Close(normalized))
+        {
+            await PersistAppTabsAsync();
+            Snackbar.Add("Tab closed. Active and pinned tabs stayed protected.", Severity.Info);
+        }
+    }
+
+    private async Task ApplyContextGroupAsync()
+    {
+        var target = _contextMenuTarget;
+        if (target is null || _appTabs is null)
+        {
+            return;
+        }
+
+        if (ContextMenuKind == "tab")
+        {
+            _appTabs.SetGroup(target.Href ?? target.TargetId, _contextGroupInput);
+        }
+        else if (ContextMenuKind == "group")
+        {
+            foreach (var record in _appTabs.Records.Where(record => string.Equals(record.Group, target.TargetId, StringComparison.OrdinalIgnoreCase)).ToArray())
+            {
+                _appTabs.SetGroup(record.Href, _contextGroupInput);
+            }
+        }
+
+        await PersistAppTabsAsync();
+        Snackbar.Add(string.IsNullOrWhiteSpace(_contextGroupInput) ? "Group assignment cleared." : $"Tab group saved as {_contextGroupInput.Trim()}.", Severity.Success);
+        _contextMenuTarget = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OpenAppearanceEditorAsync(AppContextMenuRequest target)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("acContextMenus.rememberAppearanceTarget", target);
+        }
+        catch (JSException)
+        {
+        }
+
+        _contextMenuTarget = null;
+        var encodedTarget = Uri.EscapeDataString(target.TargetId);
+        Nav.NavigateTo($"/settings?appearanceTarget={encodedTarget}#appearance-color-title");
+        Snackbar.Add($"Appearance editor opened for {target.Label}.", Severity.Info);
+    }
+
     // Per-page classification ribbon under the header (SCP flavour + a hint at the page's job).
     private string PageStrip => CurrentPath switch
     {
@@ -1026,6 +1390,11 @@
 
     private Task HandleAppTabKeyDown(KeyboardEventArgs args, string href)
     {
+        if (args.AltKey && string.Equals(args.Key, "p", StringComparison.OrdinalIgnoreCase))
+        {
+            return ToggleTabPinned(href);
+        }
+
         var tabs = OpenStations;
         var index = tabs.ToList().FindIndex(station => station.Href == href);
         if (index < 0)
@@ -1129,6 +1498,16 @@
         }
         catch
         {
+        }
+
+        _appearanceReference ??= DotNetObjectReference.Create(this);
+        try
+        {
+            await JS.InvokeVoidAsync("acContextMenus.attach", _appearanceReference);
+        }
+        catch (JSException)
+        {
+            // Context menus are an enhancement; navigation and controls stay available if the helper cannot attach.
         }
 
         _clock = new System.Threading.Timer(_ => InvokeAsync(TickClock), null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
@@ -1302,6 +1681,8 @@
         {
             _ = JS.InvokeVoidAsync("acAppearance.unsubscribe", _appearanceSubscriptionId);
         }
+
+        _ = JS.InvokeVoidAsync("acContextMenus.detach");
 
         _appearanceReference?.Dispose();
         _dimSumDismissCancellation?.Cancel();

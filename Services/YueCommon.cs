@@ -58,6 +58,38 @@ public static class YueCommon
         map["Confirm close"] = "確認關閉";
         map["pinned"] = "已釘選";
 
+        // ── Right-click / keyboard / long-press context menus ──
+        map["AC Defender application shell"] = "AC Defender 應用程式介面";
+        map["Right-click, press Shift+F10, or press and hold to edit this tab."] = "右擊、撳 Shift+F10，或者長按去編輯呢個分頁。";
+        map["Tab context menu"] = "分頁快捷選單";
+        map["Tab group context menu"] = "分頁群組快捷選單";
+        map["Control context menu"] = "控制項快捷選單";
+        map["Surface context menu"] = "介面快捷選單";
+        map["Close context menu"] = "關閉快捷選單";
+        map["Search this menu"] = "搜尋呢個快捷選單";
+        map["Filter visible actions…"] = "篩選顯示中嘅操作…";
+        map["Context actions"] = "快捷操作";
+        map["No menu actions match this search."] = "冇快捷操作符合呢次搜尋。";
+        map["Activate tab"] = "開啟分頁";
+        map["Pin tab"] = "釘選分頁";
+        map["Unpin tab"] = "取消釘選分頁";
+        map["Edit tab appearance…"] = "編輯分頁外觀…";
+        map["Close tab"] = "關閉分頁";
+        map["Search tabs in this group"] = "搜尋呢個群組嘅分頁";
+        map["Edit group appearance…"] = "編輯群組外觀…";
+        map["Remove group assignment"] = "移除群組指派";
+        map["Edit appearance…"] = "編輯外觀…";
+        map["Copy accessible label"] = "複製無障礙標籤";
+        map["Open link in new browser tab"] = "喺新瀏覽器分頁開啟連結";
+        map["Pinned tabs are protected. Unpin this tab before closing it."] = "釘選分頁受保護；要先取消釘選先可以關閉。";
+        map["The active tab stays open so the current page and unsaved work remain protected."] = "使用中嘅分頁會保持開啟，保護目前頁面同未儲存工作。";
+        map["The command tab stays available as the navigation fallback."] = "指揮分頁會保留，做導覽後備出口。";
+        map["Rename tab group"] = "重新命名分頁群組";
+        map["Tab group"] = "分頁群組";
+        map["Optional group name"] = "可選群組名稱";
+        map["Apply group"] = "套用群組";
+        map["Keyboard: Shift+F10 opens this menu. Shift+Alt+A opens appearance editing. On touch, press and hold a tab."] = "鍵盤：Shift+F10 開呢個選單；Shift+Alt+A 開外觀編輯。觸控就長按分頁。";
+
         // ── Page titles ──
         map["Command Center"] = "指揮中心";
         map["Defense Roster"] = "防衛名冊";

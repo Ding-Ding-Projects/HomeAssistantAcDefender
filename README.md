@@ -74,6 +74,7 @@ load the server image.
 | [Command palette](docs/wiki/Command-palette.md) | `Ctrl+Shift+F` keyboard navigation to every real app area |
 | [Regex search builder](docs/wiki/Regex-search.md) | Bounded plain-text and opt-in .NET regex search on core navigation surfaces |
 | [App tabs](docs/wiki/App-tabs.md) | Persisted browser-style route tabs with keyboard navigation and overflow-safe scrolling |
+| [Context menus](docs/wiki/Context-menus.md) | Right-click, keyboard, and mobile press-and-hold tab editing with local menu search |
 | [Changelog](docs/wiki/Changelog.md) | Every published version, date/regex filters, Markdown export, and commit traceability |
 | [Notification history](docs/wiki/Notification-history.md) | Review, dismiss, and restore activity notices without losing the audit trail |
 | [Thermostat OFF super-confirmation](docs/wiki/Super-confirmation.md) | Native two-key, full-slider gate for the real destructive OFF command |
@@ -144,6 +145,9 @@ snapshot — no refreshing, ever:
   route visible through overflow, expose arrow/Home/End keyboard navigation, and support a stable
   pinned region plus bounded local group labels, four independent searches, and protected
   containing/inverse bulk-close previews.
+- **Context menus** — every signed-in tab, group, control, card, navigation target, and page surface
+  has a locally searchable, opaque, viewport-bounded menu. Right-click or `Shift+F10`; mobile and pen
+  users press and hold a tab. Active, pinned, and command fallback tabs retain close protection.
 - **Regex search builder** — plain text remains the default while the command palette, Defense
   roster, and Field Manual expose bounded local .NET regex builders with timeout protection.
 - **Release changelog** (`/changelog`) — every published version with date and regex filters,

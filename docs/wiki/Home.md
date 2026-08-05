@@ -30,6 +30,7 @@ Assistant climate entity or returns a real error.
 | **[Command palette](Command-palette.html)** | Keyboard-first navigation from every signed-in page |
 | **[Regex search builder](Regex-search.html)** | Bounded plain-text and .NET regex search on the palette, Defense roster, and Field Manual |
 | **[App tabs](App-tabs.html)** | Persisted browser-style route tabs with keyboard navigation and overflow-safe scrolling |
+| **[Context menus](Context-menus.html)** | Right-click, keyboard, and mobile press-and-hold editing on every signed-in surface |
 | **[Dim-sum startup surprise](Dim-sum-surprise.html)** | A bounded, 10% post-boot delight using public catalog metadata and immutable release photos |
 | **[Thermostat OFF super-confirmation](Super-confirmation.html)** | Native two-key, full-slider safety gate for the real destructive OFF command |
 | **[Windows Electron controller](Windows-Electron-controller.html)** | Separate Windows client for the hosted service |
