@@ -1,7 +1,7 @@
 ---
 layout: doc
 title: "Cooling Failure Watch"
-description: "Raises a repeating mega-alert when cool mode is demanded but the AC is not really cooling, escalates to a full-site OMEGA alert when a rising room confirms it, then turns the AC off until the room warms 0.5 C."
+description: "Raises a repeating MEGA alert when cool mode is demanded but the AC is not really cooling, escalates to a full-site OMEGA alert when a rising room confirms it, then turns the AC off only for that confirmed failure until the room warms 0.5 C."
 ---
 
 <p class="article-kicker">Safety, Energy, and System algorithm</p>
@@ -10,7 +10,7 @@ description: "Raises a repeating mega-alert when cool mode is demanded but the A
 
 <div class="algorithm-article-hero category-system">
   <div>
-    <p class="lede">Raises a repeating mega-alert when cool mode is demanded but the AC is not really cooling, escalates to a full-site OMEGA alert when a rising room confirms it, then turns the AC off until the room warms 0.5 C.</p>
+    <p class="lede">Raises a repeating MEGA alert when cool mode is demanded but the AC is not really cooling, escalates to a full-site OMEGA alert when a rising room confirms it, then turns the AC off only for that confirmed failure until the room warms 0.5 C.</p>
     <p>These algorithms keep the product honest: real Home Assistant commands, real errors, real weather or usage data, and safety-first fallbacks whenever comfort or equipment protection matters.</p>
     <p><a class="mini-link" href="Algorithms.html">Back to all algorithms</a> <a class="mini-link" href="Defender-Logic.html#cooling-failure-watch">See it on the logic page</a></p>
   </div>
@@ -28,7 +28,7 @@ description: "Raises a repeating mega-alert when cool mode is demanded but the A
 
 ## The short version
 
-Raises a repeating mega-alert when cool mode is demanded but the AC is not really cooling, escalates to a full-site OMEGA alert when a rising room confirms it, then turns the AC off until the room warms 0.5 C.
+Raises a repeating MEGA alert when cool mode is demanded but the AC is not really cooling, escalates to a full-site OMEGA alert when a rising room confirms it, then turns the AC off only for that confirmed failure until the room warms 0.5 C.
 
 ## What it watches
 
@@ -36,11 +36,11 @@ Real Home Assistant data only: hvac_mode, hvac_action, the setpoint, and room-te
 
 ## How it decides
 
-MEGA: it alerts if the entity is in cool, the room is clearly above the setpoint, and the action stays idle for about 30 minutes (possible breaker/equipment), or if the action says cooling but the room does not drop over the retained window (possible compressor/airflow). OMEGA: while the idle/breaker mega alert is up, if the room has also risen at least 0.4 C over the last 5 minutes — what a dead breaker looks like — it escalates to a full-site OMEGA alert. Requiring a real, sustained rise (and only on the idle branch) keeps false positives down. Alerts repeat about once a minute.
+MEGA: it alerts if the entity is in cool, the room is clearly above the setpoint, and the action stays idle for about 30 minutes (possible breaker/equipment), or if the action says cooling but the room does not drop over the retained window (possible compressor/airflow). OMEGA: while the idle/breaker MEGA alert is up, if the room has also risen at least 0.4 C over the last 5 minutes — what a dead breaker looks like — it escalates to a full-site OMEGA alert. MEGA remains advisory; only OMEGA's independent room-rise evidence authorizes an automatic OFF. Requiring a real, sustained rise keeps false positives down. Alerts repeat about once a minute.
 
 ## What it changes
 
-Surfaces a red alert, an event log entry, and (on OMEGA) a site-wide overlay. It also turns the AC fully off (a failing unit is only wasting power) and holds it off until the real room temperature rises 0.5 C above the reading captured at shutdown, then restores cool. A human turning the AC back on is always respected.
+Surfaces a red alert and an event log entry, plus a site-wide overlay on OMEGA. Only a confirmed OMEGA failure turns the AC fully off and holds it off until the real room temperature rises 0.5 C above the reading captured at shutdown, then restores cool. A human turning the AC back on is respected for the rest of that failure episode, so a stale alert cannot repeatedly stop the unit.
 
 ## Safety boundaries
 

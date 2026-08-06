@@ -9564,10 +9564,11 @@ public sealed class DefenderStateStore
     }
 
     /// <summary>
-    /// Cooling-Failure Shutdown: while a MEGA/OMEGA cooling-failure alert is up, turn the AC fully off
-    /// (a failing unit is not cooling anyway) and hold it off until the real room temperature rises
+    /// Cooling-Failure Shutdown: while an OMEGA-confirmed cooling-failure alert is up, turn the AC fully
+    /// off (a failing unit is not cooling anyway) and hold it off until the real room temperature rises
     /// <see cref="CoolingFailureShutdownReleaseRiseCelsius"/> above the reading captured at shutdown,
-    /// then restore cool. The hold latches on its own state, so it survives the mega alert clearing the
+    /// then restore cool. A MEGA alert remains advisory so an idle/no-drop false positive cannot turn
+    /// off a real thermostat. The hold latches on its own state, so it survives the alert clearing the
     /// moment the mode reads "off" (an off unit is no longer "cooling demanded"). Mirrors the
     /// out-parameter shape of <see cref="TryBeginCoolOutdoorShutdown"/>: returns true to hold the cycle
     /// (AC off), returns false with <paramref name="restoreCool"/> to restore, false otherwise.
@@ -9598,8 +9599,40 @@ public sealed class DefenderStateStore
             var nextCheck = now.AddSeconds(Math.Max(15, options.PollIntervalSeconds));
             var modeOff = string.Equals(reading.HvacMode, "off", StringComparison.OrdinalIgnoreCase);
 
+            // HUMAN OVERRIDE: once a person has deliberately restarted the AC after this guard's
+            // OFF command, stand aside for the rest of the failure episode. Without this latch the
+            // first restart is respected only until the next 30-minute failure window, after which
+            // an integration that reports idle/no-drop can turn the unit off again forever.
+            if (state.CoolingFailureShutdownHumanOverrideThisEpisode)
+            {
+                if (modeOff)
+                {
+                    state.CoolingFailureShutdownHumanOverrideThisEpisode = false;
+                    state.CoolingFailureShutdownStatus = "The manually restarted cooling episode ended when the AC went off.";
+                    SaveState();
+                }
+                else
+                {
+                    message = "Cooling-failure shutdown is standing aside after a manual restart; the AC is yours until cooling evidence clears.";
+                    state.CoolingFailureShutdownStatus = message;
+                    SaveState();
+                }
+
+                return false;
+            }
+
             if (state.CoolingFailureShutdownActive)
             {
+                // A MEGA alert is a suspicion, not proof. Older versions could enter the shutdown
+                // from MEGA alone, so release any legacy hold that was not marked as OMEGA-confirmed.
+                // This is the guard that stops an idle/no-drop false positive from taking the AC down.
+                if (!state.CoolingFailureShutdownConfirmed)
+                {
+                    ClearCoolingFailureShutdownLocked("Cooling-failure shutdown released: automatic OFF now requires confirmed OMEGA evidence.");
+                    SaveState();
+                    return false;
+                }
+
                 if (state.CoolingFailureShutdownBaselineCelsius is not { } baseline)
                 {
                     // Defensive: an active shutdown with no baseline can never release. End it cleanly.
@@ -9626,6 +9659,7 @@ public sealed class DefenderStateStore
                     && now - commandedAt > TimeSpan.FromSeconds(Math.Max(15, options.CommandGraceSeconds)))
                 {
                     ClearCoolingFailureShutdownLocked("Someone turned the AC back on — the cooling-failure shutdown stood aside.");
+                    state.CoolingFailureShutdownHumanOverrideThisEpisode = true;
                     AddEvent("info", "Cooling-failure shutdown: the AC was turned back on by hand; standing aside.");
                     SaveState();
                     return false;
@@ -9706,6 +9740,16 @@ public sealed class DefenderStateStore
                 return false;
             }
 
+            // MEGA means "possible failure" and remains visible as an alert. Only OMEGA has the
+            // additional real-room rise evidence needed to justify an automatic OFF command.
+            if (state.OmegaConfirmedAt is null)
+            {
+                message = "Cooling-failure MEGA alert is advisory; automatic OFF waits for confirmed OMEGA room-rise evidence.";
+                state.CoolingFailureShutdownStatus = message;
+                SaveState();
+                return false;
+            }
+
             // A restore command (or a newly observed COOL transition) starts the shared compressor
             // minimum-ON dwell. The no-drop detector intentionally retains real room history, so an
             // old sample from before the shutdown can re-arm MEGA as soon as Home Assistant echoes
@@ -9725,11 +9769,13 @@ public sealed class DefenderStateStore
             }
 
             state.CoolingFailureShutdownActive = true;
+            state.CoolingFailureShutdownConfirmed = true;
             state.CoolingFailureShutdownBaselineCelsius = Math.Round(reading.CurrentTemperatureCelsius, 2);
             state.CoolingFailureShutdownStartedAt = now;
             state.CoolingFailureShutdownReleaseCandidateAt = null;
             state.CoolingFailureShutdownOffSent = false;
             state.CoolingFailureShutdownOffCommandedAt = null;
+            state.CoolingFailureShutdownHumanOverrideThisEpisode = false;
             if (!modeOff)
             {
                 turnOff = true;
@@ -9801,11 +9847,13 @@ public sealed class DefenderStateStore
     private void ClearCoolingFailureShutdownLocked(string reason)
     {
         state.CoolingFailureShutdownActive = false;
+        state.CoolingFailureShutdownConfirmed = false;
         state.CoolingFailureShutdownBaselineCelsius = null;
         state.CoolingFailureShutdownStartedAt = null;
         state.CoolingFailureShutdownReleaseCandidateAt = null;
         state.CoolingFailureShutdownOffSent = false;
         state.CoolingFailureShutdownOffCommandedAt = null;
+        state.CoolingFailureShutdownHumanOverrideThisEpisode = false;
         state.CoolingFailureShutdownStatus = reason;
     }
 
@@ -12428,6 +12476,7 @@ public sealed class DefenderStateStore
         state.CoolingFailureStatus = status;
         state.OmegaConfirmedAt = null;
         state.OmegaRoomRiseCelsius = null;
+        state.CoolingFailureShutdownHumanOverrideThisEpisode = false;
     }
 
     private void ClearVisibilityGuard(string status)
@@ -13660,10 +13709,15 @@ public sealed class DefenderStateStore
 
         public double? OmegaRoomRiseCelsius { get; set; }
 
-        // Cooling-Failure Shutdown: latched hold that turns the AC off while a MEGA/OMEGA alert is up
+        // Cooling-Failure Shutdown: latched hold that turns the AC off only after OMEGA confirmation
         // and keeps it off until the room warms CoolingFailureShutdownReleaseRiseCelsius above the
         // baseline captured at shutdown. Persisted so the hold survives a restart.
         public bool CoolingFailureShutdownActive { get; set; }
+
+        // Automatic OFF is permitted only for an OMEGA-confirmed failure. Keeping this marker on the
+        // latched hold lets the next process/read cycle distinguish a confirmed hold from legacy MEGA-only
+        // state and release the latter without waiting for the room to warm.
+        public bool CoolingFailureShutdownConfirmed { get; set; }
 
         public double? CoolingFailureShutdownBaselineCelsius { get; set; }
 
@@ -13674,6 +13728,10 @@ public sealed class DefenderStateStore
         public bool CoolingFailureShutdownOffSent { get; set; }
 
         public DateTimeOffset? CoolingFailureShutdownOffCommandedAt { get; set; }
+
+        // A person turning the AC back on wins for the rest of this failure episode. This is separate
+        // from the active hold so a later stale MEGA alert cannot re-open the automatic OFF command.
+        public bool CoolingFailureShutdownHumanOverrideThisEpisode { get; set; }
 
         public string CoolingFailureShutdownStatus { get; set; } = "Cooling-failure shutdown is watching.";
 

@@ -295,10 +295,10 @@ public sealed class AcDefenderService
                 return;
             }
 
-            // Cooling-Failure Shutdown: while a MEGA/OMEGA cooling-failure alert is up, turn the AC
-            // fully off (a failing unit is not cooling anyway) and hold it off until the room warms by
-            // the release margin (0.5 C), then restore cool. Runs before the enforcer and cool-mode
-            // restore so nothing turns the unit back on while the hold is deliberate.
+            // Cooling-Failure Shutdown: only an OMEGA-confirmed cooling-failure alert may turn the AC
+            // fully off. A MEGA alert remains advisory, so an idle/no-drop false positive cannot stop
+            // a real thermostat. A confirmed hold runs before the enforcer and cool-mode restore so
+            // nothing turns the unit back on while the five-minute release decision is deliberate.
             if (stateStore.TryRespectCoolingFailureShutdown(reading, DateTimeOffset.UtcNow, out var coolFailUntil, out var coolFailMessage, out var coolFailOff, out var coolFailRestore, out var coolFailSetPoint))
             {
                 if (coolFailOff)

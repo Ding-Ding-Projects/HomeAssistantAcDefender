@@ -19,6 +19,8 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
       keep the photo outside this repository.
 - [x] Provide searchable application-owned context menus across signed-in surfaces, with
       `Shift+F10`, truthful shortcut labels, and mobile press-and-hold tab editing.
+- [x] Keep Cooling Failure Watch advisory at MEGA and reserve automatic thermostat OFF for
+      OMEGA-confirmed room-rise evidence; preserve a manual restart for the rest of the episode.
 - [ ] Re-run browser checks on the dashboard, Defense, Energy, Settings, and
       narrow layouts for each user-facing change.
 - [ ] Re-deploy the verified default-branch commit to the production Docker host

@@ -40,6 +40,10 @@ entity or shows a real error.
    thermostat that vanishes mid-argument triggers the **ULTRA OMEGA ALERT** Tamper Truce —
    two hours of stand-down, not alarms; and a bedroom door sensor opening at dawn warms
    the target before the person reaches the hallway (Wake-Up Truce).
+8. **Cooling failure needs proof before it touches the power switch.** A possible MEGA failure
+   remains an alert; only an OMEGA-confirmed room-temperature rise may trigger the automatic
+   OFF-and-recovery hold. If a person turns the AC back on, that choice wins for the rest of
+   the failure episode.
 
 | The money page | The usage calendar |
 | --- | --- |

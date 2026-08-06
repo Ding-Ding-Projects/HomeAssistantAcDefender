@@ -81,6 +81,8 @@ tests.CoolingFailureStaysQuietWhenActionInconclusiveAndRoomNotRising();
 tests.CoolingFailureMegaAndOmegaWhenBreakerOffAndRoomRising();
 tests.CoolingFailureMegaWhenFarAboveTargetEvenIfRoomDrifsDown();
 tests.CoolingFailureMegaWhenCoolingActionButRoomNotDropping();
+tests.CoolingFailureMegaAlertDoesNotTurnAcOffWithoutOmega();
+tests.CoolingFailureLegacyMegaOnlyShutdownIsReleased();
 tests.CoolingFailureShutdownTurnsAcOffUntilRoomRisesHalfDegree();
 tests.CoolingFailureRestoreCannotImmediatelyReopenShutdown();
 tests.CoolingFailureShutdownRespectsAManualTurnBackOn();
@@ -3223,6 +3225,7 @@ internal sealed class DefenderSetPointRegressionTests
         }
 
         var t0 = DateTimeOffset.UtcNow;
+        SetRuntimeProperty(store, "OmegaConfirmedAt", t0);
         SetRuntimeProperty(store, "LastObservedHvacModeCoolAt", t0.AddMinutes(-10));
 
         // Shutdown opens: it turns the AC off and holds, capturing 25.0 C as the release baseline.
@@ -3302,6 +3305,7 @@ internal sealed class DefenderSetPointRegressionTests
         {
             throw new InvalidOperationException("Retained no-drop evidence should reproduce the post-restore MEGA re-arm precondition.");
         }
+        SetRuntimeProperty(store, "OmegaConfirmedAt", restoredAt);
 
         if (store.TryRespectCoolingFailureShutdown(
                 restoredCooling,
@@ -3349,6 +3353,7 @@ internal sealed class DefenderSetPointRegressionTests
         store.RecordHomeAssistantReading(coolIdle);
 
         var t0 = DateTimeOffset.UtcNow;
+        SetRuntimeProperty(store, "OmegaConfirmedAt", t0);
         SetRuntimeProperty(store, "LastObservedHvacModeCoolAt", t0.AddMinutes(-10));
         if (!store.TryRespectCoolingFailureShutdown(coolIdle, t0, out _, out _, out var turnOff, out _, out _) || !turnOff)
         {
@@ -3363,6 +3368,25 @@ internal sealed class DefenderSetPointRegressionTests
             || reOff || reRestore)
         {
             throw new InvalidOperationException("A manual turn-back-on during the hold must be respected (guard stands aside, no re-command).");
+        }
+
+        // The same stale failure evidence may still be present after the person restarts the AC. It
+        // must not reopen the automatic OFF episode at the next failure-alert boundary.
+        SetRuntimeProperty(store, "CoolingFailureSuspectedAt", t0.AddMinutes(-31));
+        SetRuntimeProperty(store, "CoolingFailureMegaActive", true);
+        if (store.TryRespectCoolingFailureShutdown(
+                humanBackOn,
+                t0.AddMinutes(40),
+                out _,
+                out var overrideMessage,
+                out var staleReOff,
+                out var staleRestore,
+                out _)
+            || staleReOff
+            || staleRestore
+            || !overrideMessage.Contains("manual restart", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("A stale cooling-failure alert must not turn the AC off again after a manual restart.");
         }
     }
 
@@ -3992,6 +4016,7 @@ internal sealed class DefenderSetPointRegressionTests
             store.RecordHomeAssistantReading(reading, now);
             SetRuntimeProperty(store, "CoolingFailureSuspectedAt", now.AddMinutes(-31));
             store.RecordHomeAssistantReading(reading, now);
+            SetRuntimeProperty(store, "OmegaConfirmedAt", now);
             SetRuntimeProperty(store, "LastObservedHvacModeCoolAt", now.AddMinutes(-10));
 
             if (!store.TryRespectCoolingFailureShutdown(reading, now, out _, out _, out var firstOff, out _, out _) || !firstOff
@@ -4967,6 +4992,64 @@ internal sealed class DefenderSetPointRegressionTests
         finally
         {
             DefenderStoreFixture.DeleteContentRoot(contentRoot);
+        }
+    }
+
+    public void CoolingFailureMegaAlertDoesNotTurnAcOffWithoutOmega()
+    {
+        // MEGA is a possible failure, not enough evidence to turn off a real thermostat. The automatic
+        // OFF path must wait for OMEGA's independent room-rise confirmation.
+        using var fixture = DefenderStoreFixture.Create();
+        var store = fixture.Store;
+        store.SetTarget(22.0);
+
+        var reading = new ThermostatReading("climate.dining_room", 25.0, 23.0, "cool", "idle", null, []);
+        store.RecordHomeAssistantReading(reading);
+        SetRuntimeProperty(store, "CoolingFailureSuspectedAt", DateTimeOffset.UtcNow.AddMinutes(-31));
+        if (!store.RecordHomeAssistantReading(reading).CoolingFailure.Alerting)
+        {
+            throw new InvalidOperationException("The test must start with an active MEGA cooling-failure alert.");
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        SetRuntimeProperty(store, "LastObservedHvacModeCoolAt", now.AddMinutes(-10));
+        if (store.TryRespectCoolingFailureShutdown(
+                reading,
+                now,
+                out _,
+                out var message,
+                out var turnOff,
+                out var restoreCool,
+                out _)
+            || turnOff
+            || restoreCool
+            || !message.Contains("OMEGA", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("A MEGA-only alert must remain advisory and must not turn the AC off.");
+        }
+    }
+
+    public void CoolingFailureLegacyMegaOnlyShutdownIsReleased()
+    {
+        // Existing persisted state may contain a shutdown that was opened by the old MEGA-only rule.
+        // The first real reading after upgrade must release that hold instead of keeping the AC off.
+        using var fixture = DefenderStoreFixture.Create();
+        var store = fixture.Store;
+        var now = DateTimeOffset.UtcNow;
+        var reading = new ThermostatReading("climate.dining_room", 27.3, 23.0, "off", "off", null, []);
+
+        SetRuntimeProperty(store, "CoolingFailureShutdownActive", true);
+        SetRuntimeProperty(store, "CoolingFailureShutdownBaselineCelsius", 27.3);
+        SetRuntimeProperty(store, "CoolingFailureShutdownOffSent", true);
+        SetRuntimeProperty(store, "CoolingFailureShutdownOffCommandedAt", now.AddMinutes(-2));
+        var runtimeState = GetRuntimeState(store);
+
+        if (store.TryRespectCoolingFailureShutdown(reading, now, out _, out _, out var turnOff, out var restoreCool, out _)
+            || turnOff
+            || restoreCool
+            || (bool)runtimeState.GetType().GetProperty("CoolingFailureShutdownActive")!.GetValue(runtimeState)!)
+        {
+            throw new InvalidOperationException("A legacy MEGA-only shutdown must be released without another OFF or restore command.");
         }
     }
 

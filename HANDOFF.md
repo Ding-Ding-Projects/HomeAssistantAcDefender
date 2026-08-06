@@ -7,6 +7,20 @@ changelog, release tooling, and deployment evidence. Defender control logic
 still remains server-side; the Windows controller contains no simulated HVAC
 state.
 
+## Cooling failure safety correction
+
+- Cooling Failure Watch still raises its real-input MEGA alert for a possible breaker,
+  compressor, or airflow problem, but MEGA is advisory and cannot turn off the real
+  thermostat by itself.
+- Automatic OFF now requires the independent OMEGA room-rise confirmation. A legacy
+  MEGA-only shutdown hold is released on the next worker check instead of waiting for
+  the room to warm.
+- A person who turns the AC back on after an automatic OFF wins for the rest of that
+  failure episode, so stale idle/no-drop evidence cannot repeatedly stop the unit.
+- Focused regression coverage is in `HomeAssistantAcDefender.Tests/Program.cs` beside
+  the existing cooling-failure tests; the documented build and console runner remain
+  the verification gates.
+
 ## CI and documentation slice
 
 - `.github/workflows/release.yml` restores, builds, and runs the regression suite;
