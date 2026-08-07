@@ -54,37 +54,43 @@
         <div class="ops-yell-crit">
             <div class="ops-yell-crit__bang" aria-hidden="true">❗</div>
             <h2 class="ops-yell-crit__headline">@YellHeadline</h2>
-            <div class="ops-yell-crit__sub">Projected bill <strong>@Cad(ProjectedBill)</strong> · yell threshold $180.00 · forecast severity: <strong>@CurrentYell.Name</strong></div>
+            <div class="ops-yell-crit__sub">Projected bill <strong>@Cad(ProjectedBill)</strong> · story threshold $180.00 · current story band: <strong>@CurrentYell.Name</strong></div>
         </div>
     }
 
     @* ── YELL-O-METER main panel ── *@
     <div class="ops-panel ops-panel--pad @(ProjectedBill >= YellThreshold ? "ops-yell--crit" : "")">
         <div class="ops-yell__head">
-            <h2 class="ops-panel__label" style="color: @CurrentYell.Color; margin: 0;">📣 YELL-O-METER — MORE DOLLARS = MORE YELLING</h2>
-            <span class="ops-yell__cal">CALIBRATED AGAINST O5-BROTHER · 3 SEASONS OF FIELD DATA</span>
+            <h2 class="ops-panel__label" style="color: @CurrentYell.Color; margin: 0;">📣 YELL-O-METER — BILL STORY BANDS</h2>
+            <span class="ops-yell__cal">HOUSEHOLD-FOLKLORE FORECAST · ONLY THE BILL INPUT IS MEASURED</span>
         </div>
         <div class="ops-yell__baseline">
             <span class="ops-yell__baseline-label">PROJECTED MONTH-END BILL</span>
             <span class="ops-yell__bill" style="color: @CurrentYell.Color;">@Cad(ProjectedBill)</span>
-            <span class="ops-yell__level" style="color: @CurrentYell.Color;">@CurrentYell.Name — @CurrentYell.Db</span>
+            <span class="ops-yell__level" style="color: @CurrentYell.Color;">@CurrentYell.Name — @CurrentYell.SoundLabel</span>
         </div>
         <div class="ops-yell-gauge"
              role="meter"
-             aria-label="Projected month-end bill"
+             aria-label="Projected month-end bill story band"
              aria-valuemin="0"
-             aria-valuemax="320"
-             aria-valuenow="@Math.Clamp(ProjectedBill, 0, 320).ToString("0.##", CultureInfo.InvariantCulture)"
-             aria-valuetext="@($"{Cad(ProjectedBill)}, {CurrentYell.Name}, {CurrentYell.Db}")">
+             aria-valuemax="@YellMeterMaximum.ToString("0", CultureInfo.InvariantCulture)"
+             aria-valuenow="@Math.Clamp(ProjectedBill, 0, YellMeterMaximum).ToString("0.##", CultureInfo.InvariantCulture)"
+             aria-valuetext="@($"{Cad(ProjectedBill)}, {CurrentYell.Name}, {CurrentYell.SoundLabel}")">
             <div class="ops-yell-gauge__needle" style="left: @NeedlePercent.ToString("0.#", CultureInfo.InvariantCulture)%;"></div>
         </div>
         <div class="ops-yell-gauge__scale">
-            <span>$0 SERENE</span><span>$100 HMPH</span><span>$180 YELL LINE</span><span>$250 OPERA</span><span>$300+ ULTRA OMEGA</span>
+            <span>$0 SERENE</span><span>$100 HMPH</span><span>$180 STORY LINE</span><span>$250 OPERA</span><span>$350+ VERIFY</span>
         </div>
         <div class="ops-yell-cards">
             <div class="ops-yell-card">
-                <h3 class="ops-yell-card__head" style="color: @CurrentYell.Color;">FORECAST — WHAT THE YELLING WILL BE LIKE</h3>
+                <h3 class="ops-yell-card__head" style="color: @CurrentYell.Color;">PLAYFUL SCENARIOS — WHAT MIGHT HAPPEN</h3>
                 <div class="ops-yell-card__body">@CurrentYell.Forecast</div>
+                <ol class="ops-yell-predictions" aria-label="Possible household scenarios for this bill story band">
+                    @foreach (var prediction in CurrentYell.Predictions)
+                    {
+                        <li>@prediction</li>
+                    }
+                </ol>
             </div>
             <div class="ops-yell-card">
                 <h3 class="ops-yell-card__head" style="color: var(--accent);">SURVIVAL PROTOCOL — HOW TO GET THROUGH IT</h3>
@@ -95,8 +101,44 @@
                     }
                 </ul>
             </div>
+            <div class="ops-yell-card ops-yell-card--wide">
+                <h3 class="ops-yell-card__head" style="color: var(--warn);">REAL PAIN &amp; SAFETY FACTS — THE PART THAT IS NOT A JOKE</h3>
+                <ul class="ops-survival">
+                    @foreach (var fact in PainAndSafetyFacts)
+                    {
+                        <li>@fact</li>
+                    }
+                </ul>
+                <div class="ops-yell-card__body" style="margin-top: 8px;">
+                    The app does not contain a sound meter and cannot predict a person's behaviour. If there is immediate danger or a medical emergency, call 9-1-1. Read the
+                    <a href="/wiki/Yelling-Survival-Guide">survival guide</a>,
+                    <a href="/wiki/Yelling-Predictions">complete story-band ledger</a>, and
+                    <a href="/wiki/Heat-Pain-and-Survival-Facts">sourced hearing, heat, pain, and personal-safety facts</a>.
+                </div>
+            </div>
+            <div class="ops-yell-card ops-yell-card--wide">
+                <h3 class="ops-yell-card__head" style="color: var(--accent);">MY FREEZE-AND-CRY RESPONSE — WHAT I MAY NOTICE NEXT</h3>
+                <p class="ops-yell-card__body">These are possible stages based on a lived household response and general stress-response guidance. They are not a diagnosis, a fixed order, or a promise that every stage will happen.</p>
+                <p class="ops-yell-card__body"><strong>AT-ANY-TIME SAFETY OVERRIDE:</strong> Threats, violence, a blocked exit, or fear for safety are not a later “stage.” Leave if possible and call 9-1-1 for immediate danger.</p>
+                <ol class="ops-yell-predictions" aria-label="Possible stages of my freeze-and-cry response and survival actions">
+                    @foreach (var (stage, possibleExperience, survivalAction) in FreezeResponseTimeline)
+                    {
+                        <li><strong>@stage:</strong> @possibleExperience <em>Survival action:</em> @survivalAction</li>
+                    }
+                </ol>
+            </div>
+            <div class="ops-yell-card ops-yell-card--wide">
+                <h3 class="ops-yell-card__head" style="color: var(--warn);">MY EXTREME OVERTHINKING MODE — WHY IT MAY START</h3>
+                <p class="ops-yell-card__body">Lived household fact: after my brother yells at me, my brain can enter an extreme overthinking mode. The facts below explain possible stress-and-worry mechanisms; they do not diagnose one cause or prove what is happening inside my brain.</p>
+                <ol class="ops-yell-predictions" aria-label="Possible reasons my brain enters extreme overthinking mode">
+                    @foreach (var fact in OverthinkingFacts)
+                    {
+                        <li>@fact</li>
+                    }
+                </ol>
+            </div>
         </div>
-        <div class="helper-text" style="margin-top: 10px;">Field notes: yelling is loud but survivable; it has never once lowered the outdoor temperature. The pantry (Field Kitchen, on <a href="/">Command</a>) and the budget guard both push this needle left. <a href="/wiki/Energy-and-Costs">⎘ full math in the wiki</a></div>
+        <div class="helper-text" style="margin-top: 10px;">Field notes: the scenarios are deliberately theatrical; the projected bill and live Home Assistant inputs are the only measured facts. The pantry (Field Kitchen, on <a href="/">Command</a>) and the budget guard both push this needle left. <a href="/wiki/Yelling-Survival-Guide">⎘ open the three-part wiki field manual</a></div>
     </div>
 
     @* ── 24-hour whole-house power ── *@
@@ -337,6 +379,7 @@
 @code {
     private const string AllCategories = "All";
     private const double YellThreshold = 180.0;
+    private const double YellMeterMaximum = 350.0;
 
     private UsageLiveSnapshot? _usage;
     private UsageHistorySnapshot? _usageHistory;
@@ -361,30 +404,166 @@
 
     // ---------- yell-o-meter ----------
 
-    private sealed record YellLevel(double Threshold, string Name, string Db, string Color, string Forecast);
+    private sealed record YellLevel(
+        double Threshold,
+        string Name,
+        string SoundLabel,
+        string Color,
+        string Forecast,
+        params string[] Predictions);
 
     private static readonly YellLevel[] YellLevels =
     [
-        new(0, "SERENE", "≈ 35 dB — CONTENT HUMMING", "var(--good)", "A pleasant \"huh, not bad this month\" delivered from another room. The bill is opened, nodded at, and filed. No countermeasures required; enjoy it while it lasts."),
-        new(100, "HMPH", "≈ 55 dB — POINTED SIGHING", "var(--good)", "Audible sighs near the thermostat. The bill is held up to the light like a suspicious cheque. Expect one rhetorical question per day (\"do we live in a walk-in fridge?\") for about a week."),
-        new(180, "FULL YELL", "≈ 85 dB — NAMES USED IN FULL", "var(--warn)", "The classic: bill slammed on the dining table (Chamber 01), your full legal name deployed, a dramatic reading of the kWh line items, and a walking tour of every vent in the house. 20–40 minutes plus aftershocks at dinner. \"MONEY DOESN'T GROW ON TREES\" appears an average of 3.2 times."),
-        new(250, "OPERA", "≈ 95 dB — SUSTAINED ARIA", "var(--bad)", "Multi-movement performance. Movement I: disbelief (fortissimo). Movement II: the story of the 1998 heat wave survived with one fan. Movement III: threats to remove the breaker. The thermostat gets unplugged \"as a lesson\" — this is exactly how the Tamper Truce was invented."),
-        new(300, "ULTRA OMEGA YELL", "> 100 dB — GEOLOGICAL EVENT", "var(--bad)", "Sustained yelling detectable by the upstairs sensors as a 0.3 °C rise (from one person, radiating). All snacks are declared communal property. Emergency protocol BROTHER MAD auto-arms itself out of self-preservation."),
+        new(0, "SERENE", "ordinary conversation", "var(--good)", "The bill is expected to land without a household summit. This is a playful scenario, not a microphone reading or a promise about anyone's reaction.",
+            "The envelope or PDF gets opened without an emergency audience.",
+            "The thermostat avoids becoming Exhibit A.",
+            "One approving nod may occur; no follow-up lecture is forecast.",
+            "The best move is to save the quiet month as the comparison baseline."),
+        new(60, "EYEBROW", "one raised eyebrow", "var(--good)", "The total is noticeable but still in the zone where an explanation can fit inside one normal sentence.",
+            "The bill gets a second look before it is filed.",
+            "Someone asks whether the AC ran during on-peak hours.",
+            "The Energy page can answer the question before folklore takes over.",
+            "The conversation is likely to end once the current month is compared with the prior month."),
+        new(100, "HMPH", "pointed sighing", "var(--good)", "The bill is held up like a suspicious cheque and the thermostat receives a long look.",
+            "The first question is likely to be who changed the temperature.",
+            "The second question is likely to be whether a window or door was open.",
+            "The AC usage calendar gets inspected for one unusually expensive day.",
+            "A rhetorical walk-in-fridge question may return at dinner."),
+        new(140, "LECTURE WEATHER WATCH", "firm indoor voice", "var(--warn)", "Conditions favour a budget lecture, but the line-item audit has not yet become a full performance.",
+            "The month-to-date graph becomes a prop.",
+            "On-peak hours are read aloud with extra punctuation.",
+            "A proposal to raise the target by 1 °C appears.",
+            "Yesterday's thermostat touches are compared with today's memory of them."),
+        new(180, "FULL YELL", "names used in full", "var(--warn)", "The classic bill-table summit: full names, line items, vents, and competing memories of the hottest day.",
+            "The bill is placed on the dining table as primary evidence.",
+            "Every vent receives an unsolicited performance review.",
+            "The 1998 one-fan story enters the record.",
+            "A thermostat setpoint is proposed as a peace gesture.",
+            "Dinner may contain a shorter aftershock when the AC cycles on."),
+        new(210, "ENCORE YELL", "repeat performance", "var(--warn)", "The first explanation did not close the case, so the household forecast contains callbacks and a second reading of the expensive lines.",
+            "The same kWh number is quoted twice with different emphasis.",
+            "The phone app and wall thermostat are accused of conspiring.",
+            "A tour of closed doors and open vents begins.",
+            "The budget guard's saved dollars become the strongest available defence.",
+            "A temporary +1 °C truce is requested before the encore ends."),
+        new(250, "OPERA", "multi-movement aria", "var(--bad)", "A long-form performance is forecast: disbelief, household history, equipment policy, then proposed sanctions.",
+            "Movement I audits the current invoice.",
+            "Movement II compares this summer with every remembered summer.",
+            "Movement III threatens thermostat custody changes.",
+            "The breaker becomes a topic; the app must never treat the joke as permission to switch real power.",
+            "The safest finale is a pause, a quieter room, and a later factual review."),
+        new(275, "BREAKER SUMMIT", "high-conflict household meeting", "var(--bad)", "The forecast now includes proposals involving the breaker, the wall unit, or somebody's phone access. Those are predictions, not automation instructions.",
+            "One person volunteers to become the sole thermostat administrator.",
+            "The AC schedule is blamed even if the vendor app made the change.",
+            "A physical thermostat inspection becomes likely.",
+            "Tamper Truce may observe a real disappearance, but it will not invent one.",
+            "If the argument stops feeling safe, leave the area instead of defending the graph."),
+        new(300, "ULTRA OMEGA YELL", "maximum theatrical forecast", "var(--bad)", "The bill has crossed the top named band. The app predicts paperwork, repetition, and household policy proposals—not measured sound pressure or human intent.",
+            "All prior arguments return as a greatest-hits compilation.",
+            "Snacks may be reclassified as shared budget assets.",
+            "BROTHER MAD may be used only as the app's real two-hour stand-down—not as a safety service.",
+            "A manual thermostat change remains a real command and must be treated carefully.",
+            "Quiet distance, a charged phone, and an exit path matter more than winning the bill debate."),
+        new(350, "BEYOND THE METER", "no reliable household forecast", "var(--bad)", "The projection is outside the Yell-O-Meter's useful storytelling range. Stop adding comedy and verify the bill inputs, the meter data, and personal safety.",
+            "Check whether the projected value is based on fresh Alectra data or the documented fallback.",
+            "Check rates, fixed delivery charges, dates, and duplicate sensor samples.",
+            "Move the discussion to a calm time rather than escalating in the moment.",
+            "Treat threats, violence, medical symptoms, or hearing pain as real safety matters.",
+            "Record what actually happened; do not upgrade a forecast into a fact."),
     ];
 
     private static readonly (string Title, string Body)[] SurvivalSteps =
     [
-        ("Strike first.", "Break the news before the bill lands — mention the heat wave and TOU rates casually at breakfast. Surprise is 60% of the yell."),
-        ("Bring receipts.", "Open this page mid-yell. Point at the runtime counters and the guards' savings. Data does not stop yelling but it shortens Movement II."),
-        ("Do not argue the 1998 heat wave.", "It was survived with one fan. This is canon now. Nod."),
-        ("Deploy the peace gesture.", "Nudge the directive +1 °C in front of witnesses. Visible sacrifice reduces yell duration by a measured 31%."),
-        ("If all else fails: BROTHER MAD.", "One slide on the Controls page files a formal apology, eases the AC, and stands everything down for 2 hours. The anger model learns. You survive."),
+        ("Share the projection early.", "A calm preview is easier to discuss than a surprise invoice. Do not quote a probability the app does not calculate."),
+        ("Verify the input first.", "Check the billing window, live-data freshness, rate settings, and whether the budget is using all-in data or the AC estimate."),
+        ("Bring the real receipts.", "Use the runtime counters, calendar, TOU bands, and guard savings. Keep estimates labelled as estimates."),
+        ("Pick a calm time.", "Do not start the budget review while somebody is rushing, exhausted, or already angry."),
+        ("Keep an exit clear.", "Never block a doorway, corner a person, or let a thermostat argument trap anyone in a room."),
+        ("Lower your own volume.", "Short sentences and a slower voice reduce confusion; do not compete for the loudest line."),
+        ("Protect ears with distance.", "If you need to shout to be heard nearby, move farther away or take a quiet break instead of testing who can be louder."),
+        ("Do not touch the breaker in anger.", "Electrical and HVAC equipment changes should be deliberate, safe, and based on real device evidence."),
+        ("Keep children and pets out of the argument.", "Move them to a quieter safe space without making them carry messages between adults."),
+        ("Use a factual pause.", "Say what is known, what is estimated, and what needs checking later; then stop the live debate."),
+        ("Recognize my freeze response.", "Lived household fact: when my brother yells at me, I can get a fight-or-flight response, my body can freeze, and I can cry. That is a cue to stop the argument, allow safe distance, and use grounding if it is safe—not to demand an immediate answer."),
+        ("Use one rehearsed exit line.", "If words are hard, try a short line such as: ‘I am frozen. I need space. I will talk later.’ It does not need to win the argument."),
+        ("Let text or a gesture carry the message.", "A pre-agreed hand signal or a short text to a trusted person can communicate ‘I need space’ when speaking feels unavailable."),
+        ("Ground through the senses if safe.", "Feel the floor or chair, name a few things you can see, or hold a familiar object. Stop any technique that makes the moment worse."),
+        ("Do not force the breath.", "Try slower breathing only if it feels comfortable. Feeling unable to take a perfect deep breath is not a failure."),
+        ("Move toward a safer quiet place.", "If it is safe to move, choose somewhere with an unblocked exit and less noise; do not hide where leaving becomes harder."),
+        ("Contact the planned trusted person.", "Use the call, text, or code word chosen in the safety plan. Immediate danger still calls for 9-1-1."),
+        ("Keep essentials reachable.", "When conflict has felt unsafe before, keep a charged phone, keys, necessary medication, and shoes where they can be reached without crossing the argument."),
+        ("Do not turn crying into evidence.", "Crying does not prove agreement, guilt, manipulation, or readiness to continue. Pause and allow space."),
+        ("Wait before making bill decisions.", "Do not agree to thermostat, money, or account changes while frozen or overwhelmed. Revisit them after safety and calm return."),
+        ("Name the overthinking loop.", "Try: ‘My brain is replaying this because I feel unsafe or uncertain; replaying is not the same as solving.’ Naming it can create a little distance without arguing with the feeling."),
+        ("Write the worries down once—only if private.", "Writing worries once may help clear mental space, but use paper, a device, or an account only when it is safe and genuinely private. If somebody may monitor the device/account or find the note, do not record it."),
+        ("Split facts from what-ifs.", "Make two columns: what is known now, and what the mind fears might happen. A possibility is not evidence."),
+        ("Pick one safe next action.", "Choose one small action that is possible now—move to safety, text the trusted person, drink water if appropriate, or defer the bill—not ten imaginary future arguments."),
+        ("Schedule bounded worry time.", "If the loop keeps returning, set aside a short 10–15 minute period later to review the list, then redirect to the present. This is an option, not a command to suppress thoughts."),
+        ("Catch, check, and reframe.", "Ask what evidence supports the thought, what evidence does not, and what neutral wording is more accurate. Replace ‘this will definitely happen’ with the facts actually known."),
+        ("Limit repeated checking.", "Re-reading the bill, messages, or audit log again and again may keep attention on the alarm. Check once for a defined purpose, record the answer, and pause."),
+        ("Protect the next sleep period.", "Write down the next action before bed, reduce stimulating bill review, and use a quiet routine. Lost sleep can make worry and concentration harder the next day."),
+        ("Use a trusted reality check.", "Ask one safe person to help separate the immediate fact from the feared scenario. The goal is clarity and support, not a courtroom vote on whether the reaction is valid."),
+        ("Get support when the loop takes over.", "If overthinking is frequent, worsening, highly distressing, prevents sleep or normal activities, or feels unmanageable, talk with a healthcare or mental-health professional."),
+        ("Offer a reversible comfort change.", "If physically safe and genuinely wanted, make one bounded setpoint change and let the app record the real result."),
+        ("Use BROTHER MAD only for its actual job.", "It is a two-hour AC Defender stand-down and peace gesture, not emergency assistance or a guarantee that conflict will stop."),
+        ("Leave if it feels unsafe.", "A graph is not worth staying near threats, violence, or a blocked exit."),
+        ("Call for emergency help when needed.", "If there is immediate danger or a medical emergency, call 9-1-1."),
+        ("Recover somewhere quiet.", "After loud noise, take a break from noise; ringing, muffled sound, fullness, or ear pain deserves attention."),
+        ("Check heat symptoms.", "For heat symptoms without emergency signs, move to a cool place and offer fluids only when the person is awake, responsive, able to swallow, and not nauseated or vomiting. Call 9-1-1 for fainting, unresponsiveness, confusion, poor coordination, or very hot red skin and cool the person while waiting."),
+        ("Write down the real outcome.", "Record the bill, the setting change, and what actually happened. Do not let a funny prediction become household history by repetition."),
+        ("Review when everyone is calm.", "Agree on the target, budget, and who controls which interface before the next expensive day."),
+    ];
+
+    private static readonly string[] PainAndSafetyFacts =
+    [
+        "Noise risk depends on loudness, duration, and repetition; the Yell-O-Meter does not measure any of them.",
+        "Ringing, muffled or dull sound, ear fullness, or sound that causes pain are warning signs—not punchlines.",
+        "Moving away, taking quiet breaks, and using correctly fitted hearing protection reduce noise exposure.",
+        "Lived household fact: when my brother yells at me, I can get a fight-or-flight response, my body can freeze, and I can cry. The app does not diagnose or measure that response.",
+        "Lived household fact: after my brother yells at me, my brain can enter an extreme overthinking mode. Stress can affect worry, sleep, concentration, and decision-making, but the app cannot prove which mechanism is occurring.",
+        "Heat symptoms without emergency signs call for a cool place; offer fluids only when the person is awake, responsive, able to swallow, and not nauseated or vomiting.",
+        "Fainting, unresponsiveness, confusion, loss of coordination, or very hot red skin during heat can indicate heat stroke; call 9-1-1 and start cooling while waiting.",
+        "Threats, violence, blocked exits, or fear for someone's safety are not a budget debate. Leave if possible and call 9-1-1 for immediate danger.",
+    ];
+
+    private static readonly (string Stage, string PossibleExperience, string SurvivalAction)[] FreezeResponseTimeline =
+    [
+        ("The yelling starts", "My body may react before I can form a plan; muscles may tighten and my attention may lock onto the voice.", "Stop the bill discussion and orient toward safety."),
+        ("Fight-or-flight alarm", "My heart or breathing may feel faster, or I may feel hot, shaky, dizzy, sick, or intensely alert.", "Create safe distance and reduce noise; do not argue about whether the reaction is reasonable."),
+        ("Freeze", "I may become very still, feel unable to move, or struggle to make words come out.", "Do not demand an answer; allow time and an unblocked exit."),
+        ("Crying", "I may cry even when I am trying to speak or leave.", "Treat tears as a sign to pause, not as agreement, guilt, or manipulation."),
+        ("Narrow attention", "I may hear the same demand but have trouble processing several questions or choices.", "Use one calm sentence and no financial or thermostat decision."),
+        ("Exit attempt", "If movement returns, I may need to go somewhere quieter or contact a trusted person.", "Do not follow, grab, corner, or block the route."),
+        ("Grounding", "Feeling the floor, naming visible objects, or holding something familiar may help me reconnect with the present.", "Offer, never force, and stop if it feels worse."),
+        ("First quiet minutes", "I may keep crying, shaking, feeling numb, or needing silence after the yelling stops.", "Allow recovery time; water, quiet, and a safe familiar place may help if comfortable."),
+        ("Thinking returns", "Words and planning may return gradually rather than all at once.", "Ask whether I want company, quiet, or a trusted-person call; accept the answer."),
+        ("Replay and what-if loop", "My brain may replay words, search for what I missed, predict another argument, or try to design the perfect response.", "Write the worries once, separate known facts from feared possibilities, and choose one safe next action."),
+        ("Sleep and concentration after-effects", "The loop may make it harder to focus, decide, relax, or sleep, and tiredness may make tomorrow's worrying louder.", "Defer major decisions, protect a quiet sleep routine, and seek support if the pattern persists or disrupts daily life."),
+        ("Later that day", "I may feel tired, upset, embarrassed, watchful, or reluctant to restart the topic.", "Do not shame the response or force a same-day bill meeting."),
+        ("Next conversation", "The voice, room, bill, or thermostat topic may bring the alarm back sooner.", "Use the pre-agreed pause signal, calm setting, clear exit, and one fact at a time."),
+        ("Repeated or worsening responses", "The freeze, crying, watchfulness, or renewed alarm may become frequent, worsen, feel highly distressing, or disrupt sleep, school, work, relationships, or daily life.", "A healthcare or mental-health professional can discuss non-emergency support without the app assigning a diagnosis."),
+    ];
+
+    private static readonly string[] OverthinkingFacts =
+    [
+        "The stress response is automatic rather than a choice under direct control; noticing it does not mean I deliberately started the loop.",
+        "Stress can speed the heart and breathing, tighten muscles, and sharpen attention, leaving more attention available for possible danger than for an ordinary bill discussion.",
+        "When attention narrows around a threat cue, the voice, exact words, exit, or next possible confrontation may keep winning the brain's priority contest.",
+        "Freezing can make speaking and planning temporarily harder; the unanswered questions may then become material for later replay.",
+        "My brain may replay the event to search for an explanation, a missed warning, or a response that might prevent another confrontation. That is a plausible protective attempt, not proof that every replay is useful.",
+        "Uncertainty creates many ‘what if’ branches. The mind may mistake generating more branches for gaining more control even when no new fact has arrived.",
+        "Thoughts, feelings, body sensations, and behaviour can reinforce one another: alarm feeds frightening thoughts, and frightening thoughts can keep the alarm active.",
+        "Stress and anxiety can include excessive worry, tension, concentration or decision difficulty, and lost sleep; these experiences vary and do not establish a diagnosis by themselves.",
+        "Lost sleep and ongoing body tension can leave fewer attention resources the next day, making the same worry feel harder to set down.",
+        "Crying, freezing, replaying, and overthinking can occur together, separately, or in a different order. There is no mandatory timeline.",
+        "Writing worries down, separating solvable problems from hypothetical worries, using bounded worry time, and checking evidence are options supported by public health guidance; none has to work instantly.",
+        "If the loop becomes frequent, worsens, feels highly distressing, disrupts daily life or sleep, or feels unmanageable, a healthcare or mental-health professional can help without AC Defender assigning a label.",
     ];
 
     private double ProjectedBill => Budget.ProjectedMonthEndCad;
     private YellLevel CurrentYell => YellLevels.Last(l => ProjectedBill >= l.Threshold);
-    private double NeedlePercent => Math.Min(100, ProjectedBill / 320.0 * 100);
-    private string YellHeadline => ProjectedBill >= 300 ? "ULTRA OMEGA YELL INCOMING" : ProjectedBill >= 250 ? "OPERA-GRADE YELLING FORECAST" : "YELL THRESHOLD EXCEEDED";
+    private double NeedlePercent => Math.Min(100, ProjectedBill / YellMeterMaximum * 100);
+    private string YellHeadline => $"{CurrentYell.Name} STORY BAND";
 
     // ---------- banner + meter ----------
 

@@ -28,6 +28,21 @@ Both lines bank into **today / this month / lifetime** buckets (Toronto-local mi
 1st-of-month resets), survive restarts in `defender-state.json`, and cap gaps at 2 minutes so
 downtime is never billed.
 
+## The Yell-O-Meter
+
+The Energy page maps the **projected month-end bill** into ten deliberately theatrical story
+bands, from `SERENE` through `BEYOND THE METER`. Each band now shows several possible household
+reactions, eighteen before/during/after survival steps, and real hearing, heat, and immediate-safety
+facts.
+
+Only the projected bill input is measured. The story does **not** measure sound, dB, pain, anger,
+intent, danger, or another person's future behaviour. Its accessible meter text uses a qualitative
+label rather than an invented sound-pressure value.
+
+- [Yelling Predictions](Yelling-Predictions.html) lists every threshold and possible consequence.
+- [Yelling Survival Guide](Yelling-Survival-Guide.html) provides the complete thirty-step playbook.
+- [Heat, Pain & Survival Facts](Heat-Pain-and-Survival-Facts.html) separates sourced facts from comedy.
+
 > The 30 A breaker rating is a ceiling, not a measurement. For a tighter estimate set
 > `AcEstimatedAmps` to your unit's nameplate running load (often 17–24 A).
 
@@ -119,6 +134,8 @@ the Energy page — so budgeting never silently stalls while Alectra is down.
 - [Settings](Settings.html) — all the knobs.
 - [Defender Logic](Defender-Logic.html) — the guards that act on these signals
   (Alectra Peak Power Saver, Rival Schedule Watch, night cooling budget…).
+- [Yelling Survival Guide](Yelling-Survival-Guide.html) — the complete practical response guide.
+- [Yelling Predictions](Yelling-Predictions.html) — all bill bands and uncertainty limits.
 
 ## Failure modes
 

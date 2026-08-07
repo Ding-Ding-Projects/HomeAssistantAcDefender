@@ -21,6 +21,11 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
       `Shift+F10`, truthful shortcut labels, and mobile press-and-hold tab editing.
 - [x] Keep Cooling Failure Watch advisory at MEGA and reserve automatic thermostat OFF for
       OMEGA-confirmed room-rise evidence; preserve a manual restart for the rest of the episode.
+- [x] Expand Yell-O-Meter documentation with truthful uncertainty boundaries, fifty-two survival
+      moves, the lived fight-or-flight/freeze/cry and extreme-overthinking accounts, a fourteen-stage
+      expectation ledger, and sourced hearing, heat, pain, stress, and personal-safety facts.
+- [x] Verify the expanded Energy and wiki surfaces at 390 CSS pixels and a 200% display-equivalent
+      mobile gate with no root-page horizontal overflow or bottom-navigation item overlap.
 - [ ] Re-run browser checks on the dashboard, Defense, Energy, Settings, and
       narrow layouts for each user-facing change.
 - [ ] Re-deploy the verified default-branch commit to the production Docker host

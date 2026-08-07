@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
 using Markdig;
 using Markdig.Renderers;
@@ -40,6 +41,9 @@ public sealed class WikiContentService
         ("Every-Guard-Explained", "Every Guard, Explained Simply"),
         ("Defender-Logic", "Defender Logic"),
         ("Energy-and-Costs", "Energy & Costs"),
+        ("Yelling-Survival-Guide", "Yelling Survival Guide"),
+        ("Yelling-Predictions", "Yelling Predictions"),
+        ("Heat-Pain-and-Survival-Facts", "Heat, Pain & Survival Facts"),
         ("Settings", "Settings"),
         ("API", "API"),
         ("Architecture", "Architecture"),
@@ -52,6 +56,9 @@ public sealed class WikiContentService
     private static readonly Regex InternalLink = new("href=\"(?<p>[A-Za-z0-9-]+)\\.html(?<frag>#[^\"]*)?\"", RegexOptions.Compiled);
     private static readonly Regex HtmlTag = new("<[^>]+>", RegexOptions.Compiled);
     private static readonly Regex FrontMatterBlock = new("^\\ufeff?---\r?\n.*?\r?\n---\r?\n", RegexOptions.Compiled | RegexOptions.Singleline);
+    private static readonly Regex LiquidFeatureLoop = new(
+        "\\{% assign feature_pages.*?\\{% endfor %\\}",
+        RegexOptions.Compiled | RegexOptions.Singleline);
 
     private readonly string _root;
     private readonly MarkdownPipeline _pipeline;
@@ -132,6 +139,12 @@ public sealed class WikiContentService
 
         var raw = File.ReadAllText(path);
         var (title, body) = StripFrontMatter(raw, name);
+        if (string.Equals(name, "Feature-briefs", StringComparison.OrdinalIgnoreCase))
+        {
+            // Pages expands this repository-authored Liquid loop. Markdig does not understand
+            // Liquid, so provide the same catalogue from the in-app page index before parsing.
+            body = LiquidFeatureLoop.Replace(body, BuildInAppFeatureCards());
+        }
 
         var doc = Markdown.Parse(body, _pipeline);
 
@@ -163,29 +176,74 @@ public sealed class WikiContentService
         return new WikiDocument(name, meta?.Title ?? title, meta?.Section ?? SectionFor(name), html, toc);
     }
 
+    private string BuildInAppFeatureCards()
+    {
+        var html = new StringBuilder();
+        foreach (var page in Pages.Where(page => !string.Equals(page.Name, "Feature-briefs", StringComparison.OrdinalIgnoreCase)))
+        {
+            var name = HtmlEncoder.Default.Encode(page.Name);
+            var title = HtmlEncoder.Default.Encode(page.Title);
+            var section = HtmlEncoder.Default.Encode(page.Section);
+            html.AppendLine($"<article class=\"algorithm-card category-system\" data-search-item data-search-text=\"{title} {section}\">");
+            html.AppendLine("  <div class=\"algorithm-card-top\"><span class=\"category-pill\">Brief</span><span class=\"live-pill\">Evidence-led</span></div>");
+            html.AppendLine($"  <h3><a href=\"{name}.html\">{title}</a></h3>");
+            html.AppendLine($"  <p>{section} documentation with behaviour, configuration, failure, security, and verification details.</p>");
+            html.AppendLine("  <p class=\"settings-preview\"><strong>Article contract:</strong> behaviour · configuration · failure modes · security · verification · suggested articles</p>");
+            html.AppendLine("</article>");
+        }
+
+        return html.ToString();
+    }
+
     private static string PostProcess(string html)
     {
         // "images/foo.png" is served by a static-file provider mounted at /wikimedia.
         html = ImageSrc.Replace(html, m => m.Groups[1].Value + ImagesRequestPath + "/");
         // "Foo.html" and "Foo.html#frag" are in-app routes.
         html = InternalLink.Replace(html, m => $"href=\"/wiki/{m.Groups["p"].Value}{m.Groups["frag"].Value}\"");
+        // Wide tables need an explicit keyboard-focusable scroll region on narrow screens.
+        html = html.Replace(
+            "<table>",
+            "<div class=\"wiki-table-scroll\" role=\"region\" aria-label=\"Scrollable documentation table\" tabindex=\"0\"><table>",
+            StringComparison.Ordinal);
+        html = html.Replace("</table>", "</table></div>", StringComparison.Ordinal);
         return html;
     }
 
     private IReadOnlyList<WikiPageMeta> BuildPages()
     {
         var pages = new List<WikiPageMeta>();
+        var indexedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var order = 0;
         foreach (var (name, title) in HandbookPages)
         {
             if (File.Exists(Path.Combine(_root, $"{name}.md")))
             {
                 pages.Add(new WikiPageMeta(name, title, HandbookSection, order++));
+                indexedNames.Add(name);
             }
         }
 
         if (Directory.Exists(_root))
         {
+            // The curated list above controls the first-run handbook order, but it must not become
+            // an allowlist. Every top-level general article ships in the app, search, and navigation.
+            // Otherwise a perfectly valid Pages article is copied into Docker and then rendered as
+            // "missing" because nobody remembered to update a second, unrelated list.
+            var additionalHandbooks = Directory.EnumerateFiles(_root, "*.md")
+                .Select(path => Path.GetFileNameWithoutExtension(path))
+                .Where(name => !name.StartsWith("Algorithm-", StringComparison.OrdinalIgnoreCase))
+                .Where(name => !indexedNames.Contains(name))
+                .Select(name => new WikiPageMeta(name, TitleFor(name), HandbookSection, 0))
+                .OrderBy(page => page.Title, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            foreach (var handbook in additionalHandbooks)
+            {
+                pages.Add(handbook with { Order = order++ });
+                indexedNames.Add(handbook.Name);
+            }
+
             var articles = Directory.EnumerateFiles(_root, "Algorithm-*.md")
                 .Select(path => Path.GetFileNameWithoutExtension(path))
                 .Select(name => new WikiPageMeta(name, TitleFor(name), ArticleSection, 0))
@@ -195,6 +253,7 @@ public sealed class WikiContentService
             foreach (var article in articles)
             {
                 pages.Add(article with { Order = order++ });
+                indexedNames.Add(article.Name);
             }
         }
 

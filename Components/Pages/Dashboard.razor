@@ -41,22 +41,22 @@
         <span class="ops-alert-row__text">@NextActionText</span>
     </div>
 
-    @* bill watch — brother will yell when this bill lands *@
+    @* Bill watch is a theatrical story cue based only on the projected dollars. *@
     @if (BillWarningActive)
     {
         <div class="ops-bill-warn">
             <div class="ops-bill-warn__head">
                 <span class="ops-bill-warn__glyph" aria-hidden="true">💸</span>
-                <span class="ops-bill-warn__title">BILL WATCH — BROTHER WILL YELL</span>
+                <span class="ops-bill-warn__title">BILL WATCH — HIGH-BILL STORY BAND</span>
                 <span class="ops-bill-warn__amount">projected @BillProjectedText</span>
             </div>
             <div class="ops-bill-warn__body">
-                The projected power bill is <strong>@BillProjectedText</strong> — past the $@BillThresholdText line. When this lands, brother is going to yell and get mad. Get ahead of it:
+                The projected power bill is <strong>@BillProjectedText</strong> — at or past the $@BillThresholdText story line. This is a possible household scenario, not a prediction about anyone's behaviour. Prepare the facts:
                 <ul class="ops-bill-warn__tips">
-                    <li><strong>Break the news first.</strong> Mention the heat wave and time-of-use rates before he opens the bill — surprise is what sets him off.</li>
+                    <li><strong>Share the projection early.</strong> Mention the heat wave and time-of-use rates during a calm conversation; do not claim the app knows how a person will react.</li>
                     <li><strong>Lead with the save.</strong> Pull up the Energy page: show the AC runtime, the cost breakdown, and what the guards already trimmed this month.</li>
-                    <li><strong>Tighten the rest of the month now.</strong> Nudge the target up ~1 °C and let the $@BudgetText budget guard ease cooling harder so the projection drops before month-end.</li>
-                    <li><strong>Offer a peace gesture.</strong> Bump the AC up a touch tonight so the next bill trends down and you can say you're already on it.</li>
+                    <li><strong>Review a reversible change.</strong> If everyone is comfortable and the room is inside its safety band, consider a bounded target change with the $@BudgetText budget guard.</li>
+                    <li><strong>Keep safety outside the joke.</strong> A thermostat change cannot make threats, hearing pain, or a medical emergency safe.</li>
                 </ul>
             </div>
         </div>
@@ -399,11 +399,10 @@
 
     private DefenderSnapshot? Snapshot => State.Snapshot;
 
-    // Bill watch: warn when the projected month-end power bill runs past this line — brother yells
-    // when the real bill lands, so surface it early with prep tips.
+    // Bill watch: surface the same story threshold as Energy without claiming human certainty.
     private const double BillYellThresholdDollars = 180.0;
     private double? BillProjectedCad => Snapshot?.ElectricityBudget?.ProjectedMonthEndCad;
-    private bool BillWarningActive => BillProjectedCad is { } p && p > BillYellThresholdDollars;
+    private bool BillWarningActive => BillProjectedCad is { } p && p >= BillYellThresholdDollars;
     private string BillProjectedText => BillProjectedCad is { } p ? $"${p:0.00}" : "--";
     private string BillThresholdText => BillYellThresholdDollars.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
     private string BudgetText => Snapshot?.ElectricityBudget?.MonthlyBudgetCad is { } b and > 0

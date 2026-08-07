@@ -31,10 +31,11 @@ entity or shows a real error.
    that eases cooling when you're spending too fast — never past a safety temperature.
 5. **Safety always wins.** Hot rooms bypass every stealth wait, emergencies stop
    everything, and a front-door person detector can kill the AC instantly.
-6. **Fully automated getting-yelled-at detection.** An angry setpoint jump or a burst of
-   thermostat touches means someone is about to yell — the rage detector sees it coming,
-   apologizes automatically, eases the AC up as a peace gesture, and stands down for two
-   hours. It stops *before* it happens, to prevent tears.
+6. **Automatic thermostat-interaction risk cues.** A deterministic large-raise/touch-burst
+   rule may apologize automatically, ease the AC up as a peace gesture, and stand down for
+   two hours. Separately, the local learning model can extend later manual-change grace during
+   previously labelled sensitive hours. Neither path has a microphone or claims certainty
+   about a person's behaviour.
 7. **A persistent human always wins.** The truce family: insist on the same warmer number
    three times and the defender adopts it for four hours (Repeated-Raise Surrender); a
    thermostat that vanishes mid-argument triggers the **ULTRA OMEGA ALERT** Tamper Truce —
@@ -73,6 +74,9 @@ load the server image.
 | [Algorithms](docs/wiki/Algorithms.md) | Search every AC Defender algorithm and open the full article for each one |
 | [Every Guard, Explained Simply](docs/wiki/Every-Guard-Explained.md) | Every single algorithm, described so anyone can follow |
 | [Energy & Costs](docs/wiki/Energy-and-Costs.md) | TOU rates, the sensor-free AC cost estimate, the calendar, the monthly budget |
+| [Yelling Predictions](docs/wiki/Yelling-Predictions.md) | Ten bill story bands, more than forty playful scenarios, and a fourteen-stage lived freeze/cry/overthinking expectation ledger |
+| [Yelling Survival Guide](docs/wiki/Yelling-Survival-Guide.md) | Fifty-two before, during, freeze-response, overthinking, recovery, and support survival moves |
+| [Heat, Pain & Survival Facts](docs/wiki/Heat-Pain-and-Survival-Facts.md) | Sourced hearing, heat, personal-safety, fight-or-flight/freeze/cry, and extreme-overthinking facts |
 | [Defender Logic](docs/wiki/Defender-Logic.md) | The decision cycle and every guard's exact rules |
 | [Settings](docs/wiki/Settings.md) | Every knob on the Settings page |
 | [Command palette](docs/wiki/Command-palette.md) | `Ctrl+Shift+F` keyboard navigation to every real app area |

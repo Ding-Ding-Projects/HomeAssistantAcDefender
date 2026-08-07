@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using System.Text.RegularExpressions;
 
 var tests = new DefenderSetPointRegressionTests();
 var settingsRepositoryTests = new SettingsGitRepositoryRegressionTests();
@@ -180,6 +181,8 @@ tests.OfflineUiHidesRetainedHomeAssistantEvidence();
 tests.WikiIndexMapsScheduleAndWeatherRulesToRealArticle();
 tests.WikiRenderCanonicalizesRouteCasingWithoutCachingAMiss();
 tests.WikiSafetyTextKeepsWarmRoomApproachAndRestoreOrderingCanonical();
+tests.WikiIndexesCompleteYellingSafetyCoverageWithoutFakePrecision();
+tests.PublishDefinitionExcludesRuntimeAppData();
 tests.RivalScheduleBlocksResolveAcrossMidnightDaysAndTolerance();
 tests.RivalScheduleChangeSkipsHumanQuietBookkeepingButHumanTouchStillCounts();
 tests.RivalScheduleBypassesQuietTimingOnlyWhileScheduledWallIsAboveMyTemp();
@@ -748,6 +751,329 @@ internal sealed class DefenderSetPointRegressionTests
             || architecture.Contains("before pause", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("Architecture.md must describe Cool Mode Restore after pause/intentional-off guards, never before pause.");
+        }
+    }
+
+    public void WikiIndexesCompleteYellingSafetyCoverageWithoutFakePrecision()
+    {
+        var root = FindRepositoryRootForWikiCheck();
+        var wiki = new WikiContentService(new TestWebHostEnvironment(root));
+        var requiredHandbooks = new[]
+        {
+            "Yelling-Survival-Guide",
+            "Yelling-Predictions",
+            "Heat-Pain-and-Survival-Facts",
+        };
+
+        foreach (var name in requiredHandbooks)
+        {
+            var meta = wiki.Handbook.SingleOrDefault(page => string.Equals(page.Name, name, StringComparison.Ordinal));
+            if (meta is null)
+            {
+                throw new InvalidOperationException($"The in-app wiki handbook must index {name}.");
+            }
+
+            var document = wiki.Render(name)
+                ?? throw new InvalidOperationException($"The in-app wiki must render {name}.");
+            if (document.Html.Length < 1_000 || document.Toc.Count < 4)
+            {
+                throw new InvalidOperationException($"{name} must ship as a substantial, navigable handbook article.");
+            }
+        }
+
+        var factsDocument = wiki.Render("Heat-Pain-and-Survival-Facts")
+            ?? throw new InvalidOperationException("The heat and pain facts article must render.");
+        AssertSourceContains(
+            factsDocument.Html,
+            "In-app table keyboard-scroll contract",
+            "class=\"wiki-table-scroll\"",
+            "role=\"region\"",
+            "tabindex=\"0\"");
+        var pagesLayout = File.ReadAllText(Path.Combine(root, "docs", "_layouts", "doc.html"));
+        AssertSourceContains(
+            pagesLayout,
+            "Pages table keyboard-scroll contract",
+            "querySelectorAll(\".article-copy table\")",
+            "region.tabIndex = 0",
+            "Scrollable documentation table");
+
+        var markdownNames = Directory.EnumerateFiles(Path.Combine(root, "docs", "wiki"), "*.md")
+            .Select(Path.GetFileNameWithoutExtension)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var indexedNames = wiki.Pages.Select(page => page.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!markdownNames.SetEquals(indexedNames))
+        {
+            var missing = string.Join(", ", markdownNames.Except(indexedNames).OrderBy(name => name));
+            var phantom = string.Join(", ", indexedNames.Except(markdownNames).OrderBy(name => name));
+            throw new InvalidOperationException($"Every top-level wiki article must be indexed. Missing: [{missing}]. Phantom: [{phantom}].");
+        }
+
+        foreach (var page in wiki.Pages)
+        {
+            var rendered = wiki.Render(page.Name)
+                ?? throw new InvalidOperationException($"Every indexed wiki article must render: {page.Name}.");
+            if (rendered.Html.Contains("{%", StringComparison.Ordinal)
+                || rendered.Html.Contains("{{", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"The in-app renderer must not expose unresolved Jekyll Liquid in {page.Name}.");
+            }
+        }
+
+        var searchNames = wiki.Search("BREAKER SUMMIT", 20).Select(result => result.Name).ToHashSet(StringComparer.Ordinal);
+        if (!searchNames.Contains("Yelling-Predictions"))
+        {
+            throw new InvalidOperationException("The in-app wiki search must find the expanded yelling prediction ledger.");
+        }
+
+        var facts = File.ReadAllText(Path.Combine(root, "docs", "wiki", "Heat-Pain-and-Survival-Facts.md"));
+        AssertSourceContains(
+            facts,
+            "Yelling pain and survival source boundary",
+            "https://www.cdc.gov/niosh/noise/about/noise.html",
+            "https://www.canada.ca/en/health-canada/services/publications/healthy-living/fact-sheet-staying-healthy-heat.html",
+            "call **9-1-1**",
+            "no sound meter",
+            "when my brother yells at me",
+            "fight-or-flight response",
+            "my body can freeze",
+            "I can cry",
+            "not a diagnosis");
+
+        var energy = File.ReadAllText(Path.Combine(root, "Components", "Pages", "Energy.razor"));
+        AssertSourceContains(
+            energy,
+            "Expanded Yell-O-Meter UI contract",
+            "HOUSEHOLD-FOLKLORE FORECAST",
+            "CurrentYell.Predictions",
+            "PainAndSafetyFacts",
+            "FreezeResponseTimeline",
+            "OverthinkingFacts",
+            "BEYOND THE METER",
+            "YellMeterMaximum = 350.0",
+            "Possible household scenarios for this bill story band",
+            "three-part wiki field manual",
+            "Recognize my freeze response",
+            "Lived household fact: when my brother yells at me",
+            "fight-or-flight response",
+            "my body can freeze",
+            "I can cry",
+            "grounding if it is safe",
+            "after my brother yells at me, my brain can enter an extreme overthinking mode");
+
+        var freezeTimelineStart = energy.IndexOf("private static readonly (string Stage, string PossibleExperience, string SurvivalAction)[] FreezeResponseTimeline", StringComparison.Ordinal);
+        if (freezeTimelineStart < 0)
+        {
+            throw new InvalidOperationException("Energy.razor must keep the explicit freeze-response expectation timeline.");
+        }
+        var freezeTimelineEnd = energy.IndexOf("];", freezeTimelineStart, StringComparison.Ordinal);
+        if (freezeTimelineEnd <= freezeTimelineStart)
+        {
+            throw new InvalidOperationException("The freeze-response expectation timeline must have a bounded array initializer.");
+        }
+        var freezeTimelineSource = energy[freezeTimelineStart..freezeTimelineEnd];
+        var freezeTimelineCount = Regex.Matches(freezeTimelineSource, "^\\s*\\(\\\"", RegexOptions.Multiline).Count;
+        if (freezeTimelineCount != 14)
+        {
+            throw new InvalidOperationException($"The live freeze/cry/overthinking expectation timeline must contain exactly 14 stages, found {freezeTimelineCount}.");
+        }
+
+        var overthinkingFactsStart = energy.IndexOf("private static readonly string[] OverthinkingFacts", StringComparison.Ordinal);
+        if (overthinkingFactsStart < 0)
+        {
+            throw new InvalidOperationException("Energy.razor must keep the explicit overthinking-fact catalog.");
+        }
+        var overthinkingFactsEnd = energy.IndexOf("];", overthinkingFactsStart, StringComparison.Ordinal);
+        if (overthinkingFactsEnd <= overthinkingFactsStart)
+        {
+            throw new InvalidOperationException("The overthinking-fact catalog must have a bounded array initializer.");
+        }
+        var overthinkingFactsSource = energy[overthinkingFactsStart..overthinkingFactsEnd];
+        var overthinkingFactCount = Regex.Matches(overthinkingFactsSource, "^\\s*\\\"", RegexOptions.Multiline).Count;
+        if (overthinkingFactCount != 12)
+        {
+            throw new InvalidOperationException($"The live overthinking explanation must contain exactly 12 facts, found {overthinkingFactCount}.");
+        }
+
+        var survivalGuide = File.ReadAllText(Path.Combine(root, "docs", "wiki", "Yelling-Survival-Guide.md"));
+        AssertSourceContains(
+            survivalGuide,
+            "Lived freeze-response survival guidance",
+            "Recognize my freeze response",
+            "when my brother yells at me",
+            "fight-or-flight response",
+            "my body can freeze",
+            "I can cry",
+            "if it is safe",
+            "Fifty-two survival moves",
+            "offer fluids only when the person is awake, responsive, able to swallow",
+            "Fainting, unresponsiveness, confusion",
+            "healthcare or",
+            "mental-health",
+            "professional can discuss support",
+            "Name the overthinking loop",
+            "Split facts from what-ifs",
+            "Schedule bounded worry time",
+            "Catch, check, and reframe");
+
+        var movesStart = survivalGuide.IndexOf("## Fifty-two survival moves", StringComparison.Ordinal);
+        var movesEnd = movesStart < 0 ? -1 : survivalGuide.IndexOf("## What each app action really does", movesStart, StringComparison.Ordinal);
+        if (movesStart < 0 || movesEnd <= movesStart)
+        {
+            throw new InvalidOperationException("The survival guide must keep a bounded fifty-two-move section.");
+        }
+        var wikiMoveCount = Regex.Matches(survivalGuide[movesStart..movesEnd], @"^\d+\. \*\*", RegexOptions.Multiline).Count;
+        if (wikiMoveCount != 52)
+        {
+            throw new InvalidOperationException($"The survival guide must contain exactly 52 numbered moves, found {wikiMoveCount}.");
+        }
+
+        var predictionGuide = File.ReadAllText(Path.Combine(root, "docs", "wiki", "Yelling-Predictions.md"));
+        AssertSourceContains(
+            predictionGuide,
+            "Freeze-response expectation ledger",
+            "My freeze-and-cry response: what I may experience next",
+            "when my brother yells at me",
+            "The order below is possible, not",
+            "guaranteed. A stage can be skipped",
+            "At-any-time safety override",
+            "Do not demand an answer",
+            "Do not follow, grab, corner, or block the route",
+            "Repeated or worsening responses",
+            "Replay and what-if loop",
+            "Sleep and concentration after-effects",
+            "healthcare or mental-health professional",
+            "Stress and Performance");
+
+        var levelsStart = energy.IndexOf("private static readonly YellLevel[] YellLevels", StringComparison.Ordinal);
+        var survivalStart = energy.IndexOf("private static readonly (string Title, string Body)[] SurvivalSteps", StringComparison.Ordinal);
+        var factsStart = energy.IndexOf("private static readonly string[] PainAndSafetyFacts", StringComparison.Ordinal);
+        if (levelsStart < 0 || survivalStart <= levelsStart || factsStart <= survivalStart)
+        {
+            throw new InvalidOperationException("Energy.razor must keep explicit YellLevels, SurvivalSteps, and PainAndSafetyFacts catalogs.");
+        }
+
+        var levelSource = energy[levelsStart..survivalStart];
+        var thresholds = Regex.Matches(levelSource, @"new\((?<threshold>\d+),")
+            .Select(match => int.Parse(match.Groups["threshold"].Value, System.Globalization.CultureInfo.InvariantCulture))
+            .ToArray();
+        var requiredThresholds = new[] { 0, 60, 100, 140, 180, 210, 250, 275, 300, 350 };
+        if (!thresholds.SequenceEqual(requiredThresholds))
+        {
+            throw new InvalidOperationException($"Yell-O-Meter thresholds must stay ordered and complete: {string.Join(", ", requiredThresholds)}.");
+        }
+
+        var survivalSource = energy[survivalStart..factsStart];
+        var survivalStepCount = Regex.Matches(survivalSource, "^\\s*\\(\\\"", RegexOptions.Multiline).Count;
+        if (survivalStepCount != 38)
+        {
+            throw new InvalidOperationException($"The live survival playbook must contain exactly 38 steps, found {survivalStepCount}.");
+        }
+
+        AssertSourceContains(
+            facts,
+            "Freeze-and-cry survival tips",
+            "Silence and tears are not consent",
+            "Use a pre-agreed signal or text",
+            "Do not make thermostat, money, or account decisions while frozen or overwhelmed",
+            "Allow recovery time after the noise stops",
+            "Why my brain may go into extreme overthinking mode",
+            "images/yelling-overthinking-mobile.png",
+            "after my brother yells at me, my brain can enter an extreme overthinking",
+            "Problem-solving and rumination are different",
+            "Ten overthinking survival actions",
+            "https://www.nimh.nih.gov/health/publications/so-stressed-out-fact-sheet",
+            "https://www.nhs.uk/every-mind-matters/mental-wellbeing-tips/self-help-cbt-techniques/tackling-your-worries/",
+            "may monitor the device/account or find the note",
+            "do not record it",
+            "Government of Canada safety-planning guidance");
+
+        var unsupportedClaims = new[]
+        {
+            "≈ 85 dB",
+            "≈ 95 dB",
+            "> 100 dB",
+            "average of 3.2 times",
+            "Surprise is 60%",
+            "measured 31%",
+            "detectable by the upstairs sensors as a 0.3 °C rise",
+            "MORE DOLLARS = MORE YELLING",
+            "Predicted household reactions",
+            "YELL INCOMING",
+        };
+        foreach (var claim in unsupportedClaims)
+        {
+            if (energy.Contains(claim, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Energy.razor must not present unsupported yelling precision: {claim}");
+            }
+        }
+
+        var dashboard = File.ReadAllText(Path.Combine(root, "Components", "Pages", "Dashboard.razor"));
+        AssertSourceContains(
+            dashboard,
+            "Dashboard Yell-O-Meter uncertainty contract",
+            "HIGH-BILL STORY BAND",
+            "possible household scenario",
+            "p >= BillYellThresholdDollars");
+        foreach (var claim in new[] { "BROTHER WILL YELL", "going to yell and get mad", "what sets him off" })
+        {
+            if (dashboard.Contains(claim, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"Dashboard.razor must not present household behaviour as certain: {claim}");
+            }
+        }
+
+        var medicalGuidance = string.Join('\n', requiredHandbooks.Select(name =>
+            File.ReadAllText(Path.Combine(root, "docs", "wiki", $"{name}.md"))));
+        if (Regex.IsMatch(medicalGuidance, @"urgent medical (need|support|help).{0,80}9-1-1", RegexOptions.IgnoreCase | RegexOptions.Singleline)
+            || energy.Contains("urgent medical need", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("9-1-1 guidance must name immediate danger, a medical emergency, or suspected heat stroke—not any urgent medical need.");
+        }
+        AssertSourceContains(medicalGuidance, "Emergency wording contract", "medical emergency", "suspected heat stroke");
+        AssertSourceContains(
+            medicalGuidance,
+            "Heat fainting emergency and fluid-safety contract",
+            "Fainting, unresponsiveness, confusion",
+            "call 9-1-1",
+            "awake, responsive, able to swallow");
+        if (FreezeResponseTimelineEndsWithImmediateDanger(energy))
+        {
+            throw new InvalidOperationException("Immediate danger must be an at-any-time override, not the final freeze-response stage.");
+        }
+
+        var css = File.ReadAllText(Path.Combine(root, "wwwroot", "css", "site.css"));
+        AssertSourceContains(
+            css,
+            "Narrow and zoomed mobile containment contract",
+            ".ops-yell-gauge__scale { display: grid",
+            ".ops-mobile-nav__item {",
+            "flex: 0 0 58px",
+            "overflow-x: auto",
+            ".ops-wiki-page, .ops-wiki-toc__link { min-height: 44px");
+    }
+
+    private static bool FreezeResponseTimelineEndsWithImmediateDanger(string energy)
+    {
+        var start = energy.IndexOf("private static readonly (string Stage, string PossibleExperience, string SurvivalAction)[] FreezeResponseTimeline", StringComparison.Ordinal);
+        var end = start < 0 ? -1 : energy.IndexOf("];", start, StringComparison.Ordinal);
+        return start >= 0 && end > start && energy[start..end].Contains("(\"Immediate danger\"", StringComparison.Ordinal);
+    }
+
+    public void PublishDefinitionExcludesRuntimeAppData()
+    {
+        var root = FindRepositoryRootForWikiCheck();
+        var project = File.ReadAllText(Path.Combine(root, "HomeAssistantAcDefender.csproj"));
+        AssertSourceContains(
+            project,
+            "Publish runtime-data exclusion contract",
+            "<Content Remove=\"App_Data\\**\\*\" />",
+            "<None Remove=\"App_Data\\**\\*\" />");
+
+        var dockerIgnore = File.ReadAllText(Path.Combine(root, ".dockerignore"));
+        if (!dockerIgnore.Split('\n', StringSplitOptions.TrimEntries).Contains("App_Data/", StringComparer.Ordinal))
+        {
+            throw new InvalidOperationException(".dockerignore must exclude App_Data/ from the Docker build context.");
         }
     }
 

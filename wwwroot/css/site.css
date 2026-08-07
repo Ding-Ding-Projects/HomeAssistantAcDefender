@@ -431,10 +431,15 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
     background: var(--panel);
     border-top: 1px solid var(--line2);
     z-index: 40;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
 }
 
 .ops-mobile-nav__item {
-    flex: 1;
+    flex: 0 0 58px;
     text-align: center;
     padding: 9px 0 11px 0;
     cursor: pointer;
@@ -444,7 +449,10 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
     background: transparent;
     text-decoration: none;
     font-family: 'JetBrains Mono', monospace;
-    min-width: 0;
+    min-width: 58px;
+    min-height: 58px;
+    white-space: nowrap;
+    scroll-snap-align: start;
 }
 
 .ops-mobile-nav__item:hover { color: var(--ink); text-decoration: none; }
@@ -3435,11 +3443,14 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
 .ops-yell__level { font-size: 12px; font-weight: 800; margin-left: auto; }
 .ops-yell-gauge { position: relative; height: 18px; border-radius: var(--radius-pill); margin: 12px 0 4px 0; background: linear-gradient(90deg, #3ddc97 0%, #3ddc97 30%, #ffb347 45%, #ffb347 60%, #ff5c47 75%, #a81606 100%); }
 .ops-yell-gauge__needle { position: absolute; top: -3px; bottom: -3px; width: 4px; background: #fff; box-shadow: 0 0 8px rgba(255, 255, 255, 0.8); transition: left 0.6s ease; transform: translateX(-50%); }
-.ops-yell-gauge__scale { display: flex; justify-content: space-between; font-size: 8px; color: var(--sub); letter-spacing: 0.04em; }
+.ops-yell-gauge__scale { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 4px 8px; font-size: 8px; color: var(--sub); letter-spacing: 0.04em; text-align: center; }
 .ops-yell-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 10px; margin-top: 12px; }
 .ops-yell-card { border: 1px solid var(--line2); border-radius: var(--radius-sm); background: var(--panel2); padding: 12px; }
+.ops-yell-card--wide { grid-column: 1 / -1; }
 .ops-yell-card__head { font-size: 9px; font-weight: 800; letter-spacing: 0.1em; margin: 0 0 6px 0; }
 .ops-yell-card__body { font-size: 10.5px; color: var(--sub); line-height: 1.55; }
+.ops-yell-predictions { margin: 9px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 10px; color: var(--sub); line-height: 1.5; }
+.ops-yell-predictions li::marker { color: var(--accent); font-weight: 800; }
 .ops-survival { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 5px; font-size: 10px; color: var(--sub); line-height: 1.5; }
 .ops-survival strong { color: var(--good); }
 
@@ -3873,6 +3884,10 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
     .ops-wiki-index { order: 3; position: static; max-height: 320px; }
 }
 
+@media (max-width: 600px) {
+    .ops-wiki-page, .ops-wiki-toc__link { min-height: 44px; padding-block: 9px; }
+}
+
 /* rendered markdown */
 .wiki-doc { font-size: 13px; line-height: 1.75; color: var(--ink); animation: riseIn 0.3s ease; overflow-wrap: break-word; }
 .wiki-doc h1, .wiki-doc h2, .wiki-doc h3, .wiki-doc h4 { font-family: 'Archivo', sans-serif; color: var(--ink); }
@@ -3885,7 +3900,9 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
 .wiki-doc code { color: #6ef0b6; background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; font-size: 0.9em; }
 .wiki-doc pre { background: var(--panel2); border: 1px solid var(--line2); border-radius: var(--radius-sm); padding: 12px; overflow-x: auto; }
 .wiki-doc pre code { border: none; background: none; padding: 0; }
-.wiki-doc table { width: 100%; display: block; overflow-x: auto; border-collapse: collapse; font-size: 11.5px; }
+.wiki-doc .wiki-table-scroll { max-width: 100%; overflow-x: auto; margin: 10px 0; border-radius: 4px; }
+.wiki-doc .wiki-table-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wiki-doc table { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 11.5px; }
 .wiki-doc th, .wiki-doc td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
 .wiki-doc th { text-transform: uppercase; font-size: 9.5px; color: var(--sub); background: var(--panel2); }
 .wiki-doc blockquote { border-left: 3px solid var(--accent); background: var(--accent-soft); margin: 12px 0; padding: 8px 14px; }

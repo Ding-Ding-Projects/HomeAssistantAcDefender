@@ -23,6 +23,9 @@ Assistant climate entity or returns a real error.
 | **[Algorithms](Algorithms.html)** | Search every AC Defender algorithm and open the full article for any guard |
 | **[Every Guard, Explained Simply](Every-Guard-Explained.html)** | Every single algorithm, described so a five-year-old could follow |
 | **[Energy & Costs](Energy-and-Costs.html)** | How hours become dollars: TOU rates, the AC-only estimate, the usage calendar, the monthly budget |
+| **[Yelling Survival Guide](Yelling-Survival-Guide.html)** | Thirty before, during, and after steps for the playful bill forecast, with immediate-safety boundaries |
+| **[Yelling Predictions](Yelling-Predictions.html)** | All ten Yell-O-Meter bands, more than forty possible scenarios, and exactly what the app does not know |
+| **[Heat, Pain & Survival Facts](Heat-Pain-and-Survival-Facts.html)** | Sourced hearing, heat-illness, and personal-safety facts that end the joke when safety matters |
 | **[Defender Logic](Defender-Logic.html)** | The full decision cycle and every guard's exact rules |
 | **[Settings](Settings.html)** | Every knob on the Settings page |
 | **[Changelog](Changelog.html)** | Every published release, date filter, regex search, export, and commit traceability |
@@ -54,10 +57,10 @@ Assistant climate entity or returns a real error.
   calendar, and steered by an optional monthly budget with a safety-first fallback.
 - **Safety always wins.** Hot rooms bypass every stealth wait; the budget yields to a
   maximum room temperature; emergencies stop everything.
-- **Fully automated getting-yelled-at detection.** An angry setpoint jump or a burst of
-  thermostat touches means someone is about to yell — the rage detector apologizes
-  automatically, eases the AC up as a peace gesture, and stands down for two hours.
-  It stops *before* it happens, to prevent tears.
+- **Automatic thermostat-interaction risk cues.** A deterministic large-raise/touch-burst
+  rule may respond with a peace gesture and a two-hour stand-down. Separately, the local
+  learning model can extend later manual-change grace during previously labelled sensitive
+  hours. Neither path has a microphone or claims that somebody is yelling with certainty.
 - **A persistent human always wins.** The truce family — Repeated-Raise Surrender (insist
   three times and your number stands for four hours), the ULTRA OMEGA Tamper Truce (a
   vanished thermostat after an argument means stand down, not alarms), and the Wake-Up

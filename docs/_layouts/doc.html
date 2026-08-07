@@ -383,10 +383,15 @@
   .doc table {
     border-collapse: collapse;
     width: 100%;
-    margin: 18px 0;
-    display: block;
-    overflow-x: auto;
+    min-width: 520px;
   }
+  .doc .wiki-table-scroll {
+    max-width: 100%;
+    margin: 18px 0;
+    overflow-x: auto;
+    border-radius: 6px;
+  }
+  .doc .wiki-table-scroll:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
   .doc th,
   .doc td {
     border: 1px solid var(--line);
@@ -997,6 +1002,16 @@
 
 <script>
 (function () {
+  document.querySelectorAll(".article-copy table").forEach(function (table) {
+    if (table.parentElement && table.parentElement.classList.contains("wiki-table-scroll")) { return; }
+    var region = document.createElement("div");
+    region.className = "wiki-table-scroll";
+    region.tabIndex = 0;
+    region.setAttribute("role", "region");
+    region.setAttribute("aria-label", "Scrollable documentation table");
+    table.parentNode.insertBefore(region, table);
+    region.appendChild(table);
+  });
   var langKey = "ac-defender-doc-language";
   var funnyEnKey = "ac-defender-doc-funny-en";
   var funnyYueKey = "ac-defender-doc-funny-yue";

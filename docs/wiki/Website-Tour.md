@@ -82,6 +82,17 @@ The money page. Tabs across the middle:
   integration, searchable, with 24-hour charts.
 - **Calendar** — the fun one, below.
 
+### The Yell-O-Meter
+
+The Energy overview also turns the projected month-end bill into a playful ten-band household
+forecast. It now shows several possible outcomes for the current band, eighteen survival steps,
+and a real-safety card. Only the bill projection is measured: there is no microphone, decibel
+reading, pain detector, or promise about anyone's behaviour.
+
+Open the [Yelling Survival Guide](Yelling-Survival-Guide.html) for the full playbook,
+[Yelling Predictions](Yelling-Predictions.html) for every band, and
+[Heat, Pain & Survival Facts](Heat-Pain-and-Survival-Facts.html) for sourced hearing and heat guidance.
+
 ### The AC usage calendar
 
 ![Energy calendar](images/energy-calendar.png)

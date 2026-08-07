@@ -47,6 +47,8 @@ Suppresses corrective commands for the protocol window.
 - Uses the real inputs listed above. It does not invent thermostat, weather, usage, or sensor state.
 - Changes only the output listed above. Thermostat-affecting work goes through Home Assistant or returns a real error.
 - The global AC Defender rules still apply: the website target remains the floor for cooling commands, the worker keeps refreshing real Home Assistant state 24/7, and comfort/safety rules are not bypassed by decorative timing.
+- `BROTHER MAD`, someone-upset, and suspicion stand-downs control thermostat corrections only. They do not detect yelling, contact emergency services, treat pain or heat illness, or make an unsafe interpersonal situation safe.
+- If there is immediate danger or a medical emergency, leave if possible and call 9-1-1; do not wait for a protocol timer.
 
 ## Settings
 
@@ -72,3 +74,5 @@ Verify the shipped behavior at the feature's live page or endpoint, then run the
 - [Feature briefs](Feature-briefs.html) — find every documented surface and guard.
 - [Defender Logic](Defender-Logic.html) — follow the complete decision cycle and its bypass rules.
 - [Settings](Settings.html) — inspect persisted configuration, language modes, and safety limits.
+- [Yelling Survival Guide](Yelling-Survival-Guide.html) — practical before, during, and after steps.
+- [Heat, Pain & Survival Facts](Heat-Pain-and-Survival-Facts.html) — sourced hearing, heat, and personal-safety facts.

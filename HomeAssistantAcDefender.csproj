@@ -14,6 +14,10 @@
   <ItemGroup>
     <Compile Remove="HomeAssistantAcDefender.Tests\**\*.cs" />
     <Content Remove="HomeAssistantAcDefender.Tests\**\*" />
+    <!-- Runtime state can contain password hashes, data-protection keys, entity history,
+         and user settings. It belongs in the runtime data volume, never in a publish tree. -->
+    <Content Remove="App_Data\**\*" />
+    <None Remove="App_Data\**\*" />
   </ItemGroup>
 
   <!-- The in-app Site Wiki renders the same markdown that GitHub Pages builds from docs/wiki.

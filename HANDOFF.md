@@ -7,6 +7,36 @@ changelog, release tooling, and deployment evidence. Defender control logic
 still remains server-side; the Windows controller contains no simulated HVAC
 state.
 
+## Yell-O-Meter survival and wiki expansion
+
+- The Energy page now uses ten qualitative bill story bands from `$0` through `$350+`, with
+  more than forty possible household scenarios. It contains no unmeasured decibel values,
+  invented probabilities, or promises about another person's behaviour.
+- The live screen carries thirty-eight practical survival steps, eight pain and safety facts,
+  a fourteen-stage “what I may notice next” timeline, and twelve overthinking-mechanism facts.
+  The lived household facts are explicit:
+  when the writer's brother yells at them, they can experience fight-or-flight, freeze, and cry.
+  Afterward, their brain can enter an extreme overthinking mode. Every rendering labels these as
+  personal experience rather than a diagnosis or sensor reading.
+- `docs/wiki/Yelling-Survival-Guide.md` contains fifty-two survival moves, including dedicated
+  freeze-and-cry and overthinking-response sequences. `docs/wiki/Yelling-Predictions.md` records all ten story bands
+  and the possible response timeline. `docs/wiki/Heat-Pain-and-Survival-Facts.md` separates sourced
+  hearing and heat guidance from the lived accounts and includes twelve freeze-and-cry plus ten
+  overthinking survival tips.
+- The in-app wiki indexes every top-level Markdown article, resolves the documentation's Liquid
+  feature loop for offline rendering, and wraps tables in keyboard-focusable internal scroll regions.
+- `App_Data` is excluded from publish output as well as Docker context. A clean Release publish
+  was inspected and contained no runtime account, state, or data-protection material.
+- Release builds completed with 0 warnings and 0 errors, and the complete console regression
+  runner passed. Authenticated hidden-desktop proof found 0 pixels of root overflow on Energy and
+  all three new wiki pages at 390 CSS pixels. At the 200% display-equivalent gate, Energy and the
+  facts wiki also had 0 pixels of root overflow; the 580-pixel bottom navigation scrolled inside its
+  195-pixel viewport with 0 item overlaps, and the 520-pixel wiki table remained inside a
+  keyboard-focusable 126-pixel scroll region.
+- The production Docker deployment and public Pages verification belong to issue #2 and the rolling
+  task Discussion #3; do not infer their result from this source handoff until those external checks
+  have recorded a terminal verdict.
+
 ## Cooling failure safety correction
 
 - Cooling Failure Watch still raises its real-input MEGA alert for a possible breaker,
@@ -29,7 +59,7 @@ state.
   an immutable release only after verification passes. Its trigger covers every
   branch push and manual dispatch while ignoring generated `v0.1.*` tag pushes,
   preventing a release from recursively starting another release.
-- The Day Teet Hui landing page carries a pinned, version-labelled download link
+- The GitHub Pages landing page carries a pinned, version-labelled download link
   for the verified `v0.1.876` Windows Setup.exe asset; newer installer versions
   must replace it only after their own release verification passes.
 - `scripts/count_lines.py` is the reproducible line-count implementation used by
