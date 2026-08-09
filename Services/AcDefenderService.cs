@@ -1665,10 +1665,10 @@ public sealed class AcDefenderService
         {
             stateStore.ClearThermostatCommandIntent();
             stateStore.RecordThermostatCommandRejected(
-                $"Home Assistant rejected the thermostat setpoint command ({(int)ex.StatusCode.Value}): {ex.Message}",
+                $"Home Assistant rejected the thermostat setpoint command: {ex.Message}",
                 setPointCelsius: setPointCelsius,
                 urgent: bypassRejectedCommandBackoff);
-            throw new ThermostatCommandRejectedException(ex.Message, ex.StatusCode.Value, ex);
+            throw CreateThermostatCommandRejectedException(ex);
         }
     }
 
@@ -1701,10 +1701,10 @@ public sealed class AcDefenderService
         {
             stateStore.ClearThermostatCommandIntent();
             stateStore.RecordThermostatCommandRejected(
-                $"Home Assistant rejected the thermostat mode command ({(int)ex.StatusCode.Value}): {ex.Message}",
+                $"Home Assistant rejected the thermostat mode command: {ex.Message}",
                 hvacMode: hvacMode,
                 urgent: bypassRejectedCommandBackoff);
-            throw new ThermostatCommandRejectedException(ex.Message, ex.StatusCode.Value, ex);
+            throw CreateThermostatCommandRejectedException(ex);
         }
     }
 
@@ -1732,9 +1732,9 @@ public sealed class AcDefenderService
         {
             stateStore.ClearThermostatCommandIntent();
             stateStore.RecordThermostatCommandRejected(
-                $"Home Assistant rejected the thermostat fan command ({(int)ex.StatusCode.Value}): {ex.Message}",
+                $"Home Assistant rejected the thermostat fan command: {ex.Message}",
                 fanMode: fanMode);
-            throw new ThermostatCommandRejectedException(ex.Message, ex.StatusCode.Value, ex);
+            throw CreateThermostatCommandRejectedException(ex);
         }
     }
 
@@ -1751,10 +1751,26 @@ public sealed class AcDefenderService
             fanMode,
             bypassRejectedCommandBackoff,
             out var until,
-            out var message))
+            out var message,
+            out var reason))
         {
-            throw new ThermostatCommandRetryDeferredException(message, until);
+            throw new ThermostatCommandRetryDeferredException(
+                message,
+                until,
+                reason ?? ThermostatCommandDeferralReason.InFlight);
         }
+    }
+
+    private static ThermostatCommandRejectedException CreateThermostatCommandRejectedException(HttpRequestException exception)
+    {
+        var statusCode = exception.StatusCode!.Value;
+        return exception is HomeAssistantServiceException serviceException
+            ? new ThermostatCommandRejectedException(
+                exception.Message,
+                statusCode,
+                exception,
+                serviceException.Operation)
+            : new ThermostatCommandRejectedException(exception.Message, statusCode, exception);
     }
 
     private async Task RunBackgroundActuatorAsync(
@@ -2102,22 +2118,40 @@ public sealed class ThermostatCommandRejectedException : Exception
     public ThermostatCommandRejectedException(
         string message,
         System.Net.HttpStatusCode statusCode,
-        Exception innerException)
+        Exception innerException,
+        string? operation = null)
         : base(message, innerException)
     {
         StatusCode = statusCode;
+        Operation = operation;
     }
 
     public System.Net.HttpStatusCode StatusCode { get; }
+
+    public string? Operation { get; }
+}
+
+public enum ThermostatCommandDeferralReason
+{
+    InFlight,
+    AmbiguousResponse,
+    AcceptedAwaitingStateEcho,
+    RejectedBackoff,
 }
 
 public sealed class ThermostatCommandRetryDeferredException : Exception
 {
-    public ThermostatCommandRetryDeferredException(string message, DateTimeOffset until)
+    public ThermostatCommandRetryDeferredException(
+        string message,
+        DateTimeOffset until,
+        ThermostatCommandDeferralReason reason = ThermostatCommandDeferralReason.InFlight)
         : base(message)
     {
         Until = until;
+        Reason = reason;
     }
 
     public DateTimeOffset Until { get; }
+
+    public ThermostatCommandDeferralReason Reason { get; }
 }

@@ -3658,12 +3658,32 @@ public sealed class DefenderStateStore
         string? fanMode,
         bool bypassRejectedCommandBackoff,
         out DateTimeOffset until,
-        out string message)
+        out string message) =>
+        TryRespectMatchingThermostatCommand(
+            now,
+            setPointCelsius,
+            hvacMode,
+            fanMode,
+            bypassRejectedCommandBackoff,
+            out until,
+            out message,
+            out _);
+
+    public bool TryRespectMatchingThermostatCommand(
+        DateTimeOffset now,
+        double? setPointCelsius,
+        string? hvacMode,
+        string? fanMode,
+        bool bypassRejectedCommandBackoff,
+        out DateTimeOffset until,
+        out string message,
+        out ThermostatCommandDeferralReason? reason)
     {
         lock (gate)
         {
             until = DateTimeOffset.MinValue;
             message = string.Empty;
+            reason = null;
             PruneRecentThermostatCommandIntents(now);
             var ambiguousGrace = TimeSpan.FromSeconds(Math.Max(60, options.CommandGraceSeconds * 2));
 
@@ -3680,6 +3700,7 @@ public sealed class DefenderStateStore
                 if (until > now)
                 {
                     message = $"The identical thermostat command is still awaiting Home Assistant confirmation until {until.ToLocalTime():HH:mm:ss}; no duplicate was sent.";
+                    reason = ThermostatCommandDeferralReason.InFlight;
                     return true;
                 }
             }
@@ -3698,6 +3719,7 @@ public sealed class DefenderStateStore
                 if (until > now)
                 {
                     message = $"The identical thermostat command is still within its ambiguous-response grace until {until.ToLocalTime():HH:mm:ss}; no duplicate was sent.";
+                    reason = ThermostatCommandDeferralReason.AmbiguousResponse;
                     return true;
                 }
             }
@@ -3715,6 +3737,7 @@ public sealed class DefenderStateStore
                 if (until > now)
                 {
                     message = $"Home Assistant accepted the identical thermostat command; waiting for its state echo until {until.ToLocalTime():HH:mm:ss}.";
+                    reason = ThermostatCommandDeferralReason.AcceptedAwaitingStateEcho;
                     return true;
                 }
             }
@@ -3732,6 +3755,7 @@ public sealed class DefenderStateStore
             {
                 until = retryAt;
                 message = $"Home Assistant rejected the identical thermostat command; retry backoff runs until {retryAt.ToLocalTime():HH:mm:ss}.";
+                reason = ThermostatCommandDeferralReason.RejectedBackoff;
                 return true;
             }
 

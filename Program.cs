@@ -42,7 +42,14 @@ builder.Services.AddHostedService<HubKioskService>();
 builder.Services.AddHostedService<WakeTruceService>();
 builder.Services.AddScoped<DefenderStateProvider>();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddMudServices();
+builder.Services.AddMudServices(configuration =>
+{
+    // The same persistent thermostat outcome is deduplicated. Keep normal snackbar capacity so a
+    // command failure never hides a separate cooling alarm on a narrow wall-mounted display.
+    configuration.SnackbarConfiguration.PositionClass = "mud-snackbar-location-bottom-right";
+    configuration.SnackbarConfiguration.PreventDuplicates = true;
+    configuration.SnackbarConfiguration.ShowCloseIcon = true;
+});
 
 // Persist the DataProtection key ring under App_Data (a docker volume in production) so container
 // rebuilds do NOT invalidate auth cookies and antiforgery tokens. Without this every redeploy
