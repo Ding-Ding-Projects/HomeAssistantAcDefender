@@ -21,6 +21,9 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
       `Shift+F10`, truthful shortcut labels, and mobile press-and-hold tab editing.
 - [x] Keep Cooling Failure Watch advisory at MEGA and reserve automatic thermostat OFF for
       OMEGA-confirmed room-rise evidence; preserve a manual restart for the rest of the episode.
+- [x] Keep rejected Home Assistant climate-command diagnostics bounded to HTTP status and
+      normalized operation identity; preserve exact-command backoff while showing one persistent,
+      viewport-safe command outcome instead of stacked retry notifications.
 - [x] Expand Yell-O-Meter documentation with truthful uncertainty boundaries, fifty-two survival
       moves, the lived fight-or-flight/freeze/cry and extreme-overthinking accounts, a fourteen-stage
       expectation ledger, and sourced hearing, heat, pain, stress, and personal-safety facts.

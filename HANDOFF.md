@@ -7,6 +7,25 @@ changelog, release tooling, and deployment evidence. Defender control logic
 still remains server-side; the Windows controller contains no simulated HVAC
 state.
 
+## Thermostat command recovery and repository integration
+
+- A non-success Home Assistant climate service response now records only a
+  normalized service operation and HTTP status. It does not read or retain an
+  upstream response body, request payload, request headers, or credentials.
+- A rejected direct command still arms the existing exact-command backoff. The
+  Dashboard and Controls pages present one persistent bottom-corner outcome
+  with a stable snackbar key, so an immediate identical retry does not stack a
+  second notification or send another command.
+- The full `dotnet build HomeAssistantAcDefender.csproj --no-restore` gate
+  completed with 0 warnings and 0 errors, and the console regression runner
+  passed after the integrated recovery merge. The test suite exercises the
+  HTTP 500 path, bounded diagnostic, one-post backoff, and MudBlazor duplicate
+  suppression at normal snackbar capacity.
+- Historical task sources were reconciled into `master` only after their tips
+  were proven represented by the current implementation. Remote publication,
+  Docker deployment, and destructive checkout cleanup remain separate final
+  verification steps.
+
 ## Yell-O-Meter survival and wiki expansion
 
 - The Energy page now uses ten qualitative bill story bands from `$0` through `$350+`, with
