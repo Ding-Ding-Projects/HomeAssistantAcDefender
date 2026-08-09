@@ -555,12 +555,19 @@
         catch (ThermostatCommandRetryDeferredException ex)
         {
             State.Refresh();
-            Snackbar.Add(ex.Message, Severity.Info);
+            if (ThermostatCommandFeedback.IsRejectedBackoff(ex))
+            {
+                ShowThermostatCommandRejected();
+            }
+            else
+            {
+                Snackbar.Add(ex.Message, Severity.Info);
+            }
         }
-        catch (ThermostatCommandRejectedException ex)
+        catch (ThermostatCommandRejectedException)
         {
             State.Refresh();
-            Snackbar.Add($"Home Assistant rejected the thermostat command: {ex.Message}", Severity.Error);
+            ShowThermostatCommandRejected();
         }
         catch (HttpRequestException ex) when (ex.StatusCode is not null)
         {
@@ -575,6 +582,15 @@
             State.Refresh();
             Snackbar.Add(ex.Message, Severity.Error);
         }
+    }
+
+    private void ShowThermostatCommandRejected()
+    {
+        Snackbar.Add(ThermostatCommandFeedback.RejectionSnackbarMessage, Severity.Error, options =>
+        {
+            options.RequireInteraction = true;
+            options.ShowCloseIcon = true;
+        }, ThermostatCommandFeedback.RejectionSnackbarKey);
     }
 
     public void Dispose() => State.Changed -= OnStateChanged;

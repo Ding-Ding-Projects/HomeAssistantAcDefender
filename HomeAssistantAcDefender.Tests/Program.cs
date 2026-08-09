@@ -46,6 +46,9 @@ appearanceTests.ElementAccentsAreAllowListedAndContrastIsDeterministic();
 var destructiveActionTests = new DestructiveActionSuperConfirmationRegressionTests();
 destructiveActionTests.ControlsAndDashboardUseTheNativeThermostatOffGate();
 destructiveActionTests.GateRequiresBothKeysAndFocusReturn();
+var thermostatCommandFeedbackTests = new ThermostatCommandFeedbackTests();
+thermostatCommandFeedbackTests.RejectionBackoffUsesOnePersistentViewportSafeOutcome();
+thermostatCommandFeedbackTests.MudBlazorSuppressesRepeatedPersistentOutcomeWithoutCapacityCap();
 var dimSumSurpriseTests = new DimSumSurpriseTests();
 dimSumSurpriseTests.CatalogUsesAuthoritativeMetadataAndPublishedAssets();
 dimSumSurpriseTests.DrawGateIsExactlyTenPercentAndDeterministic();
@@ -4944,7 +4947,9 @@ internal sealed class DefenderSetPointRegressionTests
             var handler = new SerializedClimateHomeAssistantHandler(
                 initialHvacMode: "cool",
                 blockFirstTemperatureCommand: false,
-                rejectedClimateService: "set_fan_mode");
+                rejectedClimateService: "set_fan_mode",
+                rejectedClimateStatusCode: System.Net.HttpStatusCode.InternalServerError,
+                rejectedClimateErrorJson: "{\"message\":\"climate bridge fault\"}");
             using var httpClient = new HttpClient(handler);
             var homeAssistantClient = new HomeAssistantClient(httpClient, homeAssistantMonitor, NullLogger<HomeAssistantClient>.Instance);
             var service = new AcDefenderService(
@@ -4959,18 +4964,71 @@ internal sealed class DefenderSetPointRegressionTests
                 await service.ForceFanModeAsync("auto", CancellationToken.None);
                 throw new InvalidOperationException("The test Home Assistant rejection should reach the caller.");
             }
-            catch (ThermostatCommandRejectedException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            catch (ThermostatCommandRejectedException ex) when (ex.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+            {
+                if (!string.Equals(ex.Operation, "climate.set_fan_mode", StringComparison.Ordinal)
+                    || ex.Message.Contains("climate bridge fault", StringComparison.Ordinal)
+                    || ex.InnerException is not HomeAssistantServiceException)
+                {
+                    throw new InvalidOperationException("A status-bearing climate rejection must preserve a bounded operation diagnostic without retaining response secrets.");
+                }
+            }
+
+            var rejectedSnapshot = fixture.Store.GetSnapshot();
+            if (!string.Equals(rejectedSnapshot.ConnectionState, "home-assistant", StringComparison.Ordinal)
+                || rejectedSnapshot.Emergency.Active
+                || string.Equals(rejectedSnapshot.Emergency.Protocol, "Tamper truce", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("A definite HA command rejection must remain online and must never arm Tamper Truce.");
+            }
+
+            if (rejectedSnapshot.LastError is null
+                || !rejectedSnapshot.LastError.Contains("rejected", StringComparison.OrdinalIgnoreCase)
+                || !rejectedSnapshot.LastError.Contains("HTTP 500", StringComparison.Ordinal)
+                || !rejectedSnapshot.LastError.Contains("climate.set_fan_mode", StringComparison.Ordinal)
+                || rejectedSnapshot.LastError.Contains("climate bridge fault", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("A definite HA command rejection must record only the bounded operation and HTTP status diagnostic.");
+            }
+
+            try
+            {
+                await service.ForceFanModeAsync("auto", CancellationToken.None);
+                throw new InvalidOperationException("The identical rejected thermostat command must be deferred instead of re-sent.");
+            }
+            catch (ThermostatCommandRetryDeferredException ex) when (ex.Reason == ThermostatCommandDeferralReason.RejectedBackoff)
             {
             }
 
-            var snapshot = fixture.Store.GetSnapshot();
-            if (!string.Equals(snapshot.ConnectionState, "home-assistant", StringComparison.Ordinal)
-                || snapshot.Emergency.Active
-                || string.Equals(snapshot.Emergency.Protocol, "Tamper truce", StringComparison.OrdinalIgnoreCase)
-                || snapshot.LastError is null
-                || !snapshot.LastError.Contains("rejected", StringComparison.OrdinalIgnoreCase))
+            if (handler.ClimateServiceCalls.Count != 1)
             {
-                throw new InvalidOperationException("A definite HA command rejection must remain online and must never arm Tamper Truce.");
+                throw new InvalidOperationException($"A definite HA command rejection must not retry the identical command during bounded backoff; test handler observed {handler.ClimateServiceCalls.Count} climate service calls.");
+            }
+
+            var sensitiveHandler = new SerializedClimateHomeAssistantHandler(
+                blockFirstTemperatureCommand: false,
+                rejectedClimateService: "set_temperature",
+                rejectedClimateStatusCode: System.Net.HttpStatusCode.InternalServerError,
+                rejectedClimateErrorJson: "{\"message\":\"Authorization: Bearer never-show-this-value; api_key=never-show-this-api-key\"}");
+            using var sensitiveHttpClient = new HttpClient(sensitiveHandler);
+            var sensitiveHomeAssistantClient = new HomeAssistantClient(
+                sensitiveHttpClient,
+                homeAssistantMonitor,
+                NullLogger<HomeAssistantClient>.Instance);
+            try
+            {
+                await sensitiveHomeAssistantClient.SetTemperatureAsync("climate.dining_room", 21.5, CancellationToken.None);
+                throw new InvalidOperationException("The sensitive diagnostic test Home Assistant rejection should reach the caller.");
+            }
+            catch (HomeAssistantServiceException ex)
+            {
+                if (ex.Message.Contains("never-show-this-value", StringComparison.Ordinal)
+                    || ex.Message.Contains("never-show-this-api-key", StringComparison.Ordinal)
+                    || !ex.Message.Contains("HTTP 500", StringComparison.Ordinal)
+                    || !ex.Message.Contains("climate.set_temperature", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Credential-shaped Home Assistant diagnostics must be omitted while the safe HTTP operation context remains available.");
+                }
             }
         }
         finally
@@ -7195,6 +7253,8 @@ internal sealed class SerializedClimateHomeAssistantHandler : HttpMessageHandler
     private readonly bool blockFirstClimateRead;
     private readonly double currentTemperatureCelsius;
     private readonly string? rejectedClimateService;
+    private readonly System.Net.HttpStatusCode rejectedClimateStatusCode;
+    private readonly string rejectedClimateErrorJson;
     private readonly string? climateStateOverrideJson;
     private readonly System.Net.HttpStatusCode? climateReadStatusCode;
     private string currentHvacMode;
@@ -7207,6 +7267,8 @@ internal sealed class SerializedClimateHomeAssistantHandler : HttpMessageHandler
         bool blockFirstClimateRead = false,
         double currentTemperatureCelsius = 24.0,
         string? rejectedClimateService = null,
+        System.Net.HttpStatusCode rejectedClimateStatusCode = System.Net.HttpStatusCode.BadRequest,
+        string? rejectedClimateErrorJson = null,
         string? climateStateOverrideJson = null,
         System.Net.HttpStatusCode? climateReadStatusCode = null)
     {
@@ -7216,6 +7278,8 @@ internal sealed class SerializedClimateHomeAssistantHandler : HttpMessageHandler
         this.blockFirstClimateRead = blockFirstClimateRead;
         this.currentTemperatureCelsius = currentTemperatureCelsius;
         this.rejectedClimateService = rejectedClimateService;
+        this.rejectedClimateStatusCode = rejectedClimateStatusCode;
+        this.rejectedClimateErrorJson = rejectedClimateErrorJson ?? "{\"message\":\"rejected by test thermostat\"}";
         this.climateStateOverrideJson = climateStateOverrideJson;
         this.climateReadStatusCode = climateReadStatusCode;
     }
@@ -7299,7 +7363,7 @@ internal sealed class SerializedClimateHomeAssistantHandler : HttpMessageHandler
                         climateServiceCalls.Add(service);
                     }
 
-                    return JsonResponse("{\"message\":\"rejected by test thermostat\"}", System.Net.HttpStatusCode.BadRequest);
+                    return JsonResponse(rejectedClimateErrorJson, rejectedClimateStatusCode);
                 }
 
                 if (string.Equals(service, "set_temperature", StringComparison.OrdinalIgnoreCase))

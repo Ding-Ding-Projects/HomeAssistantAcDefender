@@ -2487,6 +2487,36 @@ body { font-family: var(--ac-ui-font-family, 'JetBrains Mono', Consolas, monospa
     font-family: 'JetBrains Mono', Consolas, monospace !important;
 }
 
+#mud-snackbar-container {
+    width: min(500px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+}
+
+#mud-snackbar-container .mud-snackbar {
+    width: 100%;
+    min-width: 0;
+    max-width: 500px;
+}
+
+#mud-snackbar-container .mud-snackbar-content-message {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+    #mud-snackbar-container.mud-snackbar-location-bottom-right {
+        left: max(16px, env(safe-area-inset-left, 0px));
+        right: max(16px, env(safe-area-inset-right, 0px));
+        bottom: max(16px, env(safe-area-inset-bottom, 0px));
+        width: auto;
+        max-width: none;
+    }
+
+    #mud-snackbar-container .mud-snackbar {
+        max-width: none;
+    }
+}
+
 .mud-dialog { border: 1px solid #2a3742; }
 .mud-overlay-scrim { background-color: rgba(2, 4, 6, 0.7) !important; }
 
