@@ -246,7 +246,7 @@ internal sealed class DefenderSetPointRegressionTests
         var handler = new HomeAssistantConfigHandler();
         var configured = new HomeAssistantOptions
         {
-            BaseUrl = "http://home-assistant.test:8123",
+            BaseUrl = "http://home-assistant.local:8123",
             AllowInsecurePrivateNetworkHttp = true,
             AccessToken = "home-assistant-only-token",
         };
@@ -285,7 +285,7 @@ internal sealed class DefenderSetPointRegressionTests
         {
             var homeAssistantOptions = new HomeAssistantOptions
             {
-                BaseUrl = "http://home-assistant.test:8123",
+                BaseUrl = "http://home-assistant.local:8123",
                 AllowInsecurePrivateNetworkHttp = true,
                 AccessToken = "test-token",
                 EntityId = "climate.dining_room"
@@ -317,7 +317,7 @@ internal sealed class DefenderSetPointRegressionTests
         {
             var options = new FixedOptionsMonitor<HomeAssistantOptions>(new HomeAssistantOptions
             {
-                BaseUrl = "http://home-assistant.test:8123",
+                BaseUrl = "http://home-assistant.local:8123",
                 AllowInsecurePrivateNetworkHttp = true,
                 AccessToken = "test-token",
                 EntityId = "climate.dining_room"
@@ -344,7 +344,7 @@ internal sealed class DefenderSetPointRegressionTests
         var configured = new HomeAssistantOptions
         {
             AccessToken = "test-token",
-            BaseUrl = "http://home-assistant.test:8123",
+            BaseUrl = "http://home-assistant.local:8123",
             AllowInsecurePrivateNetworkHttp = true,
         };
         var openMeteo = new OpenMeteoWeatherClient(
@@ -4395,7 +4395,7 @@ internal sealed class DefenderSetPointRegressionTests
 
             var homeAssistantOptions = new HomeAssistantOptions
             {
-                BaseUrl = "http://home-assistant.test:8123",
+                BaseUrl = "http://home-assistant.local:8123",
                 AllowInsecurePrivateNetworkHttp = true,
                 AccessToken = "test-token",
                 EntityId = "climate.dining_room",
@@ -4619,7 +4619,7 @@ internal sealed class DefenderSetPointRegressionTests
             using var fixture = DefenderStoreFixture.Create(contentRoot, defenderOptions);
             var homeAssistantOptions = new HomeAssistantOptions
             {
-                BaseUrl = "http://home-assistant.test:8123",
+                BaseUrl = "http://home-assistant.local:8123",
                 AllowInsecurePrivateNetworkHttp = true,
                 AccessToken = "test-token",
                 EntityId = "climate.dining_room",
@@ -4705,7 +4705,7 @@ internal sealed class DefenderSetPointRegressionTests
             using var fixture = DefenderStoreFixture.Create(contentRoot, defenderOptions);
             var homeAssistantOptions = new HomeAssistantOptions
             {
-                BaseUrl = "http://home-assistant.test:8123",
+                BaseUrl = "http://home-assistant.local:8123",
                 AllowInsecurePrivateNetworkHttp = true,
                 AccessToken = "test-token",
                 EntityId = "climate.dining_room",
@@ -4778,7 +4778,7 @@ internal sealed class DefenderSetPointRegressionTests
             using var fixture = DefenderStoreFixture.Create(contentRoot, defenderOptions);
             var homeAssistantOptions = new HomeAssistantOptions
             {
-                BaseUrl = "http://home-assistant.test:8123",
+                BaseUrl = "http://home-assistant.local:8123",
                 AllowInsecurePrivateNetworkHttp = true,
                 AccessToken = "test-token",
                 EntityId = "climate.dining_room",
@@ -4834,7 +4834,7 @@ internal sealed class DefenderSetPointRegressionTests
             configureStore?.Invoke(fixture.Store);
             var homeAssistantOptions = new HomeAssistantOptions
             {
-                BaseUrl = "http://home-assistant.test:8123",
+                BaseUrl = "http://home-assistant.local:8123",
                 AllowInsecurePrivateNetworkHttp = true,
                 AccessToken = "test-token",
                 EntityId = "climate.dining_room",
@@ -4947,7 +4947,7 @@ internal sealed class DefenderSetPointRegressionTests
 
             var homeAssistantOptions = new HomeAssistantOptions
             {
-                BaseUrl = "http://home-assistant.test:8123",
+                BaseUrl = "http://home-assistant.local:8123",
                 AllowInsecurePrivateNetworkHttp = true,
                 AccessToken = "test-token",
                 EntityId = "climate.dining_room",
@@ -5063,7 +5063,7 @@ internal sealed class DefenderSetPointRegressionTests
 
             var homeAssistantOptions = new HomeAssistantOptions
             {
-                BaseUrl = "http://home-assistant.test:8123",
+                BaseUrl = "http://home-assistant.local:8123",
                 AllowInsecurePrivateNetworkHttp = true,
                 AccessToken = "test-token",
                 EntityId = "climate.dining_room",
@@ -5348,7 +5348,7 @@ internal sealed class DefenderSetPointRegressionTests
 
             var homeAssistantOptions = new HomeAssistantOptions
             {
-                BaseUrl = "http://home-assistant.test:8123",
+                BaseUrl = "http://home-assistant.local:8123",
                 AllowInsecurePrivateNetworkHttp = true,
                 AccessToken = "test-token",
                 EntityId = "climate.dining_room",
