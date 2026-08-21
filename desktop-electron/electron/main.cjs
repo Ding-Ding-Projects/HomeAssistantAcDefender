@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, safeStorage, session, autoUpdater } = requi
 const path = require("node:path");
 const fs = require("node:fs");
 const { normalizeUpdateFeedUrl, probeSquirrelFeed } = require("./update-contract.cjs");
+const { authenticate, mergeCookies, normalizeBaseUrl } = require("./auth-client.cjs");
 
 const DEFAULT_BASE_URL = "http://127.0.0.1:8888";
 const CONFIG_VERSION = 1;
@@ -114,28 +115,6 @@ function saveConfig(partial) {
   fs.writeFileSync(configPath(), JSON.stringify(payload, null, 2), { mode: 0o600 });
 }
 
-function normalizeBaseUrl(value) {
-  const raw = String(value || "").trim().replace(/\/+$/, "");
-  let parsed;
-  try { parsed = new URL(raw); } catch { throw new Error("Enter a valid http:// or https:// defender address."); }
-  if (!/^https?:$/.test(parsed.protocol)) throw new Error("Only HTTP and HTTPS defender addresses are supported.");
-  if (parsed.username || parsed.password) throw new Error("Do not put credentials in the defender address.");
-  return parsed.toString().replace(/\/+$/, "");
-}
-
-function mergeCookies(existing, response) {
-  const values = typeof response.headers.getSetCookie === "function"
-    ? response.headers.getSetCookie()
-    : (response.headers.get("set-cookie") || "").split(/,(?=[^;,]+=)/g);
-  const jar = new Map((existing || "").split("; ").filter(Boolean).map((item) => item.split("=", 2)));
-  for (const value of values) {
-    const pair = value.split(";", 1)[0];
-    const index = pair.indexOf("=");
-    if (index > 0) jar.set(pair.slice(0, index), pair.slice(index + 1));
-  }
-  return [...jar.entries()].map(([key, value]) => `${key}=${value}`).join("; ");
-}
-
 async function request(pathname, options = {}) {
   if (!connection.baseUrl || !connection.cookie) throw new Error("Connect to the defender before using controls.");
   const headers = new Headers(options.headers || {});
@@ -165,41 +144,18 @@ async function request(pathname, options = {}) {
 
 async function login({ baseUrl, username, password, remember }) {
   const normalized = normalizeBaseUrl(baseUrl);
-  if (!String(username || "").trim() || !password) throw new Error("Username and password are required.");
-  connection = { baseUrl: normalized, username: String(username).trim(), cookie: "" };
-  let loginPage;
-  try {
-    loginPage = await fetch(`${normalized}/login`, { redirect: "manual" });
-  } catch (error) {
-    throw new Error(`Could not reach defender: ${error instanceof Error ? error.message : String(error)}`);
-  }
-  const loginHtml = await loginPage.text();
-  connection.cookie = mergeCookies("", loginPage);
-  // Blazor's <AntiforgeryToken /> emits a hidden RequestVerificationToken input.
-  // Keep the parser deliberately small and local: this is only a server-issued token,
-  // never a credential supplied by the user.
-  const tokenInputs = [...loginHtml.matchAll(/<input\b[^>]*>/gi)];
-  const hidden = {};
-  for (const match of tokenInputs) {
-    const tag = match[0];
-    const name = tag.match(/name=["']([^"']+)["']/i)?.[1];
-    const value = tag.match(/value=["']([^"']*)["']/i)?.[1];
-    const type = tag.match(/type=["']([^"']+)["']/i)?.[1] || "text";
-    if (name && value !== undefined && type.toLowerCase() === "hidden") hidden[name] = value;
-  }
-  const form = new URLSearchParams({ ...hidden, action: "login", username: connection.username, password, keepSignedIn: remember ? "true" : "false" });
-  const response = await fetch(`${normalized}/login`, {
-    method: "POST", body: form, redirect: "manual",
-    headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "text/html" }
-  });
-  connection.cookie = mergeCookies(connection.cookie, response);
-  if (response.status >= 400 && response.status !== 302 && response.status !== 303) {
-    throw new Error(`Login returned HTTP ${response.status}.`);
-  }
   let status;
-  try { status = await request("/api/status"); } catch (error) {
-    connection.cookie = "";
-    throw new Error(`Sign-in failed or API is unavailable: ${error instanceof Error ? error.message : String(error)}`);
+  try {
+    status = await authenticate({
+      baseUrl: normalized,
+      username,
+      password,
+      remember,
+      onAuthenticated: (next) => { connection = next; }
+    });
+  } catch (error) {
+    connection = { baseUrl: normalized, username: String(username || "").trim(), cookie: "" };
+    throw error;
   }
   saveConfig({ baseUrl: normalized, username: connection.username, password, remember });
   return status;
