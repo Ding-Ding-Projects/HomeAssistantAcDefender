@@ -96,18 +96,17 @@ state.
   reports zero vulnerabilities in the current dependency tree. Packaging compatibility still
   requires a future bounded Squirrel run; no new installer run is claimed by this handoff.
 - `npm run build` and `npm test` pass from `desktop-electron/` in the current checkout.
-- `npm run dist` now completes on this Windows checkout and produces a non-empty unsigned Setup.exe,
-  `.nupkg`, and `RELEASES` feed under `desktop-electron/dist/squirrel-windows`.
-  Keep this verification boundary explicit until a Windows packaging host opens the real
-  installer execution as a separate evidence boundary; the update path uses HTTPS plus
-  `RELEASES` package hashes and carries the unsigned-artifact contract. Visible controller
-  warning copy remains an auth/UI-owned integration follow-up.
+- The previously published controller baseline produced an unsigned Setup.exe, `.nupkg`, and
+  `RELEASES` feed. The current Electron `43.4.1` candidate still requires a fresh bounded
+  `npm run dist` pass and installer execution proof; no new package result is claimed here.
+  The update path uses HTTPS plus `RELEASES` package hashes and carries the unsigned-artifact
+  contract. Settings, manual checks, and the ready banner now render its exact warning in source.
 - The update contract rejects non-HTTPS, credential-bearing, query-bearing, fragment-bearing,
   and GitHub Pages feed URLs; it bounds and validates the direct RELEASES manifest before
   Electron asks Squirrel.Windows to check for updates. It now accepts only the exact three-field
   Squirrel RELEASES grammar and rejects fourth-field source URLs. Code signing is explicitly
-  disabled and no certificate is used; local artifacts may trigger an OS warning. Visible
-  controller warning copy remains an auth/UI-owned integration follow-up and is not claimed here.
+  disabled and no certificate is used; local artifacts may trigger an OS warning. The visible
+  warning is source-verified; packaged interaction remains a separate evidence boundary.
 - The controller uses a frameless Material title bar with real minimize, maximize,
   and close IPC controls. Headless packaged-app capture verified the branded frame.
 - Dashboard, Notifications, and Settings are persisted browser-style tabs with

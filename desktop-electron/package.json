@@ -13,13 +13,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.json && vite build",
-    "test": "node tests/static-check.mjs && node tests/lifecycle-contract.mjs && node tests/update-contract.mjs",
+    "test": "node tests/static-check.mjs && node tests/lifecycle-contract.mjs && node tests/auth-contract.mjs && node tests/update-contract.mjs",
     "electron": "electron .",
     "dist": "npm run build && electron-builder --win squirrel"
   },
   "dependencies": {
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "tough-cookie": "^6.0.2"
   },
   "devDependencies": {
     "@types/react": "^19.1.8",

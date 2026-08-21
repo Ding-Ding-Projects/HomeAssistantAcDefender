@@ -35,9 +35,9 @@ the feed should be public or protected by the platform's normal transport/auth
 boundary, not by embedding a secret in this app's profile. The URL is stored
 with the other controller preferences but never logged. `RELEASES` and packages are published
 unsigned by permanent project policy. HTTPS, the bounded manifest parser, package SHA-1/size
-fields, and the unsigned-artifact warning contract are the complete source-level integrity boundary;
-visible controller warning copy remains an integration follow-up in the auth/UI-owned files and is
-not claimed by this source-only lane;
+fields, and the unsigned-artifact warning contract are the complete source-level integrity boundary.
+Settings, manual check results, and the ready banner render the exact warning; packaged interaction
+remains a separate unverified boundary;
 none is a certificate or publisher-authenticity claim.
 
 ## Failure modes and recovery

@@ -54,10 +54,11 @@ the full NuGet package, and `RELEASES`; the latter two are required by Squirrel'
 delta/update flow. The current client keeps background checks disabled until an
 operator configures an HTTPS feed and preflights its direct `RELEASES` manifest.
 Code signing is permanently disabled; HTTPS and package hashes provide transport
-and content-integrity evidence, not publisher authenticity. The non-blocking
-**Restart to install update** surface remains an auth/UI-owned integration
-follow-up and is not claimed by this source-only lane. Treat attached assets as
-build artifacts until the independent public release asset digest is verified.
+and content-integrity evidence, not publisher authenticity. Settings, manual
+checks, and the non-blocking **Restart to install update** surface now carry the
+exact unsigned-artifact warning in source; packaged interaction remains unverified.
+Treat attached assets as build artifacts until the independent public release
+asset digest is verified.
 
 ## Reproducing the line-count table
 
