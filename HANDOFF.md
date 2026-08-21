@@ -72,10 +72,11 @@ state.
 
 ## CI and documentation slice
 
-- `.github/workflows/release.yml` restores, builds, and runs the regression suite;
-  creates a Docker image archive and checksum; counts lines with the committed
+- `.github/workflows/release.yml` builds separate `linux/amd64` and `linux/arm64` Docker image
+  archives with SHA-256 checksums and source revision metadata; counts lines with the committed
   script; resolves a public dim-sum code name without copying photos; and creates
-  an immutable release only after verification passes. Its trigger covers every
+  an immutable release. GitHub Actions intentionally performs no tests or lint; local checks
+  remain documented and are not represented as release verdicts. Its trigger covers every
   branch push and manual dispatch while ignoring generated `v0.1.*` tag pushes,
   preventing a release from recursively starting another release.
 - The GitHub Pages landing page carries a pinned, version-labelled download link
@@ -91,15 +92,22 @@ state.
 
 - `desktop-electron/` is a separate Windows-only Electron + React/TypeScript controller. It does
   not contain defender logic or simulated HVAC state.
+- The controller now pins Electron `43.4.1` and overrides `nanoid` to `3.3.18`; `npm audit --json`
+  reports zero vulnerabilities in the current dependency tree. Packaging compatibility still
+  requires a future bounded Squirrel run; no new installer run is claimed by this handoff.
 - `npm run build` and `npm test` pass from `desktop-electron/` in the current checkout.
-- `npm run dist` now completes on this Windows checkout and produces a non-empty Setup.exe,
+- `npm run dist` now completes on this Windows checkout and produces a non-empty unsigned Setup.exe,
   `.nupkg`, and `RELEASES` feed under `desktop-electron/dist/squirrel-windows`.
   Keep this verification boundary explicit until a Windows packaging host opens the real
-  installer and a signed background update feed plus restart banner are verified.
+  installer execution as a separate evidence boundary; the update path uses HTTPS plus
+  `RELEASES` package hashes and carries the unsigned-artifact contract. Visible controller
+  warning copy remains an auth/UI-owned integration follow-up.
 - The update contract rejects non-HTTPS, credential-bearing, query-bearing, fragment-bearing,
   and GitHub Pages feed URLs; it bounds and validates the direct RELEASES manifest before
-  Electron asks Squirrel.Windows to check for updates. Local packaging is unsigned until a
-  private signing certificate is supplied.
+  Electron asks Squirrel.Windows to check for updates. It now accepts only the exact three-field
+  Squirrel RELEASES grammar and rejects fourth-field source URLs. Code signing is explicitly
+  disabled and no certificate is used; local artifacts may trigger an OS warning. Visible
+  controller warning copy remains an auth/UI-owned integration follow-up and is not claimed here.
 - The controller uses a frameless Material title bar with real minimize, maximize,
   and close IPC controls. Headless packaged-app capture verified the branded frame.
 - Dashboard, Notifications, and Settings are persisted browser-style tabs with
@@ -177,4 +185,4 @@ Keep `.env`, `App_Data`, access tokens, and host state outside Git.
 ## Open issues
 
 At audit start, `gh issue list --state open` returned no open issues for either
-this repository or `Ding-Ding-Projects/agent-global-memory`.
+this repository or the instruction repository.

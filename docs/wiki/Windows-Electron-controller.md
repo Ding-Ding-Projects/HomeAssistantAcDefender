@@ -18,8 +18,11 @@ decisions remain in the server and every reading or command comes from the real 
   command endpoints. Thermostat-off has an explicit confirmation naming the affected device.
 - Notification history reads, marks read, dismisses, and restores records through the hosted API.
 - The optional Squirrel update feed is normalized and preflighted against a direct `RELEASES`
-  manifest before Electron checks for packages. See [Windows signed update-feed contract](release/windows-update-feed.html)
-  for the signature boundary and recovery states.
+  manifest before Electron checks for packages. HTTPS transport and the manifest's package hashes
+  provide transport/content-integrity evidence; shipped artifacts are unsigned and may trigger an
+  operating-system publisher warning. The visible in-app warning remains an integration follow-up
+  in the auth/UI-owned files and is not claimed by this lane. See [Windows HTTPS update-feed contract](release/windows-update-feed.html)
+  for the boundary and recovery states.
 - Settings persist language mode, independent English/Cantonese funny levels, theme, density,
   accent/seed color, installed-font choice, and UI scale (85%–135%), plus a settings-local
   plain-text/regex search builder. Appearance values apply live to the controller only;
@@ -41,7 +44,8 @@ runtime images.
 Connection, authentication, HTTP, API, and update-feed errors are rendered as errors. A
 disconnected host never produces a made-up reading or success result. The Squirrel installer
 target is configured, and the local Windows packaging command produces the complete
-installer/update set; the feed article records why unsigned local artifacts are not trust proof.
+  installer/update set; the feed article records why unsigned local artifacts are not publisher
+  authenticity proof.
 
 ## Verification
 
@@ -49,16 +53,25 @@ From `desktop-electron/`:
 
 ```powershell
 npm ci --ignore-scripts
+node node_modules/electron/install.js
+node node_modules/esbuild/install.js
 npm run build
 npm test
 ```
+
+The package job does not run arbitrary npm lifecycle hooks. Electron `43.4.1` and esbuild
+`0.28.1` install steps are invoked explicitly after the script-disabled install; transitive
+electron-winstaller `5.4.0` is version-checked but its vendor-dependent install hook is not
+invoked because this project does not own its `vendor/7z-*` inputs.
 
 `npm run build`, `npm test`, and `npm run dist` pass in the current checkout. The packaging command
 produces a Squirrel Setup.exe, a `.nupkg` update package, and a `RELEASES` feed under
 `dist/squirrel-windows`; the release workflow verifies those files are non-empty before attaching
 them. A Lowlevel headless Windows launch also verified the branded frameless title bar and editable
-loopback sign-in field. Opening the installer and enabling a signed background update feed remain
-separate gates and must not be described as passed until their corresponding evidence exists.
+loopback sign-in field. Opening the installer remains a separate evidence gate. Background updates
+never claim a signature: they require HTTPS plus a valid `RELEASES` manifest and package hashes,
+  and retain the unsigned-artifact warning in the update contract. Visible controller copy remains
+  an integration follow-up and is not claimed by this source-only lane.
 
 The landing page exposes the exact verified installer asset from release `v0.1.876`:
 [Download the Windows controller v0.1.876 Setup.exe](https://github.com/Ding-Ding-Projects/HomeAssistantAcDefender/releases/download/v0.1.876/AC.Defender.Controller.Setup.0.1.0.exe).

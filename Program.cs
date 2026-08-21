@@ -8,20 +8,81 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.HostFiltering;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Forwarded headers are opt-in and fail closed. A proxy can only influence the
+// request scheme when its exact address or CIDR is configured in
+// ForwardedHeaders__KnownProxies / ForwardedHeaders__KnownIPNetworks. An empty
+// contract deliberately ignores forwarded headers instead of trusting a
+// caller-supplied X-Forwarded-Proto value.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.None;
+    options.KnownProxies.Clear();
+    options.KnownIPNetworks.Clear();
+
+    var configuredProxies = builder.Configuration["ForwardedHeaders:KnownProxies"];
+    var configuredNetworks = builder.Configuration["ForwardedHeaders:KnownIPNetworks"]
+        ?? builder.Configuration["ForwardedHeaders:KnownNetworks"];
+    foreach (var address in HomeAssistantConfigurationValidator.ValidateKnownProxies(configuredProxies))
+    {
+        options.KnownProxies.Add(address);
+    }
+
+    foreach (var network in HomeAssistantConfigurationValidator.ValidateKnownNetworks(configuredNetworks))
+    {
+        options.KnownIPNetworks.Add(network);
+    }
+
+    if (options.KnownProxies.Count > 0 || options.KnownIPNetworks.Count > 0)
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.ForwardLimit = 1;
+    }
+});
+
+builder.Services.Configure<HostFilteringOptions>(options =>
+{
+    options.AllowedHosts = HomeAssistantConfigurationValidator
+        .ValidateAllowedHosts(builder.Configuration["ForwardedHeaders:AllowedHosts"])
+        .ToArray();
+});
+
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
+
+if (args.Any(argument => string.Equals(argument, "--validate-deployment-contract", StringComparison.OrdinalIgnoreCase)))
+{
+    HomeAssistantConfigurationValidator.RunNegativeRegression();
+    return;
+}
+
+if (args.Any(argument => string.Equals(argument, "--validate-cli-contract", StringComparison.OrdinalIgnoreCase)))
+{
+    CliCommands.RunContractRegression();
+    return;
+}
 
 if (await CliCommands.TryRunAsync(args, builder.Configuration))
 {
     return;
 }
 
-builder.Services.Configure<HomeAssistantOptions>(builder.Configuration.GetSection(HomeAssistantOptions.SectionName));
+builder.Services.AddOptions<HomeAssistantOptions>()
+    .Bind(builder.Configuration.GetSection(HomeAssistantOptions.SectionName))
+    .Validate(options =>
+    {
+        HomeAssistantConfigurationValidator.ValidateBaseUrl(
+            options.BaseUrl,
+            options.AllowInsecurePrivateNetworkHttp);
+        return true;
+    }, "HomeAssistant:BaseUrl is not a permitted HTTP(S) endpoint.")
+    .ValidateOnStart();
 builder.Services.Configure<DefenderOptions>(builder.Configuration.GetSection(DefenderOptions.SectionName));
 builder.Services.Configure<KioskOptions>(builder.Configuration.GetSection(KioskOptions.SectionName));
 builder.Services.AddSingleton<SettingsGitRepository>();
@@ -98,6 +159,8 @@ if (!app.Environment.IsDevelopment())
     }));
 }
 
+app.UseForwardedHeaders();
+app.UseHostFiltering();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -125,6 +188,17 @@ app.MapGet("/logout", async (HttpContext context) =>
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     context.Response.Redirect("/login");
 });
+
+// Anonymous, intentionally low-detail health response for Compose/load-balancer
+// checks. It contains no Home Assistant configuration, account state, or
+// thermostat readings. APP_VERSION and APP_REVISION are release metadata only.
+app.MapGet("/healthz", (HttpContext context, IConfiguration configuration) => Results.Ok(new
+{
+    status = "ok",
+    version = configuration["APP_VERSION"] ?? "unknown",
+    revision = configuration["APP_REVISION"] ?? "unknown",
+    scheme = context.Request.Scheme,
+})).AllowAnonymous();
 
 // Every /api/* endpoint requires an authenticated session. The Blazor UI reads state
 // server-side via DefenderStateProvider (not these endpoints), so locking them down does

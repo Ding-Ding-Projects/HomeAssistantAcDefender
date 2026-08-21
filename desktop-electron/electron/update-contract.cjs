@@ -1,13 +1,13 @@
 const MAX_MANIFEST_BYTES = 256 * 1024;
+const UNSIGNED_UPDATE_WARNING = "Updates use HTTPS transport plus RELEASES/package hashes; artifacts are unsigned and may trigger an operating-system warning.";
 
 /**
  * Normalize the operator-provided Squirrel.Windows feed directory.
  *
  * The updater only consumes a direct HTTPS directory. Credentials, query
  * strings, fragments, and GitHub Pages hosts are rejected before Electron's
- * updater sees the value. This does not replace Squirrel signature
- * verification; it prevents a common class of accidental or ambiguous feed
- * configuration.
+ * updater sees the value. Package hashes and manifest shape are integrity
+ * evidence, not a signature or publisher-authenticity claim.
  */
 function normalizeUpdateFeedUrl(value) {
   const raw = String(value || "").trim();
@@ -19,7 +19,7 @@ function normalizeUpdateFeedUrl(value) {
     throw new Error("Update feed URL must be a valid HTTPS URL.");
   }
   if (parsed.protocol !== "https:") {
-    throw new Error("Update feeds must use HTTPS so Squirrel signatures and metadata cannot be replaced in transit.");
+    throw new Error("Update feeds must use HTTPS so Squirrel package hashes and metadata cannot be replaced in transit.");
   }
   if (parsed.username || parsed.password) {
     throw new Error("Update feed URLs cannot contain credentials.");
@@ -28,7 +28,7 @@ function normalizeUpdateFeedUrl(value) {
     throw new Error("Update feed URLs cannot contain a query string or fragment.");
   }
   if (parsed.hostname.toLowerCase().endsWith(".github.io") || parsed.hostname.toLowerCase() === "github.io") {
-    throw new Error("GitHub Pages is an HTML site, not a signed Squirrel.Windows feed directory.");
+    throw new Error("GitHub Pages is an HTML site, not a Squirrel.Windows feed directory.");
   }
   parsed.pathname = `${parsed.pathname.replace(/\/+$/, "")}/`;
   return parsed.toString();
@@ -44,10 +44,10 @@ function parseSquirrelReleaseManifest(text) {
     const line = rawLine.trim();
     if (!line) continue;
     const fields = line.split(/\s+/);
-    if (fields.length < 3 || fields.length > 4) {
+    if (fields.length !== 3) {
       throw new Error(`The Squirrel RELEASES manifest has an invalid line ${index + 1}.`);
     }
-    const [sha1, filename, size, sourceUrl] = fields;
+    const [sha1, filename, size] = fields;
     if (!/^[0-9a-f]{40}$/i.test(sha1)) {
       throw new Error(`The Squirrel RELEASES manifest has an invalid SHA-1 on line ${index + 1}.`);
     }
@@ -57,10 +57,7 @@ function parseSquirrelReleaseManifest(text) {
     if (!/^[1-9][0-9]*$/.test(size) || Number(size) > Number.MAX_SAFE_INTEGER) {
       throw new Error(`The Squirrel RELEASES manifest has an invalid package size on line ${index + 1}.`);
     }
-    if (sourceUrl && /[\u0000-\u0020\u007f]/.test(sourceUrl)) {
-      throw new Error(`The Squirrel RELEASES manifest has an invalid source URL on line ${index + 1}.`);
-    }
-    entries.push({ sha1: sha1.toLowerCase(), filename, size: Number(size), sourceUrl: sourceUrl || null });
+    entries.push({ sha1: sha1.toLowerCase(), filename, size: Number(size), sourceUrl: null });
   }
   if (!entries.length) throw new Error("The Squirrel RELEASES manifest contains no packages.");
   return entries;
@@ -81,7 +78,13 @@ async function probeSquirrelFeed(feedUrl, fetchImpl = globalThis.fetch) {
     throw new Error(`The Squirrel RELEASES manifest returned HTTP ${response?.status ?? "unknown"}.`);
   }
   const entries = parseSquirrelReleaseManifest(await response.text());
-  return { feedUrl: normalized, manifestUrl, entries };
+  return {
+    feedUrl: normalized,
+    manifestUrl,
+    entries,
+    integrity: "release-manifest-package-hash",
+    unsignedWarning: UNSIGNED_UPDATE_WARNING
+  };
 }
 
-module.exports = { MAX_MANIFEST_BYTES, normalizeUpdateFeedUrl, parseSquirrelReleaseManifest, probeSquirrelFeed };
+module.exports = { MAX_MANIFEST_BYTES, UNSIGNED_UPDATE_WARNING, normalizeUpdateFeedUrl, parseSquirrelReleaseManifest, probeSquirrelFeed };

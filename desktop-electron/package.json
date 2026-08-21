@@ -5,12 +5,15 @@
   "author": "Ding-Ding Projects",
   "private": true,
   "description": "Windows Electron controller for a running Home Assistant AC Defender deployment.",
+  "engines": {
+    "node": "24.19.0"
+  },
   "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.json && vite build",
-    "test": "node tests/static-check.mjs && node tests/update-contract.mjs",
+    "test": "node tests/static-check.mjs && node tests/lifecycle-contract.mjs && node tests/update-contract.mjs",
     "electron": "electron .",
     "dist": "npm run build && electron-builder --win squirrel"
   },
@@ -22,8 +25,8 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "electron": "43.4.1",
     "electron-builder": "^26.0.12",
-    "electron": "^37.10.3",
     "typescript": "~5.8.3",
     "vite": "^7.0.4"
   },
@@ -31,6 +34,7 @@
     "appId": "com.dingdingprojects.acdefender.controller",
     "productName": "AC Defender Controller",
     "asar": true,
+    "forceCodeSigning": false,
     "files": [
       "dist/**/*",
       "!dist/win-unpacked{,/**/*}",
@@ -41,6 +45,8 @@
     ],
     "win": {
       "icon": "public/icon.ico",
+      "signExecutable": false,
+      "signAndEditExecutable": false,
       "target": [
         {
           "target": "squirrel",
@@ -52,13 +58,11 @@
     },
     "squirrelWindows": {
       "name": "ACDefenderController",
-      "iconUrl": "https://github.com/Ding-Ding-Projects/HomeAssistantAcDefender/raw/master/desktop/src-tauri/icons/icon.ico"
+      "iconUrl": "https://github.com/Ding-Ding-Projects/HomeAssistantAcDefender/raw/f407c15d73844ad9f81c5e7719c5c62a35dd893e/desktop/src-tauri/icons/icon.ico"
     },
     "publish": null
   },
-  "allowScripts": {
-    "electron@37.10.3": true,
-    "esbuild@0.28.1": true,
-    "electron-winstaller@5.4.0": true
+  "overrides": {
+    "nanoid": "3.3.18"
   }
 }
