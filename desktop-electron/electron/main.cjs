@@ -2,14 +2,38 @@ const { app, BrowserWindow, ipcMain, safeStorage, session, autoUpdater } = requi
 const path = require("node:path");
 const fs = require("node:fs");
 const { normalizeUpdateFeedUrl, probeSquirrelFeed } = require("./update-contract.cjs");
-const { authenticate, mergeCookies, normalizeBaseUrl } = require("./auth-client.cjs");
+const {
+  authenticate,
+  applyResponseCookies,
+  boundedRequest,
+  cookieHeader,
+  credentialIdentity,
+  createConnectionState,
+  createLoginAttemptCoordinator,
+  completeLoginAttempt,
+  invalidateConnectionState,
+  invalidateIfCurrent,
+  MAX_REQUEST_PAYLOAD_BYTES,
+  boundedErrorDetail,
+  normalizeBaseUrl,
+  normalizeUsername,
+  projectConfig,
+  resolveLoginCredentials,
+  requestEffectIfCurrent,
+  validateEnabled,
+  validateNotificationAction,
+  validateNotificationQuery,
+  validateTemperature,
+  validateApiResponse
+} = require("./auth-client.cjs");
 
 const DEFAULT_BASE_URL = "http://127.0.0.1:8888";
 const CONFIG_VERSION = 1;
 const TAB_IDS = ["dashboard", "notifications", "settings"];
 const FONT_FAMILIES = ["Segoe UI Variable", "Segoe UI", "Arial", "Cascadia Code", "Consolas", "system-ui"];
 let mainWindow;
-let connection = { baseUrl: DEFAULT_BASE_URL, username: "", cookie: "" };
+let connection = createConnectionState(DEFAULT_BASE_URL);
+const loginAttempts = createLoginAttemptCoordinator();
 let updateFeedUrl = "";
 let updateReady = false;
 let updateTimer;
@@ -18,17 +42,36 @@ function configPath() {
   return path.join(app.getPath("userData"), "controller-config.json");
 }
 
-function readConfig() {
+function defaultConfig() {
+  return {
+    baseUrl: DEFAULT_BASE_URL, username: "", password: "", remember: false,
+    language: "en", funnyEnglish: 2, funnyCantonese: 3, theme: "dark", density: "compact", accent: "#9de7c0", fontFamily: "Segoe UI Variable", fontScale: 1, updateFeedUrl: "",
+    activeTab: "dashboard", tabOrder: TAB_IDS, tabAppearance: normalizeTabAppearance({})
+  };
+}
+
+function readRawConfig() {
+  try { return JSON.parse(fs.readFileSync(configPath(), "utf8")); }
+  catch { return {}; }
+}
+
+function readStoredConfig() {
+  const raw = readRawConfig();
   try {
-    const raw = JSON.parse(fs.readFileSync(configPath(), "utf8"));
     const savedPassword = raw.password && safeStorage.isEncryptionAvailable()
       ? safeStorage.decryptString(Buffer.from(raw.password, "base64"))
       : "";
+    let storedIdentity = null;
+    if (savedPassword && typeof raw.credentialBaseUrl === "string" && typeof raw.credentialUsername === "string") {
+      try { storedIdentity = credentialIdentity(raw.credentialBaseUrl, raw.credentialUsername); } catch { storedIdentity = null; }
+    }
     return {
       baseUrl: typeof raw.baseUrl === "string" ? raw.baseUrl : DEFAULT_BASE_URL,
       username: typeof raw.username === "string" ? raw.username : "",
       password: savedPassword,
-      remember: Boolean(savedPassword),
+      credentialBaseUrl: storedIdentity?.baseUrl || "",
+      credentialUsername: storedIdentity?.username || "",
+      remember: Boolean(savedPassword && storedIdentity),
       language: raw.language === "yue" || raw.language === "bilingual" ? raw.language : "en",
       funnyEnglish: clampFunny(raw.funnyEnglish),
       funnyCantonese: clampFunny(raw.funnyCantonese),
@@ -42,13 +85,11 @@ function readConfig() {
       tabOrder: normalizeTabOrder(raw.tabOrder),
       tabAppearance: normalizeTabAppearance(raw.tabAppearance)
     };
-  } catch {
-    return {
-      baseUrl: DEFAULT_BASE_URL, username: "", password: "", remember: false,
-      language: "en", funnyEnglish: 2, funnyCantonese: 3, theme: "dark", density: "compact", accent: "#9de7c0", fontFamily: "Segoe UI Variable", fontScale: 1, updateFeedUrl: "",
-      activeTab: "dashboard", tabOrder: TAB_IDS, tabAppearance: normalizeTabAppearance({})
-    };
-  }
+  } catch { return defaultConfig(); }
+}
+
+function readConfig() {
+  return projectConfig(readStoredConfig());
 }
 
 function normalizeAccent(value) {
@@ -89,8 +130,16 @@ function normalizeTabAppearance(value) {
 }
 
 function saveConfig(partial) {
-  const old = readConfig();
+  const old = readStoredConfig();
+  const raw = readRawConfig();
   const next = { ...old, ...partial, version: CONFIG_VERSION };
+  const suppliedPassword = typeof partial?.password === "string" && partial.password.length > 0;
+  const remember = Boolean(next.remember);
+  const suppliedIdentity = typeof partial?.credentialBaseUrl === "string" && typeof partial?.credentialUsername === "string"
+    ? credentialIdentity(partial.credentialBaseUrl, partial.credentialUsername)
+    : null;
+  let targetIdentity = null;
+  try { targetIdentity = credentialIdentity(next.baseUrl, next.username); } catch { targetIdentity = null; }
   const payload = {
     version: CONFIG_VERSION,
     baseUrl: next.baseUrl,
@@ -108,57 +157,92 @@ function saveConfig(partial) {
     tabOrder: normalizeTabOrder(next.tabOrder),
     tabAppearance: normalizeTabAppearance(next.tabAppearance)
   };
-  if (next.remember && next.password && safeStorage.isEncryptionAvailable()) {
-    payload.password = safeStorage.encryptString(next.password).toString("base64");
+  if (remember && suppliedPassword && safeStorage.isEncryptionAvailable()) {
+    payload.password = safeStorage.encryptString(partial.password).toString("base64");
+    if (suppliedIdentity) {
+      payload.credentialBaseUrl = suppliedIdentity.baseUrl;
+      payload.credentialUsername = suppliedIdentity.username;
+    }
+  } else if (remember && typeof raw.password === "string" && raw.password
+      && targetIdentity
+      && raw.credentialBaseUrl === targetIdentity.baseUrl
+      && raw.credentialUsername === targetIdentity.username) {
+    // Renderer-safe config projections carry password: "". Preserve the encrypted
+    // bytes during unrelated preference saves instead of decrypting them into IPC.
+    payload.password = raw.password;
+    payload.credentialBaseUrl = raw.credentialBaseUrl;
+    payload.credentialUsername = raw.credentialUsername;
   }
   fs.mkdirSync(path.dirname(configPath()), { recursive: true });
   fs.writeFileSync(configPath(), JSON.stringify(payload, null, 2), { mode: 0o600 });
 }
 
 async function request(pathname, options = {}) {
-  if (!connection.baseUrl || !connection.cookie) throw new Error("Connect to the defender before using controls.");
+  const activeConnection = connection;
+  if (!activeConnection.baseUrl || !activeConnection.username) throw new Error("Connect to the defender before using controls.");
+  const url = `${activeConnection.baseUrl}${pathname}`;
   const headers = new Headers(options.headers || {});
   headers.set("Accept", "application/json");
-  if (connection.cookie) headers.set("Cookie", connection.cookie);
+  const cookies = await cookieHeader(activeConnection.jar, url);
+  if (!requestEffectIfCurrent(activeConnection, connection, () => {})) throw new Error("Defender request was superseded by a newer session.");
+  if (!cookies) throw new Error("Connect to the defender before using controls.");
+  headers.set("Cookie", cookies);
   if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  let response;
+  const { timeoutMs, maxBodyBytes, ...fetchOptions } = options;
+  let result;
   try {
-    response = await fetch(`${connection.baseUrl}${pathname}`, { ...options, headers, redirect: "manual" });
+    result = await boundedRequest(fetch, url, {
+      ...fetchOptions,
+      headers,
+      redirect: "manual"
+    }, { timeoutMs, maxBodyBytes: maxBodyBytes ?? 1024 * 1024, maxRequestPayloadBytes: MAX_REQUEST_PAYLOAD_BYTES });
   } catch (error) {
     throw new Error(`Defender request failed: ${error instanceof Error ? error.message : String(error)}`);
   }
-  connection.cookie = mergeCookies(connection.cookie, response);
-  const text = await response.text();
+  if (!requestEffectIfCurrent(activeConnection, connection, () => {})) throw new Error("Defender request was superseded by a newer session.");
+  const response = result.response;
+  await applyResponseCookies(activeConnection.jar, response, url);
+  if (!requestEffectIfCurrent(activeConnection, connection, () => {})) throw new Error("Defender request was superseded by a newer session.");
+  const text = result.body;
   let body = null;
   try { body = text ? JSON.parse(text) : null; } catch { body = null; }
   if (response.status === 401 || response.status === 403) {
-    connection.cookie = "";
+    if (!requestEffectIfCurrent(activeConnection, connection, () => { connection = invalidateConnectionState(activeConnection, activeConnection.baseUrl); })) throw new Error("Defender request was superseded by a newer session.");
     throw new Error("The defender rejected this session. Sign in again.");
   }
   if (!response.ok) {
-    const detail = body && typeof body.error === "string" ? body.error : text.slice(0, 240);
+    const detail = boundedErrorDetail(body && body.error);
     throw new Error(`Defender returned HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
   }
-  return body;
+  return validateApiResponse(pathname, body);
 }
 
-async function login({ baseUrl, username, password, remember }) {
-  const normalized = normalizeBaseUrl(baseUrl);
-  let status;
+async function login({ baseUrl, username, password, remember } = {}) {
+  const attempt = loginAttempts.begin();
+  const attemptedBaseUrl = typeof baseUrl === "string" ? baseUrl : "";
+  connection = invalidateConnectionState(connection, attemptedBaseUrl);
+  let normalized = attemptedBaseUrl;
   try {
-    status = await authenticate({
-      baseUrl: normalized,
-      username,
-      password,
-      remember,
-      onAuthenticated: (next) => { connection = next; }
-    });
+    normalized = normalizeBaseUrl(baseUrl);
+    const cleanUsername = normalizeUsername(username);
+    const stored = readStoredConfig();
+    const storedIdentity = stored.credentialBaseUrl && stored.credentialUsername
+      ? { baseUrl: stored.credentialBaseUrl, username: stored.credentialUsername }
+      : null;
+    const credentials = resolveLoginCredentials({ baseUrl: normalized, username: cleanUsername, password, rememberedPassword: stored.password, storedIdentity });
+    const candidate = await authenticate({ baseUrl: credentials.baseUrl, username: credentials.username, password: credentials.password, remember });
+    // Persist first. A write failure must not make an unpersisted session live.
+    return completeLoginAttempt(
+      loginAttempts,
+      attempt,
+      candidate,
+      () => saveConfig({ baseUrl: credentials.baseUrl, username: credentials.username, password: credentials.password, remember, credentialBaseUrl: credentials.baseUrl, credentialUsername: credentials.username }),
+      (nextConnection) => { connection = nextConnection || invalidateConnectionState(connection, normalized); }
+    );
   } catch (error) {
-    connection = { baseUrl: normalized, username: String(username || "").trim(), cookie: "" };
+    invalidateIfCurrent(loginAttempts, attempt, () => { connection = invalidateConnectionState(connection, normalized); });
     throw error;
   }
-  saveConfig({ baseUrl: normalized, username: connection.username, password, remember });
-  return status;
 }
 
 function createWindow() {
@@ -206,17 +290,23 @@ app.whenReady().then(() => {
   ipcMain.handle("config:load", () => readConfig());
   ipcMain.handle("config:save", (_event, values) => {
     const nextValues = values || {};
-    const feedUrl = normalizeUpdateFeedUrl(nextValues.updateFeedUrl ?? readConfig().updateFeedUrl);
+    const feedUrl = normalizeUpdateFeedUrl(nextValues.updateFeedUrl ?? readStoredConfig().updateFeedUrl);
     saveConfig({ ...nextValues, updateFeedUrl: feedUrl });
     configureUpdater(feedUrl);
     return readConfig();
   });
   ipcMain.handle("auth:connect", (_event, values) => login(values));
   ipcMain.handle("api:status", () => request("/api/status"));
-  ipcMain.handle("api:notifications", (_event, query) => request(`/api/notifications?limit=${encodeURIComponent(query?.limit || 30)}&includeDismissed=${query?.includeDismissed ? "true" : "false"}`));
-  ipcMain.handle("api:notification-action", (_event, { id, action }) => request(`/api/notifications/${encodeURIComponent(id)}/${action}`, { method: "POST" }));
-  ipcMain.handle("api:target", (_event, temperature) => request("/api/target", { method: "POST", body: JSON.stringify({ temperatureCelsius: temperature }) }));
-  ipcMain.handle("api:defender", (_event, enabled) => request("/api/defender", { method: "POST", body: JSON.stringify({ enabled }) }));
+  ipcMain.handle("api:notifications", (_event, query) => {
+    const safeQuery = validateNotificationQuery(query);
+    return request(`/api/notifications?limit=${encodeURIComponent(safeQuery.limit)}&includeDismissed=${safeQuery.includeDismissed ? "true" : "false"}`);
+  });
+  ipcMain.handle("api:notification-action", (_event, values) => {
+    const { id, action } = validateNotificationAction(values?.id, values?.action);
+    return request(`/api/notifications/${encodeURIComponent(id)}/${encodeURIComponent(action)}`, { method: "POST" });
+  });
+  ipcMain.handle("api:target", (_event, temperature) => request("/api/target", { method: "POST", body: JSON.stringify({ temperatureCelsius: validateTemperature(temperature) }) }));
+  ipcMain.handle("api:defender", (_event, enabled) => request("/api/defender", { method: "POST", body: JSON.stringify({ enabled: validateEnabled(enabled) }) }));
   ipcMain.handle("api:command", (_event, command) => {
     const routes = {
       forceTarget: ["/api/thermostat/force-target", "POST"],
@@ -228,7 +318,11 @@ app.whenReady().then(() => {
     if (!route) throw new Error("Unknown controller command.");
     return request(route[0], { method: route[1] });
   });
-  ipcMain.handle("auth:disconnect", () => { connection.cookie = ""; return true; });
+  ipcMain.handle("auth:disconnect", () => {
+    loginAttempts.begin();
+    connection = invalidateConnectionState(connection, connection.baseUrl);
+    return true;
+  });
   ipcMain.handle("window:control", (event, action) => {
     const window = BrowserWindow.fromWebContents(event.sender);
     if (!window || window.isDestroyed()) return false;

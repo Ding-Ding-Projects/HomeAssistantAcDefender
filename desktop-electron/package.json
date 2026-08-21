@@ -10,20 +10,21 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.json && vite build",
-    "test": "node tests/static-check.mjs && node tests/update-contract.mjs",
+    "test": "node tests/static-check.mjs && node tests/auth-contract.mjs && node tests/update-contract.mjs",
     "electron": "electron .",
     "dist": "npm run build && electron-builder --win squirrel"
   },
   "dependencies": {
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "tough-cookie": "^6.0.2"
   },
   "devDependencies": {
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
-    "electron-builder": "^26.0.12",
     "electron": "^37.10.3",
+    "electron-builder": "^26.0.12",
     "typescript": "~5.8.3",
     "vite": "^7.0.4"
   },
