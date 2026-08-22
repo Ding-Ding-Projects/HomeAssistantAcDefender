@@ -71,10 +71,16 @@ if errorlevel 1 (
   exit /b 1
 )
 pushd "%~dp0desktop-electron" || exit /b 1
-for %%F in ("%SETUP%" "%NUPKG%") do "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command "$sig = Get-AuthenticodeSignature -LiteralPath '%%~fF'; if ($sig.Status -ne 'NotSigned') { exit 1 }"
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command "$sig = Get-AuthenticodeSignature -LiteralPath $env:SETUP; Write-Output ('authenticode=' + $sig.Status + ' file=' + (Split-Path -Leaf $env:SETUP)); if ($sig.Status -ne 'NotSigned') { exit 1 }"
 if errorlevel 1 (
   popd
-  echo [installer] BLOCKED: an installer asset is not explicitly NotSigned. 1>&2
+  echo [installer] BLOCKED: Setup.exe is not explicitly NotSigned. 1>&2
+  exit /b 1
+)
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; $zip=[IO.Compression.ZipFile]::OpenRead($env:NUPKG); try { if ($zip.Entries | Where-Object { $_.FullName -ieq '.signature.p7s' }) { exit 1 } } finally { $zip.Dispose() }; Write-Output ('nugetSignature=absent file=' + (Split-Path -Leaf $env:NUPKG))"
+if errorlevel 1 (
+  popd
+  echo [installer] BLOCKED: the .nupkg contains a NuGet package signature. 1>&2
   exit /b 1
 )
 set "ARTIFACT_METADATA=%ARTIFACT_ROOT%\release-artifact-metadata.json"

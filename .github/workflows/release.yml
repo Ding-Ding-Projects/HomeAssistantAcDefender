@@ -100,12 +100,24 @@ jobs:
             if ($file.Length -le 0) { throw "Squirrel artifact is empty: $($file.FullName)" }
             Write-Host ("Verified {0} ({1} bytes)" -f $file.Name, $file.Length)
           }
-          foreach ($file in @($setup) + @($nupkg)) {
+          foreach ($file in @($setup)) {
             $signature = Get-AuthenticodeSignature -LiteralPath $file.FullName
             if ($signature.Status -ne 'NotSigned') {
               throw "Squirrel artifact is not explicitly NotSigned: $($file.FullName) reported $($signature.Status)"
             }
             Write-Host ("Verified NotSigned: {0}" -f $file.Name)
+          }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          foreach ($file in @($nupkg)) {
+            $zip = [IO.Compression.ZipFile]::OpenRead($file.FullName)
+            try {
+              if ($zip.Entries | Where-Object { $_.FullName -ieq '.signature.p7s' }) {
+                throw "Squirrel .nupkg contains a NuGet package signature: $($file.FullName)"
+              }
+            } finally {
+              $zip.Dispose()
+            }
+            Write-Host ("Verified unsigned NuGet package: {0}" -f $file.Name)
           }
 
       - name: Upload Squirrel.Windows release assets
