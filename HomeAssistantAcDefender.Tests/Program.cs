@@ -1082,6 +1082,16 @@ internal sealed class DefenderSetPointRegressionTests
         {
             throw new InvalidOperationException(".dockerignore must exclude App_Data/ from the Docker build context.");
         }
+
+        var dockerfile = File.ReadAllText(Path.Combine(root, "Dockerfile"));
+        var pinnedBaseImages = Regex.Matches(
+            dockerfile,
+            @"^FROM\s+mcr\.microsoft\.com/dotnet/(?:sdk|aspnet):10\.0@sha256:[0-9a-f]{64}\s+AS\s+(?:build|runtime)\s*$",
+            RegexOptions.Multiline);
+        if (pinnedBaseImages.Count != 2)
+        {
+            throw new InvalidOperationException("Dockerfile must pin exactly two complete 64-character .NET base-image digests.");
+        }
     }
 
     private static void AssertCanonicalWarmRoomText(string text, string source)
