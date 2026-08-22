@@ -93,12 +93,15 @@ state.
 - `desktop-electron/` is a separate Windows-only Electron + React/TypeScript controller. It does
   not contain defender logic or simulated HVAC state.
 - The controller now pins Electron `43.4.1` and overrides `nanoid` to `3.3.18`; `npm audit --json`
-  reports zero vulnerabilities in the current dependency tree. Packaging compatibility still
-  requires a future bounded Squirrel run; no new installer run is claimed by this handoff.
+  reports zero vulnerabilities in the current dependency tree. A clean-tree Squirrel.Windows run at
+  `5a265f92da2d8b66f1e2448d7763a6ce24dbbd25` produced `Setup.exe`, one full `.nupkg`, and
+  `RELEASES`; an independent receipt verified the feed record, package contents, SHA-256 values,
+  `Setup.exe` as `NotSigned`, and zero observed signer processes. Installer execution remains a
+  separate outstanding proof.
 - `npm run build` and `npm test` pass from `desktop-electron/` in the current checkout.
 - The previously published controller baseline produced an unsigned Setup.exe, `.nupkg`, and
-  `RELEASES` feed. The current Electron `43.4.1` candidate still requires a fresh bounded
-  `npm run dist` pass and installer execution proof; no new package result is claimed here.
+  `RELEASES` feed. The current Electron `43.4.1` candidate has a fresh bounded Squirrel build;
+  installer execution proof and remote release publication remain outstanding.
   The update path uses HTTPS plus `RELEASES` package hashes and carries the unsigned-artifact
   contract. Settings, manual checks, and the ready banner now render its exact warning in source.
 - The update contract rejects non-HTTPS, credential-bearing, query-bearing, fragment-bearing,
@@ -167,6 +170,12 @@ build` and browser checks required by `AGENTS.md`, then let the release workflow
 create its first verified release. Only after that remote evidence is available
 should the Docker Compose stack be rebuilt on the deployment host.
 Keep `.env`, `App_Data`, access tokens, and host state outside Git.
+
+The ARM64 preflight discovered and repaired a malformed ASP.NET base-image digest in `Dockerfile`.
+Commit `6c1096a9dbf0c9e14ffd1fbe15779c01b0e30160` pins the complete multi-platform manifest-list
+digest and adds a negative regression that rejects a truncated digest. A separately named,
+read-only ARM64 image built from that commit returned `GET /healthz` with its expected revision and
+version before its temporary container was stopped. This was not a production deployment.
 
 ## Dim-sum startup surprise
 

@@ -8,9 +8,9 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
 
 - [x] Add the separate Windows Electron controller source and its local build/static checks.
 - [ ] Open a verified Squirrel.Windows installer and verify the unsigned HTTPS/package-hash
-      update path end to end; `npm run dist` produces Setup.exe, `.nupkg`, and `RELEASES`, but
-      installer execution and the non-blocking restart banner remain outstanding. Code signing
-      stays permanently disabled.
+      update path end to end; the clean-tree `5a265f9` candidate produced Setup.exe, `.nupkg`, and
+      `RELEASES` with an independent unsigned-artifact receipt, but installer execution and the
+      non-blocking restart banner remain outstanding. Code signing stays permanently disabled.
 
 - [x] Build and regression-test the application before a release.
 - [x] Build a loadable Docker image archive and checksum from the exact tested commit.
@@ -18,6 +18,9 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
       metadata, and an exact `up --no-build` Compose selection path.
 - [x] Add anonymous non-secret `/healthz`, bounded trusted-forwarded-HTTPS configuration, and
       Compose health/resource/secret-state mounts for a small ARM64 host.
+- [x] Pin complete multi-platform .NET base-image digests and reject truncated digests before a
+      Docker build; the `6c1096a` ARM64 preflight image returned its revision/version health JSON
+      in an isolated temporary container.
 - [ ] Complete a fully fresh-machine Windows bootstrap with the pinned user-scoped portable ZIP
       fallbacks when winget is unavailable. The source contract and hashes are now recorded, but
       a cold-machine execution proof, live host deployment, and release publication remain
