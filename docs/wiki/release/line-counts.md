@@ -8,27 +8,31 @@ title: "Line counts and release archives"
 ## What CI publishes
 
 Every branch push and every manual release dispatch runs the verification
-workflow. It restores and builds the application and regression suite, runs the
-real Home Assistant HTTP regression checks, builds the Docker image from that
-same commit, and publishes an immutable release only after those checks pass.
+workflow. It builds and packages the application and Docker images from that
+same commit, then publishes an immutable release when build and publication
+succeed. GitHub Actions intentionally does not run tests or lint; those checks
+remain local evidence and are not release claims.
 The workflow ignores its own generated `v0.1.*` tag pushes; this guard prevents
 release publication from recursively starting another release while keeping
 ordinary branch pushes covered.
 
 The release includes:
 
-- `ac-defender-docker-<commit>.tar.gz`, a loadable Docker image archive for this
-  server application;
-- a SHA-256 checksum for the archive; and
-- Windows controller assets from the verified Squirrel.Windows job: `Setup.exe`,
-  the `.nupkg` update package, and the `RELEASES` feed. These are attached only
-  after `npm test`, `npm run dist`, and non-empty artifact checks pass on
-  `windows-latest`;
+- separate `ac-defender-docker-<version>-amd64.tar.gz` and
+  `ac-defender-docker-<version>-arm64.tar.gz` single-platform Docker image
+  archives for this server application;
+- a SHA-256 checksum and exact image/version/architecture/revision metadata for
+  each archive; and
+- Windows controller assets from the locally built and locally checked Squirrel.Windows job:
+  `Setup.exe`, the `.nupkg` update package, and the `RELEASES` feed. These are attached only
+  after `npm run dist`, unsigned packaging-control checks, produced-byte
+  `NotSigned` checks, and non-empty artifact checks pass on `windows-latest`;
 - a release note with the exact commit, checks, public dim-sum code name (when
   a published catalog photo is available), CI-generated line-count table, and
   measured `Workflow started`, `Workflow completed`, and `Workflow duration`
-  values. The timing starts in the first workflow job and ends after release
-  metadata publication.
+  values in stable `HH:mm:ss` form. The timing starts at the first workflow job
+  and ends when `gh release create` completes; the later notes edit only records
+  that already-measured publication boundary.
 
 The image is a real installable artifact, not a simulator or placeholder. Load
 it on a deployment host with:
@@ -48,11 +52,13 @@ The Electron controller's `desktop-electron/package.json` targets
 Squirrel.Windows. A successful release therefore carries the Setup executable,
 the full NuGet package, and `RELEASES`; the latter two are required by Squirrel's
 delta/update flow. The current client keeps background checks disabled until an
-operator configures an HTTPS feed, preflights its direct `RELEASES` manifest,
-and then lets Squirrel perform its own signature verification. The non-blocking
-**Restart to install update** surface is emitted only after Electron reports a
-downloaded update. Treat the attached assets as build artifacts, not proof that
-an unsigned update feed is safe to consume.
+operator configures an HTTPS feed and preflights its direct `RELEASES` manifest.
+Code signing is permanently disabled; HTTPS and package hashes provide transport
+and content-integrity evidence, not publisher authenticity. Settings, manual
+checks, and the non-blocking **Restart to install update** surface now carry the
+exact unsigned-artifact warning in source; packaged interaction remains unverified.
+Treat attached assets as build artifacts until the independent public release
+asset digest is verified.
 
 ## Reproducing the line-count table
 

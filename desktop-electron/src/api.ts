@@ -32,18 +32,20 @@ export interface DefenderSnapshot {
 }
 
 export interface NotificationItem {
-  id?: string;
-  timestamp?: string;
-  level?: string;
-  title?: string;
-  message?: string;
-  read?: boolean;
-  dismissed?: boolean;
+  id: string;
+  timestamp: string;
+  level: string;
+  message: string;
+  read: boolean;
+  dismissed: boolean;
+  readAt: string | null;
+  dismissedAt: string | null;
+  actions: string[] | null;
 }
 
 export interface NotificationSnapshot {
-  notifications?: NotificationItem[];
-  unreadCount?: number;
-  activeCount?: number;
-  [key: string]: unknown;
+  items: NotificationItem[];
+  unreadCount: number;
+  activeCount: number;
+  actionCounts: Record<string, number> | null;
 }

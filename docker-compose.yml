@@ -1,6 +1,11 @@
 services:
   ac-defender:
-    build: .
+    image: ${AC_DEFENDER_IMAGE:-ac-defender:local}
+    build:
+      context: .
+      args:
+        APP_VERSION: ${AC_DEFENDER_VERSION:-local}
+        APP_REVISION: ${AC_DEFENDER_REVISION:-unknown}
     container_name: homeassistant-ac-defender
     restart: unless-stopped
     ports:
@@ -13,6 +18,22 @@ services:
       Defender__StateFilePath: /data/defender-state.json
       Defender__SettingsRepositoryPath: /data/settings-repo
       Defender__PollIntervalSeconds: 5
+      APP_VERSION: ${AC_DEFENDER_VERSION:-local}
+      APP_REVISION: ${AC_DEFENDER_REVISION:-unknown}
+      ForwardedHeaders__KnownProxies: ${FORWARDED_HEADERS_KNOWN_PROXIES:-}
+      ForwardedHeaders__KnownIPNetworks: ${FORWARDED_HEADERS_KNOWN_IP_NETWORKS:-}
+      ForwardedHeaders__AllowedHosts: ${FORWARDED_HEADERS_ALLOWED_HOSTS:?Set FORWARDED_HEADERS_ALLOWED_HOSTS to the exact public host names}
     volumes:
       - ./App_Data/defender:/data
       - ./App_Data/auth:/app/App_Data
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid,nodev
+    mem_limit: ${AC_DEFENDER_MEMORY_LIMIT:-768m}
+    cpus: ${AC_DEFENDER_CPU_LIMIT:-1.50}
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

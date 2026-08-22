@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Fresh-machine build inputs for the Windows application and unsigned Squirrel.Windows package.",
+  "tools": [
+    {
+      "name": "dotnet",
+      "source": "Microsoft .NET SDK",
+      "wingetId": "Microsoft.DotNet.SDK.10",
+      "version": "10.0.301",
+      "verification": "dotnet --list-sdks must include 10.0.301 and Microsoft.NETCore.App 10.0.11",
+      "portableFallback": {
+        "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.301/dotnet-sdk-10.0.301-win-x64.zip",
+        "algorithm": "SHA512",
+        "hash": "38456e992c4df0ff0ac9fc5f28ff09a88543c0fc4e4deedffda9c4ebaf852c4519addacf28814ea77ea42ce2d37db812fae5ba1fe25f06364ca5a6027036387f",
+        "installRoot": "%LOCALAPPDATA%\\Programs\\dotnet"
+      }
+    },
+    {
+      "name": "node",
+      "source": "OpenJS Node.js LTS",
+      "wingetId": "OpenJS.NodeJS.LTS",
+      "version": "24.19.0",
+      "verification": "node --version must be exactly v24.19.0 and npm --version must be available",
+      "portableFallback": {
+        "url": "https://nodejs.org/download/release/v24.19.0/node-v24.19.0-win-x64.zip",
+        "algorithm": "SHA256",
+        "hash": "57f71ab3652e797d84acddc79c81cc9ff1c6ddb2a1974cdb83f00fee9bff4c73",
+        "installRoot": "%LOCALAPPDATA%\\Programs\\nodejs"
+      }
+    }
+  ],
+  "projectDependencies": {
+    "server": "HomeAssistantAcDefender.csproj and its NuGet lock state",
+    "controller": "desktop-electron/package-lock.json (npm ci)",
+    "signing": "disabled by policy; no certificate, key, or signer is downloaded"
+  },
+  "containerImages": {
+    "sdk": {
+      "reference": "mcr.microsoft.com/dotnet/sdk:10.0",
+      "digest": "sha256:e1ffd2a92ae84c1291bc1b6887501f8af98e6331e7af6d4c8d37168c5e87a64c",
+      "platforms": ["linux/amd64", "linux/arm/v7", "linux/arm64"]
+    },
+    "aspnet": {
+      "reference": "mcr.microsoft.com/dotnet/aspnet:10.0",
+      "digest": "sha256:a4556ed033fa96f984bb7a8d348851cb2d36b1281dd2420075f664fbb5f94",
+      "platforms": ["linux/amd64", "linux/arm/v7", "linux/arm64"]
+    }
+  },
+  "containerPackages": {
+    "baseDistribution": "Ubuntu 24.04 Noble",
+    "git": "1:2.43.0-1ubuntu7.3",
+    "curl": "8.5.0-2ubuntu10.12",
+    "repositoryProof": "noble-updates Packages.gz independently listed both exact versions for amd64 and arm64 during this correction pass"
+  },
+  "runtimeFallback": {
+    "version": "10.0.11",
+    "url": "https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.11/dotnet-runtime-10.0.11-win-x64.zip",
+    "algorithm": "SHA512",
+    "hash": "d9ab9c0d9916b8fa3585b5f403057f594ffffb8364dac09e0007dd8ac671c86754935b980d8fb5da83cb1b82ac3cd57cc407c969e6d837aaa2fae21047cb7448",
+    "installRoot": "%LOCALAPPDATA%\\Programs\\dotnet"
+  },
+  "downloadedArtifacts": [],
+  "portableFallback": {
+    "enabled": true,
+    "status": "verified-source-pins",
+    "reason": "Pinned .NET SDK/runtime and Node.js official portable ZIP fallbacks install under user-scoped LOCALAPPDATA roots without UAC."
+  },
+  "notes": [
+    "Tool installation pins the canonical winget source, which enforces its package-manifest installer hashes, then uses verified official portable ZIP fallbacks for .NET and Node.js; it never prints credentials or triggers UAC in silent mode.",
+    "If neither winget nor the verified portable fallback can provide a pinned tool, the script stops with the exact missing tool instead of claiming bootstrap success."
+  ]
+}

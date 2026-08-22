@@ -13,6 +13,53 @@ The app is designed to run in Docker Compose.
 docker compose up -d --build
 ```
 
+For a published release, load the archive matching the host architecture and use the exact
+image reference recorded in its `.metadata.json` companion. The release publishes independent
+`linux/amd64` and `linux/arm64` `docker save` archives because a single-platform archive is what
+`docker load` can consume:
+
+```bash
+gunzip ac-defender-docker-<version>-arm64.tar.gz
+docker load --input ac-defender-docker-<version>-arm64.tar
+export AC_DEFENDER_IMAGE=ac-defender:<version>-arm64
+export AC_DEFENDER_VERSION=<version>
+export AC_DEFENDER_REVISION=<commit>
+docker compose up -d --no-build
+```
+
+The image carries OCI `org.opencontainers.image.version` and `.revision` labels. The Compose
+service has a 768 MiB memory limit, a 1.50 CPU limit, a 64 MiB no-execute temporary filesystem,
+and a read-only application root. `/data` and `/app/App_Data` are the only write mounts, so
+defender state, settings history, authentication state, and data-protection keys survive an
+image replacement without putting credentials in the image.
+
+`GET /healthz` is anonymous and returns only `status`, release `version`, source `revision`, and
+the effective request scheme. It is the Compose healthcheck target and never returns Home
+Assistant URLs, access tokens, accounts, thermostat readings, or settings. A reverse proxy may
+forward HTTPS only after the operator configures all three bounded settings below; an empty
+trusted-proxy/network list ignores forwarded headers rather than trusting every caller:
+
+```text
+FORWARDED_HEADERS_KNOWN_PROXIES=10.0.0.5
+FORWARDED_HEADERS_KNOWN_IP_NETWORKS=10.0.0.0/24
+FORWARDED_HEADERS_ALLOWED_HOSTS=ac-defender.example
+```
+
+`scripts/deploy-host.sh` is a non-publishing host-side path for a previously built archive. It
+requires Docker Compose v2, a mode-600 `.env` containing the three required Home Assistant keys,
+one exact allowed-host list, one or more exact trusted proxy IP/CIDR entries, an image checksum
+sidecar, a matching exact-schema metadata sidecar, an exact image/version/revision selection, a
+matching host architecture, and an immutable public release tag whose GitHub asset digest matches
+the archive independently of the adjacent checksum file. Set `AC_DEFENDER_RELEASE_TAG` to the
+published `v0.1.*` tag for the fixed public project identity
+`Ding-Ding-Projects/HomeAssistantAcDefender`. The project identity cannot be overridden by
+deployment environment variables. The script verifies image labels and `/healthz`,
+and independently verifies a rollback's image, prior metadata, health status, and `/healthz`
+response. Run it with `/s` (or `--silent`) for unattended operation; no `.env` values or tokens
+are printed. The host must provide `curl` and `python3` for public release lookup and strict
+duplicate-key/schema parsing. A missing release digest, unavailable strict parser, or unavailable
+previous image is a failed/unavailable deployment state, never a guessed success.
+
 The compose file publishes:
 
 ```text
@@ -61,9 +108,25 @@ Home Assistant credentials and tokens belong in `.env` on the deployment host. T
 Required:
 
 ```text
-HomeAssistant__BaseUrl=http://homeassistant.local:8123
+# Development-only loopback placeholder; use the real HTTPS API URL in production.
+HomeAssistant__BaseUrl=http://127.0.0.1:8123
+HomeAssistant__AllowInsecurePrivateNetworkHttp=false
 HomeAssistant__EntityId=climate.dining_room
 HomeAssistant__AccessToken=replace-with-token
+```
+
+Non-loopback Home Assistant traffic requires HTTPS. The only HTTP compatibility exception is an
+explicit `HomeAssistant__AllowInsecurePrivateNetworkHttp=true` setting for an RFC1918, link-local,
+or `.local` private target. This sends the bearer token over cleartext on that private network and
+must not be used for public hosts. Public HTTP remains rejected even when the compatibility switch
+is enabled. The deployment script validates this contract before loading an image.
+
+The host `.env` also needs an exact reverse-proxy trust boundary:
+
+```text
+FORWARDED_HEADERS_KNOWN_PROXIES=127.0.0.1
+FORWARDED_HEADERS_KNOWN_IP_NETWORKS=
+FORWARDED_HEADERS_ALLOWED_HOSTS=localhost
 ```
 
 Optional Home Assistant entities:
@@ -111,6 +174,12 @@ display labels but does not otherwise alter the temperature forecast.
 The key-free endpoint is intended for non-commercial use and has no uptime guarantee; commercial
 deployments should review Open-Meteo's current plan and terms before enabling it. A failed backup
 request never creates synthetic weather, and AC Defender continues retrying on its throttled cadence.
+
+Existing deployments with a non-loopback HTTP Home Assistant URL or a broadly permissioned `.env`
+will intentionally fail the new deployment preflight. The operator must either move the Home
+Assistant endpoint to HTTPS or explicitly choose the bounded private-LAN compatibility setting and
+repair the file ownership/mode; this project does not silently add a bypass or rewrite live host
+values.
 
 Any `Defender` option from `appsettings.json` can be overridden the same way, e.g.
 `Defender__RivalScheduleWatchEnabled=false` or `Defender__AcEstimatedAmps=20`. See

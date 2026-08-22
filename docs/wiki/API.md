@@ -129,7 +129,7 @@ dotnet run -- usage-live [--json]
 dotnet run -- usage-history [--entity sensor.name] [--hours 24] [--from timestamp] [--to timestamp] [--json]
 ```
 
-CLI commands use the same Home Assistant base URL, token, and usage sensor configuration as the web app. They can be overridden with `--base-url`, `--token`, `--power`, `--energy`, `--hourly-cost`, `--cost`, and `--entity`.
+CLI commands use the same Home Assistant base URL, token, and usage sensor configuration as the web app. The base URL and usage sensor selectors can be overridden with `--base-url`, `--power`, `--energy`, `--hourly-cost`, `--cost`, and `--entity`; tokens are read only from host configuration and are never accepted as command-line arguments.
 
 ## Failure modes
 

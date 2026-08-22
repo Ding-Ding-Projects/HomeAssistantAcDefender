@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import {
   normalizeUpdateFeedUrl,
   parseSquirrelReleaseManifest,
-  probeSquirrelFeed
+  probeSquirrelFeed,
+  UNSIGNED_UPDATE_WARNING
 } from "../electron/update-contract.cjs";
 
 assert.equal(normalizeUpdateFeedUrl(""), "");
@@ -19,7 +20,8 @@ assert.deepEqual(parseSquirrelReleaseManifest(manifest), [{
   size: 12345,
   sourceUrl: null
 }]);
-assert.throws(() => parseSquirrelReleaseManifest("not a RELEASES line"), /invalid SHA-1/);
+assert.throws(() => parseSquirrelReleaseManifest(`${"a".repeat(40)} ACDefenderController-0.1.0-full.nupkg 12345 https://evil.example/update`), /invalid line/);
+assert.throws(() => parseSquirrelReleaseManifest("not a RELEASES line"), /invalid line/);
 assert.throws(() => parseSquirrelReleaseManifest(`${"b".repeat(40)} bad.zip 1`), /invalid package name/);
 
 const probed = await probeSquirrelFeed("https://updates.example.test/feed", async (url, options) => {
@@ -29,6 +31,9 @@ const probed = await probeSquirrelFeed("https://updates.example.test/feed", asyn
 });
 assert.equal(probed.entries.length, 1);
 assert.equal(probed.manifestUrl, "https://updates.example.test/feed/RELEASES");
+assert.equal(probed.integrity, "release-manifest-package-hash");
+assert.match(probed.unsignedWarning, /unsigned/i);
+assert.match(UNSIGNED_UPDATE_WARNING, /HTTPS.*RELEASES.*hash/i);
 
 await assert.rejects(
   probeSquirrelFeed("https://updates.example.test/feed", async () => ({ ok: false, status: 503, text: async () => "" })),

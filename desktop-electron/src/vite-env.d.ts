@@ -33,9 +33,9 @@ interface ControllerBridge {
   defender(enabled: boolean): Promise<DefenderSnapshot>;
   command(name: "forceTarget" | "forceBoost" | "refresh" | "thermostatOff"): Promise<DefenderSnapshot>;
   windowControl(action: "minimize" | "maximize" | "close"): Promise<boolean>;
-  configureUpdater(feedUrl: string): Promise<{ configured: boolean; platform: string }>;
-  checkForUpdate(): Promise<{ status: string }>;
+  configureUpdater(feedUrl: string): Promise<{ configured: boolean; platform: string; unsignedWarning: string }>;
+  checkForUpdate(): Promise<{ status: string; manifestEntries?: number; unsignedWarning?: string }>;
   installUpdate(): Promise<boolean>;
-  onUpdateReady(callback: (payload: { releaseName?: string; releaseNotes?: string }) => void): () => void;
+  onUpdateReady(callback: (payload: { releaseName?: string; releaseNotes?: string; unsignedWarning?: string }) => void): () => void;
   onUpdateError(callback: (payload: { message?: string }) => void): () => void;
 }

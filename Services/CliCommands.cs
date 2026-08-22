@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using HomeAssistantAcDefender.Models;
+using HomeAssistantAcDefender.Options;
 using Microsoft.Extensions.Configuration;
 
 namespace HomeAssistantAcDefender.Services;
@@ -42,6 +43,11 @@ public static class CliCommands
 
         try
         {
+            if (HasCommandLineTokenOverride(args[offset..]))
+            {
+                throw new InvalidOperationException("The --token CLI option is not supported. Configure HomeAssistant__AccessToken through the host environment or configuration instead.");
+            }
+
             var options = CliUsageOptions.Create(args[offset..], configuration);
             using var httpClient = CreateClient(options);
             if (command == "usage-live")
@@ -138,7 +144,7 @@ public static class CliCommands
 
         var client = new HttpClient
         {
-            BaseAddress = BuildBaseUri(options.BaseUrl)
+            BaseAddress = BuildBaseUri(options.BaseUrl, options.AllowInsecurePrivateNetworkHttp)
         };
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", options.AccessToken);
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -252,21 +258,38 @@ public static class CliCommands
             : string.IsNullOrWhiteSpace(unit) ? $"{value.Value:0.###}" : $"{value.Value:0.###} {unit}";
     }
 
-    private static Uri BuildBaseUri(string? baseUrl)
+    private static Uri BuildBaseUri(string? baseUrl, bool allowInsecurePrivateNetworkHttp)
     {
-        var value = string.IsNullOrWhiteSpace(baseUrl) ? "http://homeassistant.local:8123" : baseUrl.Trim();
-        if (!value.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
-            && !value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        var normalized = HomeAssistantConfigurationValidator.ValidateBaseUrl(baseUrl, allowInsecurePrivateNetworkHttp);
+        return normalized.AbsoluteUri.EndsWith("/", StringComparison.Ordinal)
+            ? normalized
+            : new Uri($"{normalized.AbsoluteUri}/", UriKind.Absolute);
+    }
+
+    public static bool HasCommandLineTokenOverride(IEnumerable<string> args)
+    {
+        return args.Any(argument => argument.Equals("--token", StringComparison.OrdinalIgnoreCase)
+            || argument.StartsWith("--token=", StringComparison.OrdinalIgnoreCase));
+    }
+
+    public static void RunContractRegression()
+    {
+        if (!HasCommandLineTokenOverride(new[] { "--token", "not-a-real-token" }))
         {
-            value = $"http://{value}";
+            throw new InvalidOperationException("CLI negative regression did not identify a command-line token override.");
         }
 
-        if (!value.EndsWith('/'))
+        try
         {
-            value += "/";
+            HomeAssistantConfigurationValidator.ValidateBaseUrl("http://public.example:8123", false);
+        }
+        catch (InvalidOperationException)
+        {
+            Console.WriteLine("CLI contract negative regressions passed (token override and public HTTP rejection).");
+            return;
         }
 
-        return new Uri(value);
+        throw new InvalidOperationException("CLI negative regression accepted public HTTP.");
     }
 
     private static string? TryGetAttributeString(JsonElement root, string name)
@@ -333,7 +356,6 @@ Usage:
 
 Options:
   --base-url URL     Overrides HomeAssistant__BaseUrl.
-  --token TOKEN      Overrides HomeAssistant__AccessToken.
   --power ENTITY     Overrides HomeAssistant__UsagePowerEntityId for usage-live.
   --energy ENTITY    Overrides HomeAssistant__UsageEnergyEntityId.
   --cost ENTITY      Overrides HomeAssistant__UsageCostEntityId for usage-live.
@@ -359,7 +381,8 @@ Options:
         string? HistoryEntityId,
         DateTimeOffset From,
         DateTimeOffset To,
-        bool Json)
+        bool Json,
+        bool AllowInsecurePrivateNetworkHttp)
     {
         public static CliUsageOptions Create(string[] args, IConfiguration configuration)
         {
@@ -368,8 +391,8 @@ Options:
             var to = TryGetDate(args, "--to") ?? now;
             var from = TryGetDate(args, "--from") ?? to.AddHours(-Math.Max(0.1, hours));
             return new CliUsageOptions(
-                TryGetValue(args, "--base-url") ?? configuration["HomeAssistant:BaseUrl"] ?? "http://homeassistant.local:8123",
-                TryGetValue(args, "--token") ?? configuration["HomeAssistant:AccessToken"],
+                TryGetValue(args, "--base-url") ?? configuration["HomeAssistant:BaseUrl"] ?? "http://127.0.0.1:8123",
+                configuration["HomeAssistant:AccessToken"],
                 TryGetValue(args, "--power") ?? configuration["HomeAssistant:UsagePowerEntityId"] ?? "sensor.alectra_hui_current_power",
                 TryGetValue(args, "--energy") ?? configuration["HomeAssistant:UsageEnergyEntityId"] ?? "sensor.alectra_hui_energy_today",
                 TryGetValue(args, "--cost") ?? configuration["HomeAssistant:UsageCostEntityId"] ?? "sensor.alectra_hui_cost_today",
@@ -380,7 +403,8 @@ Options:
                 TryGetValue(args, "--entity"),
                 from,
                 to,
-                args.Any(arg => arg.Equals("--json", StringComparison.OrdinalIgnoreCase)));
+                args.Any(arg => arg.Equals("--json", StringComparison.OrdinalIgnoreCase)),
+                bool.TryParse(configuration["HomeAssistant:AllowInsecurePrivateNetworkHttp"], out var allowInsecure) && allowInsecure);
         }
 
         private static string? TryGetValue(string[] args, string name)

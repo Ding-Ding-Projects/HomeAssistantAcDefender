@@ -29,8 +29,9 @@ does not log request bodies, tokens, or passwords.
   builder are persisted per Windows profile. Appearance changes apply live to the controller only.
 - `Ctrl+Shift+F` opens the command palette and navigates to every controller page.
 - Optional Windows update feed: configure an HTTPS Squirrel.Windows feed in Settings. Electron's
-  `autoUpdater` performs the signed background check/download; this app never invents an update,
-  downloads an arbitrary URL, or executes an unverified installer. Only the `update-downloaded`
+  `autoUpdater` performs the background download and RELEASES/package-hash integrity checks; the
+  artifacts are unsigned and may trigger an operating-system warning. This app never invents an update
+  or downloads an arbitrary URL. Only the `update-downloaded`
   event creates the non-blocking **Restart to install update** banner, and installation runs only
   after the user presses that action.
 - Every controller search surface (Settings, Notifications, and the `Ctrl+Shift+F` command palette)
@@ -50,12 +51,12 @@ made-up temperature, HVAC state, success message, or fallback command.
 
 ## Build and package
 
-Prerequisites: Windows, Node 20+, and the usual native prerequisites for Electron. All assets are
-local; there are no CDN scripts, fonts, analytics, or remote images.
+Prerequisites are supplied by the repository-root dependency script. All assets are local; there
+are no CDN scripts, fonts, analytics, or remote images.
 
 ```powershell
+download-dependencies.bat /s
 cd desktop-electron
-npm install
 npm run test
 npm run build
 npm run dist       # Windows Squirrel installer/update artifacts
@@ -66,15 +67,16 @@ npm run electron   # run the packaged renderer after npm run build
 Squirrel.Windows target and does not publish releases by itself; publishing remains the parent
 repository's release workflow and must attach a verified installer.
 
-## Signed update-feed contract
+## Unsigned update-feed contract
 
-The feed URL points to a Squirrel.Windows release directory containing the signed `RELEASES`
-manifest and signed `.nupkg`/setup artifacts produced by the release workflow. The feed must be
-HTTPS and must not be a GitHub Pages HTML page or an unsigned file share. The workflow owns key
-management and signing; private signing keys never enter this repository or the controller.
+The feed URL points to a Squirrel.Windows release directory containing the `RELEASES` manifest
+and unsigned `.nupkg`/setup artifacts produced by the release workflow. The feed must be HTTPS
+and must not be a GitHub Pages HTML page or an arbitrary file share. Code signing is disabled;
+there is no publisher-signature authenticity claim.
 
-The main process passes the feed to Electron's Windows `autoUpdater`, which verifies the package
-signature before emitting `update-downloaded`. A failed check is shown as an ordinary, dismissible
-error notification. There is no fake `updateReady` state: the renderer receives it only from the
-real Electron event, and `Restart to install update` calls `quitAndInstall` only after that event.
+The main process passes the feed to Electron's Windows `autoUpdater`, which checks the RELEASES
+metadata and package hash before emitting `update-downloaded`. Settings, manual check results, and
+the ready banner show the exact unsigned-artifact warning. A failed check is shown as an ordinary,
+dismissible error notification. There is no fake `updateReady` state: the renderer receives it only
+from the real Electron event, and `Restart to install update` calls `quitAndInstall` only after it.
 On non-Windows development runs, checks report `windows-only` and do not attempt a download.

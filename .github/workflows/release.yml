@@ -19,10 +19,6 @@ concurrency:
   group: release-${{ github.repository }}
   cancel-in-progress: false
 
-env:
-  # Use the narrowest available token without putting credentials in logs.
-  GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.ORG_TOKEN || secrets.GITHUB_TOKEN }}
-
 jobs:
   workflow-start:
     runs-on: ubuntu-latest
@@ -43,6 +39,8 @@ jobs:
   build-desktop-electron:
     needs: workflow-start
     runs-on: windows-latest
+    outputs:
+      controller_version: ${{ steps.controller_version.outputs.controller_version }}
     defaults:
       run:
         working-directory: desktop-electron
@@ -53,18 +51,40 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '24.19.0'
           cache: npm
           cache-dependency-path: desktop-electron/package-lock.json
 
-      - name: Install Electron dependencies
-        run: npm ci
+      - name: Derive unique monotonic controller package version
+        id: controller_version
+        shell: pwsh
+        run: |
+          $version = "0.1.${{ github.run_number }}"
+          npm version $version --no-git-tag-version --allow-same-version | Out-Host
+          "controller_version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
-      - name: Run Electron static checks
-        run: npm test
+      - name: Install Electron dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run reviewed pinned native install steps
+        shell: pwsh
+        run: |
+          if ((node -p "require('./node_modules/electron/package.json').version") -ne '43.4.1') { throw 'Electron version is not pinned to 43.4.1' }
+          node node_modules/electron/install.js
+          if ((node -p "require('./node_modules/esbuild/package.json').version") -ne '0.28.1') { throw 'esbuild version is not pinned to 0.28.1' }
+          node node_modules/esbuild/install.js
+          if ((node -p "require('./node_modules/electron-winstaller/package.json').version") -ne '5.4.0') { throw 'electron-winstaller version is not pinned to 5.4.0' }
 
       - name: Build Squirrel.Windows installer and update feed
         run: npm run dist
+
+      - name: Verify unsigned packaging controls
+        shell: pwsh
+        run: |
+          $package = Get-Content -Raw package.json | ConvertFrom-Json
+          if ($package.build.forceCodeSigning -ne $false) { throw "forceCodeSigning must remain false" }
+          if ($package.build.win.signExecutable -ne $false) { throw "win.signExecutable must remain false" }
+          if ($package.build.win.signAndEditExecutable -ne $false) { throw "win.signAndEditExecutable must remain false" }
 
       - name: Verify Squirrel.Windows artifacts
         shell: pwsh
@@ -80,6 +100,25 @@ jobs:
             if ($file.Length -le 0) { throw "Squirrel artifact is empty: $($file.FullName)" }
             Write-Host ("Verified {0} ({1} bytes)" -f $file.Name, $file.Length)
           }
+          foreach ($file in @($setup)) {
+            $signature = Get-AuthenticodeSignature -LiteralPath $file.FullName
+            if ($signature.Status -ne 'NotSigned') {
+              throw "Squirrel artifact is not explicitly NotSigned: $($file.FullName) reported $($signature.Status)"
+            }
+            Write-Host ("Verified NotSigned: {0}" -f $file.Name)
+          }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          foreach ($file in @($nupkg)) {
+            $zip = [IO.Compression.ZipFile]::OpenRead($file.FullName)
+            try {
+              if ($zip.Entries | Where-Object { $_.FullName -ieq '.signature.p7s' }) {
+                throw "Squirrel .nupkg contains a NuGet package signature: $($file.FullName)"
+              }
+            } finally {
+              $zip.Dispose()
+            }
+            Write-Host ("Verified unsigned NuGet package: {0}" -f $file.Name)
+          }
 
       - name: Upload Squirrel.Windows release assets
         uses: actions/upload-artifact@v4
@@ -90,6 +129,37 @@ jobs:
             desktop-electron/dist/squirrel-windows/*.nupkg
             desktop-electron/dist/squirrel-windows/RELEASES
           if-no-files-found: error
+
+      - name: Collect safe Windows build evidence
+        if: ${{ always() }}
+        continue-on-error: true
+        shell: pwsh
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          $evidence = Join-Path $env:GITHUB_WORKSPACE 'safe-evidence/windows-build'
+          New-Item -ItemType Directory -Force -Path $evidence | Out-Null
+          [ordered]@{
+            runId = $env:GITHUB_RUN_ID
+            commit = $env:GITHUB_SHA
+            jobStatus = $env:JOB_STATUS
+            runner = $env:RUNNER_NAME
+            artifactRoot = 'desktop-electron/dist/squirrel-windows'
+          } | ConvertTo-Json -Compress | Set-Content -LiteralPath (Join-Path $evidence 'build-metadata.json') -Encoding utf8
+          $artifactRoot = Join-Path $env:GITHUB_WORKSPACE 'desktop-electron/dist/squirrel-windows'
+          if (Test-Path -LiteralPath $artifactRoot) {
+            Get-ChildItem -LiteralPath $artifactRoot -File | Where-Object { $_.Name -like '*Setup*.exe' -or $_.Extension -eq '.nupkg' -or $_.Name -eq 'RELEASES' } | Copy-Item -Destination $evidence -Force
+          }
+
+      - name: Upload safe Windows build evidence
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build-safe-evidence
+          path: safe-evidence/windows-build/**
+          if-no-files-found: warn
+          retention-days: 7
 
   verify-and-release:
     needs: [workflow-start, build-desktop-electron]
@@ -103,29 +173,38 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install .NET SDK
-        uses: actions/setup-dotnet@v4
+      - name: Enable ARM64 image builds
+        uses: docker/setup-qemu-action@v3
         with:
-          dotnet-version: '10.0.x'
+          platforms: arm64
 
-      - name: Restore application and regression suite
-        run: dotnet restore HomeAssistantAcDefender.Tests/HomeAssistantAcDefender.Tests.csproj
+      - name: Configure Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Build application and regression suite
-        run: dotnet build HomeAssistantAcDefender.Tests/HomeAssistantAcDefender.Tests.csproj --configuration Release --no-restore
-
-      - name: Run regression suite
-        run: dotnet run --project HomeAssistantAcDefender.Tests/HomeAssistantAcDefender.Tests.csproj --configuration Release --no-build
-
-      - name: Build the installable Docker image
+      - name: Build installable Docker image archives for both supported architectures
         env:
-          IMAGE_TAG: ac-defender:${{ github.sha }}
+          CONTROLLER_VERSION: ${{ needs.build-desktop-electron.outputs.controller_version }}
         run: |
           set -euo pipefail
-          docker build --label org.opencontainers.image.revision="${GITHUB_SHA}" --tag "${IMAGE_TAG}" .
           mkdir -p release-assets
-          docker save "${IMAGE_TAG}" | gzip -9 > "release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz"
-          sha256sum "release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz" > "release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz.sha256"
+          for arch in amd64 arm64; do
+            image="ac-defender:${CONTROLLER_VERSION}-${arch}"
+            docker buildx build --platform "linux/${arch}" \
+              --build-arg APP_VERSION="${CONTROLLER_VERSION}" \
+              --build-arg APP_REVISION="${GITHUB_SHA}" \
+              --tag "${image}" \
+              --output "type=docker,dest=release-assets/ac-defender-docker-${CONTROLLER_VERSION}-${arch}.tar" .
+            archive="release-assets/ac-defender-docker-${CONTROLLER_VERSION}-${arch}.tar.gz"
+            gzip -9 "${archive%.gz}"
+            sha256sum "${archive}" > "${archive}.sha256"
+            metadata="${archive%.tar.gz}.metadata.json"
+            expected_metadata="release-assets/ac-defender-docker-${CONTROLLER_VERSION}-${arch}.metadata.json"
+            cat > "${metadata}" <<EOF
+          {"image":"${image}","architecture":"${arch}","version":"${CONTROLLER_VERSION}","revision":"${GITHUB_SHA}","archive":"$(basename "${archive}")"}
+          EOF
+            test "${metadata}" = "${expected_metadata}"
+            test -f "${expected_metadata}"
+          done
 
       - name: Count surviving project lines
         run: python3 scripts/count_lines.py > release-assets/line-count.md
@@ -139,6 +218,8 @@ jobs:
       - name: Resolve an unused public dim-sum code name
         id: dimsum
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.ORG_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           fallback() {
@@ -211,7 +292,9 @@ jobs:
       - name: Create the immutable GitHub release
         shell: bash
         env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.ORG_TOKEN || secrets.GITHUB_TOKEN }}
           RELEASE_TAG: v0.1.${{ github.run_number }}
+          CONTROLLER_VERSION: ${{ needs.build-desktop-electron.outputs.controller_version }}
           DIM_SUM_NAME: ${{ steps.dimsum.outputs.name }}
           DIM_SUM_PHOTO_URL: ${{ steps.dimsum.outputs.photo_url }}
         run: |
@@ -222,17 +305,22 @@ jobs:
             {
               echo "# Home Assistant AC Defender ${RELEASE_TAG}"
               echo
-              echo "Verified from commit \`${GITHUB_SHA}\`. The Docker image archive is the installable artifact for this server application; decompress it with \`gunzip ac-defender-docker-${GITHUB_SHA}.tar.gz\` and load it with \`docker load --input ac-defender-docker-${GITHUB_SHA}.tar\`, then run it with the documented Compose configuration."
+              echo "Locally built from commit \`${GITHUB_SHA}\`. Separate Docker image archives are prepared for linux/amd64 and linux/arm64. Independent published-download proof is established only by the authoritative release asset readback below."
+              for release_arch in amd64 arm64; do
+                release_archive="ac-defender-docker-${CONTROLLER_VERSION}-${release_arch}.tar.gz"
+                release_tar="${release_archive%.gz}"
+                echo "- ${release_archive}: run \`gunzip ${release_archive}\`, then \`docker load --input ${release_tar}\`; use the exact image reference from its metadata."
+              done
               echo
               echo "## Windows Electron controller"
               echo
-              echo "The verified Squirrel.Windows Setup.exe, .nupkg update package, and RELEASES feed are attached for the Windows controller. The application still requires a signed update feed before background updates can be enabled."
+              echo "Locally built and locally checked unsigned Squirrel.Windows Setup.exe, .nupkg update package, and RELEASES feed are prepared for the Windows controller. Background updates use HTTPS plus RELEASES/package hashes and retain an unsigned-artifact warning contract; visible controller warning copy remains an integration follow-up. Independent published-download proof is established only by release asset readback. No signing certificate is used."
               echo
               echo "## Workflow timing"
               echo
               echo "- Workflow started: ${WORKFLOW_STARTED}"
               echo "- Workflow completed: ${completed}"
-              echo "- Workflow duration: ${duration} seconds"
+              echo "- Workflow duration (workflow-start first job through gh release create completion): ${duration}"
               echo
               echo "## Release code name"
               echo
@@ -250,26 +338,139 @@ jobs:
               echo
               echo "## Checks"
               echo
-              echo "- \`dotnet build HomeAssistantAcDefender.Tests/HomeAssistantAcDefender.Tests.csproj --configuration Release\`"
-              echo "- Regression suite: passed in this workflow before publication."
-              echo "- Docker image: built from this commit and archived as \`ac-defender-docker-${GITHUB_SHA}.tar.gz\`."
-              echo "- Electron: \`npm test\`, \`npm run dist\`, and non-empty Setup.exe/.nupkg/RELEASES checks passed on \`windows-latest\`."
+              echo "- Docker images: linux/amd64 and linux/arm64 archives were built from this commit with OCI revision/version labels and checksums."
+              echo "- Electron: \`npm run dist\`, unsigned packaging-control checks, and non-empty Setup.exe/.nupkg/RELEASES checks ran on \`windows-latest\`."
+              echo "- Local checks remain in the repository but are not run by GitHub Actions; this workflow intentionally builds, packages, and publishes only."
             } > release-assets/release-notes.md
           }
-          write_notes "pending final release publication" "pending final release publication"
+          prepared_epoch="$(date +%s)"
+          prepared_iso="$(date -u -d "@${prepared_epoch}" +%Y-%m-%dT%H:%M:%SZ)"
+          prepared_seconds=$((prepared_epoch - WORKFLOW_STARTED_EPOCH))
+          prepared_hours=$((prepared_seconds / 3600))
+          prepared_minutes=$(((prepared_seconds % 3600) / 60))
+          prepared_remainder=$((prepared_seconds % 60))
+          prepared_duration="$(printf '%02d:%02d:%02d' "${prepared_hours}" "${prepared_minutes}" "${prepared_remainder}")"
+          write_notes "${prepared_iso}" "${prepared_duration}"
           release_assets=(
-            "release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz"
-            "release-assets/ac-defender-docker-${GITHUB_SHA}.tar.gz.sha256"
+            release-assets/ac-defender-docker-*.tar.gz
+            release-assets/ac-defender-docker-*.tar.gz.sha256
+            release-assets/ac-defender-docker-*.metadata.json
             release-assets/electron/*
           )
           gh release create "${RELEASE_TAG}" \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
+            --draft \
             --title "Home Assistant AC Defender ${RELEASE_TAG} — ${DIM_SUM_NAME}" \
             --notes-file release-assets/release-notes.md \
             "${release_assets[@]}"
-          completed_epoch="$(date +%s)"
-          completed_iso="$(date -u -d "@${completed_epoch}" +%Y-%m-%dT%H:%M:%SZ)"
-          duration_seconds=$((completed_epoch - WORKFLOW_STARTED_EPOCH))
-          write_notes "${completed_iso}" "${duration_seconds}"
-          gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --notes-file release-assets/release-notes.md
+          gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --draft=false
+          release_readback="$(mktemp)"
+          release_readback_ok=0
+          for attempt in 1 2 3 4 5; do
+            if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json isDraft,publishedAt,targetCommitish,tagName,assets > "${release_readback}"; then
+              if published_at="$(python3 - "${release_readback}" "${RELEASE_TAG}" "${GITHUB_SHA}" "${CONTROLLER_VERSION}" <<'PY'
+          import json
+          import re
+          import sys
+          data = json.load(open(sys.argv[1], encoding='utf-8'))
+          tag, revision, version = sys.argv[2:]
+          if data.get('isDraft') is not False or data.get('tagName') != tag:
+              raise SystemExit(1)
+          target = data.get('targetCommitish')
+          if not isinstance(target, str) or target.lower() != revision.lower():
+              raise SystemExit(1)
+          published = data.get('publishedAt')
+          if not isinstance(published, str) or not published:
+              raise SystemExit(1)
+          assets = data.get('assets')
+          if not isinstance(assets, list):
+              raise SystemExit(1)
+          names = {asset.get('name') for asset in assets if isinstance(asset, dict)}
+          required = {f'ac-defender-docker-{version}-amd64.tar.gz', f'ac-defender-docker-{version}-amd64.tar.gz.sha256', f'ac-defender-docker-{version}-amd64.metadata.json', f'ac-defender-docker-{version}-arm64.tar.gz', f'ac-defender-docker-{version}-arm64.tar.gz.sha256', f'ac-defender-docker-{version}-arm64.metadata.json'}
+          if not required.issubset(names) or not any(name and 'Setup' in name and name.endswith('.exe') for name in names) or not any(name and name.endswith('.nupkg') for name in names) or 'RELEASES' not in names:
+              raise SystemExit(1)
+          print(published)
+          PY
+              )"; then
+                release_readback_ok=1
+                break
+              fi
+            fi
+            sleep 2
+          done
+          if [[ "${release_readback_ok}" != 1 ]]; then
+            echo 'Published release readback failed: no authoritative non-draft/tag/target/assets verdict arrived.' >&2
+            exit 1
+          fi
+          published_epoch="$(python3 - "${published_at}" <<'PY'
+          import datetime
+          import sys
+          value = datetime.datetime.fromisoformat(sys.argv[1].replace('Z', '+00:00'))
+          print(int(value.timestamp()))
+          PY
+          )"
+          duration_seconds=$((published_epoch - WORKFLOW_STARTED_EPOCH))
+          if (( duration_seconds < 0 )); then
+            echo 'Published release timestamp precedes workflow start.' >&2
+            exit 1
+          fi
+          duration_hours=$((duration_seconds / 3600))
+          duration_minutes=$(((duration_seconds % 3600) / 60))
+          duration_remainder=$((duration_seconds % 60))
+          duration_display="$(printf '%02d:%02d:%02d' "${duration_hours}" "${duration_minutes}" "${duration_remainder}")"
+          write_notes "${published_at}" "${duration_display}"
+          notes_updated=0
+          for attempt in 1 2 3 4 5; do
+            if gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --notes-file release-assets/release-notes.md; then
+              notes_updated=1
+              break
+            fi
+            sleep 2
+          done
+          if [[ "${notes_updated}" != 1 ]]; then
+            echo 'Published release timing notes could not be updated after bounded retries; the workflow is incomplete.' >&2
+            exit 1
+          fi
+          gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json isDraft,publishedAt,targetCommitish,tagName,body > "${release_readback}"
+          python3 - "${release_readback}" "${RELEASE_TAG}" "${GITHUB_SHA}" <<'PY'
+          import json
+          import re
+          import sys
+          data = json.load(open(sys.argv[1], encoding='utf-8'))
+          if data.get('isDraft') is not False or data.get('tagName') != sys.argv[2] or str(data.get('targetCommitish', '')).lower() != sys.argv[3].lower() or not data.get('publishedAt'):
+              raise SystemExit('final release state is not authoritative')
+          body = data.get('body')
+          if not isinstance(body, str) or data['publishedAt'] not in body or 'pending' in body.lower() or '<archive.' in body or not re.search(r'Workflow duration.*[0-9]{2}:[0-9]{2}:[0-9]{2}', body):
+              raise SystemExit('final release notes contain placeholders or no stable duration')
+          PY
+          rm -f -- "${release_readback}"
+
+      - name: Collect safe release evidence
+        if: ${{ always() }}
+        continue-on-error: true
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          set +e
+          mkdir -p safe-evidence/release
+          cat > safe-evidence/release/release-metadata.json <<EOF
+          {"runId":"${GITHUB_RUN_ID}","commit":"${GITHUB_SHA}","jobStatus":"${JOB_STATUS}","runner":"${RUNNER_NAME}","releaseTag":"v0.1.${GITHUB_RUN_NUMBER}"}
+          EOF
+          for path in release-assets/*.sha256 release-assets/*.metadata.json release-assets/line-count.md release-assets/release-notes.md; do
+            [ -f "$path" ] && cp -- "$path" safe-evidence/release/
+          done
+          if [ -d release-assets/electron ]; then
+            find release-assets/electron -maxdepth 1 -type f \( -name '*Setup*.exe' -o -name '*.nupkg' -o -name 'RELEASES' \) -exec cp -- {} safe-evidence/release/ \;
+          fi
+
+      - name: Upload safe release evidence
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-safe-evidence
+          path: safe-evidence/release/**
+          if-no-files-found: warn
+          retention-days: 7

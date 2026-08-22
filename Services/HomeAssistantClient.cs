@@ -1016,24 +1016,14 @@ public sealed class HomeAssistantClient
 
     private Uri BuildUri(string relativePath)
     {
-        var baseUrl = options.CurrentValue.BaseUrl;
-        if (string.IsNullOrWhiteSpace(baseUrl))
-        {
-            baseUrl = "http://homeassistant.local:8123";
-        }
-
-        if (!baseUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
-            && !baseUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        {
-            baseUrl = $"http://{baseUrl}";
-        }
-
-        if (!baseUrl.EndsWith('/'))
-        {
-            baseUrl += "/";
-        }
-
-        return new Uri(new Uri(baseUrl), relativePath);
+        var configuredBaseUrl = options.CurrentValue.BaseUrl;
+        var baseUri = HomeAssistantConfigurationValidator.ValidateBaseUrl(
+            configuredBaseUrl,
+            options.CurrentValue.AllowInsecurePrivateNetworkHttp);
+        var normalizedBase = baseUri.AbsoluteUri.EndsWith("/", StringComparison.Ordinal)
+            ? baseUri
+            : new Uri($"{baseUri.AbsoluteUri}/", UriKind.Absolute);
+        return new Uri(normalizedBase, relativePath);
     }
 
     private static ThermostatReading? ParseClimateState(JsonElement root, string entityId)

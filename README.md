@@ -58,15 +58,45 @@ anyone can follow.
 
 The [GitHub Pages landing page](https://ding-ding-projects.github.io/HomeAssistantAcDefender/)
 is built from `docs/` on every documentation change. Every branch push and manual dispatch run
-the release workflow: it builds the regression suite and Docker image, publishes an immutable
-release with the image archive and checksum, and records the CI-generated line-count table.
-It also builds the separate Windows controller with Squirrel.Windows and attaches its Setup.exe,
+the release workflow: it builds the Docker image for both `linux/amd64` and `linux/arm64`,
+publishes separate loadable archives, SHA-256 checksums, and revision metadata records, and
+records the CI-generated line-count table. GitHub Actions intentionally performs build,
+packaging, and publication only; local checks remain available for development and are not release
+claims.
+It also builds the separate Windows controller with Squirrel.Windows and attaches its unsigned Setup.exe,
 `.nupkg`, and `RELEASES` update-feed artifacts after static and non-empty-file checks. Release
 notes include measured workflow start, completion, and duration values. The workflow ignores
 its generated `v0.1.*` tag pushes so release publication cannot recursively create more releases.
 The [release and
 line-count guide](docs/wiki/release/line-counts.md) explains the artifact boundaries and how to
 load the server image.
+
+To run a release archive without rebuilding, load the host-architecture archive and select its
+exact image reference from the adjacent `.metadata.json` file:
+
+```powershell
+docker load --input ac-defender-docker-<version>-arm64.tar.gz
+$env:AC_DEFENDER_IMAGE = "ac-defender:<version>-arm64"
+$env:AC_DEFENDER_VERSION = "<version>"
+$env:AC_DEFENDER_REVISION = "<commit>"
+docker compose up -d --no-build
+```
+
+The service exposes an anonymous, non-secret `GET /healthz` response for Compose and load
+balancers. Forwarded HTTPS is accepted only when the deployment explicitly configures
+`FORWARDED_HEADERS_KNOWN_PROXIES` or `FORWARDED_HEADERS_KNOWN_IP_NETWORKS` plus
+`FORWARDED_HEADERS_ALLOWED_HOSTS` in the host `.env`; Compose maps those bounded values to the
+application's `ForwardedHeaders__*` configuration. An empty trust list ignores forwarded headers.
+
+For a clean Windows machine, `download-dependencies.bat /s` pins the canonical winget .NET SDK
+10.0.301, .NET runtime 10.0.11, and Node.js v24.19.0, then `build.bat /s` builds both the server
+and Windows controller.
+`build-installer.bat /s` clears stale Squirrel output, clears signing inputs, verifies `NotSigned`
+assets, and writes SHA-256/source-revision metadata. Pinned user-scoped portable ZIP fallbacks for
+.NET SDK/runtime and Node.js are recorded in `dependency-manifest.json`; when neither winget nor
+the verified portable fallback can supply a pinned tool, the scripts stop with the exact missing
+tool rather than claiming a complete bootstrap. A fully fresh-machine bootstrap run remains an
+open verification item.
 
 | Page | What it covers |
 | --- | --- |
@@ -107,12 +137,30 @@ docker compose up -d --build
 Required environment variables:
 
 ```text
-HomeAssistant__BaseUrl=http://homeassistant.local:8123
+# Development-only loopback HTTP; production must use the real HTTPS Home Assistant API URL.
+HomeAssistant__BaseUrl=http://127.0.0.1:8123
+HomeAssistant__AllowInsecurePrivateNetworkHttp=false
 HomeAssistant__EntityId=climate.dining_room
 HomeAssistant__AccessToken=replace-with-token
+# Exact reverse-proxy trust boundary; production must replace these placeholders.
+FORWARDED_HEADERS_KNOWN_PROXIES=127.0.0.1
+FORWARDED_HEADERS_KNOWN_IP_NETWORKS=
+FORWARDED_HEADERS_ALLOWED_HOSTS=localhost
 ```
 
-Open `http://<host>:8888` — the first account you create becomes the owner. All optional
+Non-loopback Home Assistant URLs must use HTTPS. The narrowly scoped
+`HomeAssistant__AllowInsecurePrivateNetworkHttp=true` compatibility switch is accepted only for
+RFC1918, link-local, or `.local` private targets and never permits public HTTP. It exposes the
+bearer token over cleartext on that private network, so production should use HTTPS instead.
+The deployment script also requires a mode-600, deployment-account-owned `.env`, an exact
+allowed-host list, at least one exact trusted proxy IP or CIDR, and `AC_DEFENDER_RELEASE_TAG`
+for the immutable public release whose independently reported asset digest must match the archive.
+It verifies rollback image/version/revision metadata and `/healthz` rather than swallowing a
+rollback failure.
+
+Open `http://localhost:8888` — the first account you create becomes the owner. This local route
+uses `FORWARDED_HEADERS_ALLOWED_HOSTS=localhost`; any remote, LAN, or public deployment must
+replace that value with its exact hostname or IP before startup. Wildcard hosts are rejected. All optional
 entities (weather, outdoor temperature, Alectra Hui usage sensors) and every `Defender__*`
 tuning knob are listed in [Deployment](docs/wiki/Deployment.md).
 

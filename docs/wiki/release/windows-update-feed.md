@@ -1,9 +1,9 @@
 ---
 layout: doc
-title: "Windows signed update-feed contract"
+title: "Windows HTTPS update-feed contract"
 ---
 
-# Windows signed update-feed contract
+# Windows HTTPS update-feed contract
 
 The Windows Electron controller accepts only a direct HTTPS Squirrel.Windows
 feed directory. Before Electron's `autoUpdater` checks for packages, the main
@@ -20,9 +20,10 @@ when a website URL, an incomplete directory, or a stale proxy was configured.
   The manifest is bounded to 256 KiB, must contain at least one package, and
   each entry must have a 40-character SHA-1, a safe `.nupkg` filename, and a
   positive package size.
-- A valid manifest is only a preflight. Squirrel.Windows still performs the
-  package-signature verification and download. The controller never downloads
-  an installer itself and never invents an `update-ready` state.
+- A valid manifest is only a preflight. Squirrel.Windows downloads the package
+  using the manifest's package hash and size. Those fields provide content-integrity evidence,
+  not a publisher signature. The controller never downloads an installer itself and never
+  invents an `update-ready` state.
 - A failed preflight clears stale readiness and becomes the ordinary,
   dismissible error notification. The non-blocking **Restart to install update**
   action is emitted only by Electron's real `update-downloaded` event.
@@ -32,18 +33,21 @@ when a website URL, an incomplete directory, or a stale proxy was configured.
 Enter the HTTPS feed directory in Settings. Do not put credentials in the URL;
 the feed should be public or protected by the platform's normal transport/auth
 boundary, not by embedding a secret in this app's profile. The URL is stored
-with the other controller preferences but never logged. `RELEASES` and the
-packages must be signed in the release pipeline; manifest syntax alone is not a
-signature or an installer trust decision.
+with the other controller preferences but never logged. `RELEASES` and packages are published
+unsigned by permanent project policy. HTTPS, the bounded manifest parser, package SHA-1/size
+fields, and the unsigned-artifact warning contract are the complete source-level integrity boundary.
+Settings, manual check results, and the ready banner render the exact warning; packaged interaction
+remains a separate unverified boundary;
+none is a certificate or publisher-authenticity claim.
 
 ## Failure modes and recovery
 
 | Symptom | Meaning | Recovery |
 | --- | --- | --- |
-| `GitHub Pages is an HTML site` | A Pages URL was entered, not a feed directory. | Use the signed Squirrel feed directory. |
+| `GitHub Pages is an HTML site` | A Pages URL was entered, not a feed directory. | Use a direct HTTPS Squirrel feed directory. |
 | `HTTP 404` or `HTTP 503` | `RELEASES` is missing or the feed is unavailable. | Restore the feed and use **Check for updates** again. |
 | `invalid SHA-1`, package name, or size | The manifest is not a Squirrel `RELEASES` file. | Regenerate the release feed; do not bypass validation. |
-| Electron reports a signature error | The package was not signed by the trusted release path. | Keep the current version and repair signing; no install is offered. |
+| package hash/size mismatch | The package bytes do not match the `RELEASES` manifest. | Keep the current version and restore the exact release assets; no install is offered. |
 
 ## Verification
 
@@ -58,9 +62,9 @@ npm run dist
 `tests/update-contract.mjs` covers URL normalization, rejected unsafe forms,
 manifest bounds and fields, direct-feed preflight, and HTTP failure recovery.
 `npm run dist` produces the non-empty Setup.exe, `.nupkg`, and `RELEASES` files;
-local artifacts are not evidence of Authenticode or Squirrel trust because the
-checkout has no private signing certificate. The release workflow remains the
-place to attach artifacts and to provide the signed-feed evidence.
+local artifacts are unsigned and are not publisher-authenticity proof. The release workflow
+attaches the assets and records their source revision and checksums; it never obtains or invokes
+a signer.
 
 ## Suggested articles
 
