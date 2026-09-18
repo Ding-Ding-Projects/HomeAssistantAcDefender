@@ -2,7 +2,7 @@
 
 ## Repository closeout state
 
-- The primary checkout is clean on `main` at `67d48234d6ef9e59094f14464351f2c65f93bf32`, matching `origin/main` and `origin/master` before this closeout.
+- The primary checkout is clean on `main` at `12270cc1ab869a4502272511f43c55ba78154b04`, matching `origin/main`.
 - The linked checkout `HomeAssistantAcDefender-auth-deploy` was clean at `ee5136b80717882b47d43f7b2467d0c8d2b1a562`. Its tip is already an ancestor of `main`; it was published as `origin/codex/fix-desktop-auth-deploy` and verified with `git ls-remote`.
 - The linked checkout `HomeAssistantAcDefender-full-deployment` was clean at `25dd48e5f5a7d812d5ee621ed2ebb20c36d09e0f`. Its tip is already an ancestor of `main`; it was published as `origin/codex/harden-full-deployment` and verified with `git ls-remote`.
 - No checkout had uncommitted or untracked files, no stash entries existed, and no conflict markers or unmerged index entries were present. No new commit was necessary for preservation because all recoverable work was already committed and represented in `main`.
@@ -13,7 +13,7 @@
   and its roadmap checklist was retained in `ROADMAP.md`.
 - The required external archive must be created and read back successfully before removing the two redundant linked checkouts and their published branches. Any active, user-owned, load-bearing, unmerged, unpublished, or ownership-uncertain item must remain and be documented.
 - Archive verification completed before cleanup. `C:\Users\cntow\OneDrive\OakKayBackups\HomeAssistantAcDefender\zips\HomeAssistantAcDefender-20260918T124500Z.7z` is a valid 7-Zip archive, 20,226,309 bytes compressed, containing 547 files and 97 folders. The integrity test returned `Everything is Ok`; it includes the primary Git administrative directory, both linked checkout `.git` pointers, linked-worktree metadata, and the tracked source snapshot.
-- Cleanup retained both linked checkouts because ownership was not independently established. The auth-deploy checkout now holds the additional published commit `0311457b539ee8464327b0854121ccc0b387d2dc`, changing only `AGENTS.md`, `HANDOFF.md`, and `ROADMAP.md`; it is not an ancestor of `main` and remains retained as active or ownership-uncertain work. The full-deployment checkout holds the published commit `9e330e804b15b4fddab639b8a71e85744f64e0fd`, changing only `HANDOFF.md` and `ROADMAP.md`; it is also not an ancestor of `main` and remains retained.
+- Cleanup retained both linked checkouts because ownership was not independently established. The auth-deploy checkout now holds the additional published commit `0311457b539ee8464327b0854121ccc0b387d2dc`, changing only `AGENTS.md`, `HANDOFF.md`, and `ROADMAP.md`; it is not an ancestor of `main` and remains retained as active or ownership-uncertain work. The full-deployment checkout holds the published commits `9e330e804b15b4fddab639b8a71e85744f64e0fd` and `27cdcebe19c591481b0448f4204136114a8eb17c`, changing only `HANDOFF.md` and `ROADMAP.md`; it is also not an ancestor of `main` and remains retained.
 - No conflict markers or unmerged index entries were found in the primary or linked checkouts. No conflict resolution was required. The non-obvious choice was to keep both newly published documentation commits out of `main` because their ownership and integration authority were not established during this closeout.
 
 ## Scope

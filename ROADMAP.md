@@ -10,7 +10,7 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
 - [x] Create and verify the external repository archive before removing redundant linked checkouts, branches, or stash entries; the verified archive is recorded in `HANDOFF.md`.
 - [x] Evaluate redundant linked task checkouts and branches after archive verification; no removal was authorized because ownership was not independently established.
 - [ ] Remove a linked checkout or branch only after its ownership, merged ancestry, active-use status, and clean state are independently proven.
-- [ ] Reconcile the published but unmerged auth-deploy `0311457` and full-deployment `9e330e8` documentation commits only after their owning sessions confirm integration authority.
+- [ ] Reconcile the published but unmerged auth-deploy `0311457` and full-deployment `27cdceb` documentation commits only after their owning sessions confirm integration authority.
 
 - [x] Add the separate Windows Electron controller source and its local build/static checks.
 - [ ] Open a verified Squirrel.Windows installer and verify the unsigned HTTPS/package-hash
