@@ -178,3 +178,22 @@ Keep `.env`, `App_Data`, access tokens, and host state outside Git.
 
 At audit start, `gh issue list --state open` returned no open issues for either
 this repository or `Ding-Ding-Projects/agent-global-memory`.
+
+
+## Repository closeout
+
+- The supplied path, `C:\\Users\\cntow\\Documents\\GitHub\\HomeAssistantAcDefender-auth-deploy`,
+  is a linked checkout of `codex/fix-desktop-auth-deploy`. The repository's primary
+  checkout is `C:\\Users\\cntow\\Documents\\GitHub\\HomeAssistantAcDefender` on `main`.
+- The preservation branch `codex/fix-desktop-auth-deploy` is at
+  `ee5136b80717882b47d43f7b2467d0c8d2b1a562` and the preservation branch
+  `codex/harden-full-deployment` is at `25dd48e5f5a7d812d5ee621ed2ebb20c36d09e0f`.
+  Both tips are already ancestors of `origin/main`, and `git ls-remote` verified both
+  matching remote heads before cleanup.
+- No uncommitted files or stashes were found in any linked checkout. The two
+  preservation branches were therefore retained until the external archive and ancestry proofs
+  were complete, then removed only after those proofs.
+- No release, deployment, or production-host operation was performed in this closeout.
+- The external archive receipt is recorded after the archive was created and read back. It
+  contains the Git administrative directory plus the tracked and non-ignored untracked files,
+  while ignored build output and dependencies remain excluded.

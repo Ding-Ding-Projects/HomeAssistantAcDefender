@@ -40,3 +40,15 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
   `HANDOFF.md`, and this roadmap aligned with the last verified commit.
 - Add a categorized article for each new user-facing feature, including behavior,
   configuration, failure modes, security, and verification evidence.
+
+
+## Repository closeout
+
+- [x] Inventory the primary and linked checkouts, local branches, remote heads, and stashes.
+- [x] Fetch the remote and verify each preservation branch with `git ls-remote`.
+- [x] Preserve recoverable uncommitted work before integration or removal.
+- [x] Refresh `HANDOFF.md` with the checkout layout, ancestry decisions, issue scope, and
+      closeout boundary.
+- [ ] Create and verify the dated external archive before cleanup removal.
+- [ ] Integrate the completed task records into `main`, push `main`, and verify the remote ref.
+- [ ] Remove only proven redundant linked checkouts and preservation branches after archive proof.
