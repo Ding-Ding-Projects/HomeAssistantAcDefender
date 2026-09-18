@@ -1,5 +1,14 @@
 # Handoff
 
+## Repository closeout state
+
+- The primary checkout is clean on `main` at `67d48234d6ef9e59094f14464351f2c65f93bf32`, matching `origin/main` and `origin/master` before this closeout.
+- The linked checkout `HomeAssistantAcDefender-auth-deploy` was clean at `ee5136b80717882b47d43f7b2467d0c8d2b1a562`. Its tip is already an ancestor of `main`; it was published as `origin/codex/fix-desktop-auth-deploy` and verified with `git ls-remote`.
+- The linked checkout `HomeAssistantAcDefender-full-deployment` was clean at `25dd48e5f5a7d812d5ee621ed2ebb20c36d09e0f`. Its tip is already an ancestor of `main`; it was published as `origin/codex/harden-full-deployment` and verified with `git ls-remote`.
+- No checkout had uncommitted or untracked files, no stash entries existed, and no conflict markers or unmerged index entries were present. No new commit was necessary for preservation because all recoverable work was already committed and represented in `main`.
+- The two linked tips were not merged again because they were already contained in `main`; creating duplicate merge commits would add no work. The non-obvious integration choice was recorded here before cleanup.
+- The required external archive must be created and read back successfully before removing the two redundant linked checkouts and their published jers. Any active, user-owned, load-bearing, unmerged, undewed, or ownership-uncertain item must remain and be documented.
+
 ## Scope
 
 The current handoff covers the server UI, the Windows controller, the in-app

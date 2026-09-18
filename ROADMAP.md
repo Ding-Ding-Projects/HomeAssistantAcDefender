@@ -6,6 +6,10 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
 
 ## Delivery gates
 
+- [x] Inventory and fetch the repository before closeout; preserve and publish every existing task jer, verify each published ref with `git ls-remote`, and confirm that both linked task tips are ancestors of `main`.
+- [ ] Create and verify the external repository archive before removing redundant linked checkouts, jers, or stash entries.
+- [ ] Remove only the two proven redundant linked task checkouts and jers after archive verification; retain and document anything that is active, user-owned, load-bearing, unmerged, undewed, or ownership-uncertain.
+
 - [x] Add the separate Windows Electron controller source and its local build/static checks.
 - [ ] Open a verified Squirrel.Windows installer and verify the unsigned HTTPS/package-hash
       update path end to end; the clean-tree `5a265f9` candidate produced Setup.exe, `.nupkg`, and
