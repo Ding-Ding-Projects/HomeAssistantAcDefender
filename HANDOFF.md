@@ -1,5 +1,25 @@
 # Handoff
 
+## Repository closeout, 2026-09-18
+
+- The repository was fetched from `origin` before closeout. The current checkout
+  was `codex/harden-full-deployment` at `25dd48e5f5a7d812d5ee621ed2ebb20c36d09e0f`.
+- The current commit is already an ancestor of `main` and `origin/main`; the
+  default branch contains it through `67d48234d6ef9e59094f14464351f2c65f93bf32`.
+  No source integration merge was required for this lane.
+- The primary checkout and the linked `codex/fix-desktop-auth-deploy` checkout
+  were clean and had no stashes or untracked recoverable files during inventory.
+  They are retained because ownership is not established by this closeout.
+- The linked `codex/harden-full-deployment` checkout was also clean. No
+  preservation commit was needed because there was no uncommitted or stashed
+  work to recover.
+- The external repository archive was created and verified before any cleanup.
+  Its exact destination, byte size, entry count, excluded ignored-path count,
+  and full integrity-test result are recorded in the closeout report for this
+  task; the archive is intentionally outside the repository and is not tracked.
+- No checkout, branch, or stash was removed. The remaining linked checkouts and
+  branches are active or ownership-uncertain, so retaining them is the safe result.
+
 ## Scope
 
 The current handoff covers the server UI, the Windows controller, the in-app

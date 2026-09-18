@@ -52,3 +52,14 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
   `HANDOFF.md`, and this roadmap aligned with the last verified commit.
 - Add a categorized article for each new user-facing feature, including behavior,
   configuration, failure modes, security, and verification evidence.
+
+## Closeout state
+
+- [x] Fetch the remote, inventory every checkout, branch, and stash, and preserve all
+      recoverable work before cleanup.
+- [x] Confirm the completed deployment-hardening jer is represented in `main`
+      and `origin/main` without rewriting history.
+- [x] Refresh `HANDOFF.md` with the closeout inventory, retained work, and
+      external archive evidence boundary.
+- [ ] Remove linked checkouts or branches owned by another task only after their
+      ownership, merged ancestry, and active-use status are independently proven.
