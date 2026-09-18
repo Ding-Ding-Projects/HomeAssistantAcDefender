@@ -57,7 +57,7 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
 
 - [x] Fetch the remote, inventory every checkout, branch, and stash, and preserve all
       recoverable work before cleanup.
-- [x] Confirm the completed deployment-hardening jer is represented in `main`
+- [x] Confirm the completed deployment-hardening branch is represented in `main`
       and `origin/main` without rewriting history.
 - [x] Refresh `HANDOFF.md` with the closeout inventory, retained work, and
       external archive evidence boundary.
