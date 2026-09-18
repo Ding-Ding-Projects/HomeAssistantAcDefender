@@ -8,6 +8,8 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
 
 - [x] Inventory and fetch the repository before closeout; preserve and publish every existing task branch, verify each published ref with `git ls-remote`, and confirm that both linked task tips are ancestors of `main`.
 - [x] Create and verify the external repository archive before removing redundant linked checkouts, branches, or stash entries; the verified archive is recorded in `HANDOFF.md`.
+- [x] Refresh the archive receipt after the final documentation integration; the verified
+      `HomeAssistantAcDefender-20260918T170517Z.7z` archive contains 386 files and 86 folders.
 - [x] Evaluate redundant linked task checkouts and branches after archive verification; no removal was authorized because ownership was not independently established.
 - [ ] Remove a linked checkout or branch only after its ownership, merged ancestry, active-use status, and clean state are independently proven.
 - [ ] Reconcile the published but unmerged auth-deploy `0311457` and full-deployment `27cdceb` documentation commits only after their owning sessions confirm integration authority.
