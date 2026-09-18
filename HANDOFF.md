@@ -8,6 +8,7 @@
 - No checkout had uncommitted or untracked files, no stash entries existed, and no conflict markers or unmerged index entries were present. No new commit was necessary for preservation because all recoverable work was already committed and represented in `main`.
 - The two linked tips were not merged again because they were already contained in `main`; creating duplicate merge commits would add no work. The non-obvious integration choice was recorded here before cleanup.
 - The required external archive must be created and read back successfully before removing the two redundant linked checkouts and their published jers. Any active, user-owned, load-bearing, unmerged, undewed, or ownership-uncertain item must remain and be documented.
+- Archive verification completed before cleanup. `C:\Users\cntow\OneDrive\OakKayBackups\HomeAssistantAcDefender\zips\HomeAssistantAcDefender-20260918T124500Z.7z` is a valid 7-Zip archive, 20,226,309 bytes compressed, containing 547 files and 97 folders. The integrity test returned `Everything is Ok`; it includes the primary Git administrative directory, both linked checkout `.git` pointers, linked-worktree metadata, and the tracked source snapshot.
 
 ## Scope
 
