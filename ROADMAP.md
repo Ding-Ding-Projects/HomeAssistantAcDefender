@@ -6,10 +6,10 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
 
 ## Delivery gates
 
-- [x] Inventory and fetch the repository before closeout; preserve and publish every existing task jer, verify each published ref with `git ls-remote`, and confirm that both linked task tips are ancestors of `main`.
-- [x] Create and verify the external repository archive before removing redundant linked checkouts, jers, or stash entries; the verified archive is recorded in `HANDOFF.md`.
-- [x] Evaluate redundant linked task checkouts and jers after archive verification; no removal was authorized because ownership was not independently established.
-- [ ] Remove a linked checkout or jer only after its ownership, merged ancestry, active-use status, and clean state are independently proven.
+- [x] Inventory and fetch the repository before closeout; preserve and publish every existing task branch, verify each published ref with `git ls-remote`, and confirm that both linked task tips are ancestors of `main`.
+- [x] Create and verify the external repository archive before removing redundant linked checkouts, branches, or stash entries; the verified archive is recorded in `HANDOFF.md`.
+- [x] Evaluate redundant linked task checkouts and branches after archive verification; no removal was authorized because ownership was not independently established.
+- [ ] Remove a linked checkout or branch only after its ownership, merged ancestry, active-use status, and clean state are independently proven.
 
 - [x] Add the separate Windows Electron controller source and its local build/static checks.
 - [ ] Open a verified Squirrel.Windows installer and verify the unsigned HTTPS/package-hash
