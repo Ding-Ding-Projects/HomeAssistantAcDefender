@@ -72,3 +72,14 @@ behavior belongs in the categorized documentation under `docs/wiki/`.
 - [ ] Create and verify the dated external archive before cleanup removal.
 - [ ] Integrate the completed task records into `main`, push `main`, and verify the remote ref.
 - [ ] Remove only proven redundant linked checkouts and preservation branches after archive proof.
+
+## Closeout state
+
+- [x] Fetch the remote, inventory every checkout, branch, and stash, and preserve all
+      recoverable work before cleanup.
+- [x] Confirm the completed deployment-hardening branch is represented in `main`
+      and `origin/main` without rewriting history.
+- [x] Refresh `HANDOFF.md` with the closeout inventory, retained work, and
+      external archive evidence boundary.
+- [ ] Remove linked checkouts or branches owned by another task only after their
+      ownership, merged ancestry, and active-use status are independently proven.
