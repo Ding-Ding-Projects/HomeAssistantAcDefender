@@ -72,6 +72,19 @@ class DeploymentContract(unittest.TestCase):
             self.assertIn(expected, publisher["run"])
         self.assertNotRegex(publisher["run"], r"--(?:draft|prerelease)(?:\s|=)")
 
+    def test_portable_build_provenance(self):
+        jobs = yaml.safe_load((ROOT / ".github/workflows/release.yml").read_text())["jobs"]
+        for job_name, directory, prefix in (("build-hosting-wizard", "hosting-wizard", "AC-Defender-Setup"), ("build-docs-companion", "docs-companion", "AC-Defender-Docs")):
+            job = jobs[job_name]
+            self.assertEqual(job["env"], {
+                "AC_DEFENDER_VERSION": "0.1.${{ github.run_number }}",
+                "AC_DEFENDER_REVISION": "${{ github.sha }}",
+                "AC_DEFENDER_BUILD_TIME": "${{ needs.workflow-start.outputs.started_iso }}",
+            })
+            artifact = next(step for step in job["steps"] if step.get("uses") == "actions/upload-artifact@v4")
+            self.assertEqual(artifact["with"]["path"], directory + "/dist/" + prefix + "-0.1.${{ github.run_number }}-portable.exe")
+            self.assertEqual(job["defaults"]["run"]["working-directory"], directory)
+
     def test_embedded_shell_and_python_syntax(self):
         jobs = yaml.safe_load((ROOT / ".github/workflows/release.yml").read_text())["jobs"]
         for job in jobs.values():
