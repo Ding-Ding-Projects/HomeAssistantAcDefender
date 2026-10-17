@@ -1,14 +1,13 @@
 import { chromium } from 'playwright-core';
-import { spawn, execFile } from 'node:child_process';
+import { spawn } from 'node:child_process';
+import {finishOwnedCleanup, inspectOwnedListener, stopOwnedProcesses} from './native-cleanup.mjs';
 import { createServer } from 'node:net';
 import { copyFile, mkdtemp, mkdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
-import { promisify } from 'node:util';
 import assert from 'node:assert/strict';
 
-const execute = promisify(execFile);
 const [artifactArgument, evidenceArgument] = process.argv.slice(2);
 if (!artifactArgument || !evidenceArgument) {
   console.error('Usage: node scripts/native-portable-proof.mjs <portable.exe> <evidence-directory>');
@@ -22,6 +21,9 @@ let launchDirectory;
 let child;
 let browser;
 let failure;
+let launchedAt;
+let isolatedArtifact;
+let identities = [];
 const delay = milliseconds => new Promise(resolveDelay => setTimeout(resolveDelay, milliseconds));
 try {
   if (process.platform !== 'win32') throw new Error('Native Windows is required; this host cannot verify the portable executable.');
@@ -35,7 +37,7 @@ try {
   const expectedSource = process.env.AC_DEFENDER_REVISION;
   profile = await mkdtemp(join(tmpdir(), 'ac-defender-docs-native-'));
   launchDirectory = await mkdtemp(join(tmpdir(), 'ac-defender-docs-portable-'));
-  const isolatedArtifact = join(launchDirectory, basename(artifact));
+  isolatedArtifact = join(launchDirectory, basename(artifact));
   await copyFile(artifact, isolatedArtifact);
   assert.equal(createHash('sha256').update(await readFile(isolatedArtifact)).digest('hex'), receipt.artifactSha256);
   receipt.checks.push('Exact portable bytes copied into an otherwise empty owned launch directory');
@@ -43,6 +45,7 @@ try {
   await new Promise((done, reject) => { reservation.once('error', reject); reservation.listen(0, '127.0.0.1', done); });
   const port = reservation.address().port;
   await new Promise(done => reservation.close(done));
+  launchedAt = Date.now();
   child = spawn(isolatedArtifact, [
     `--user-data-dir=${profile}`,
     '--remote-debugging-address=127.0.0.1',
@@ -73,7 +76,8 @@ try {
   const session = await browser.newBrowserCDPSession();
   const commandLine = await session.send('Browser.getBrowserCommandLine');
   assert(commandLine.arguments.some(argument => argument === `--user-data-dir=${profile}`), 'CDP browser must belong to the exact owned temporary profile');
-  receipt.checks.push('CDP process command line matches the owned temporary profile');
+  identities = await inspectOwnedListener({port, launcherPid:child.pid, launchedAt, profile});
+  receipt.checks.push('CDP process command line matches the owned temporary profile', 'Loopback listener belongs to the exact portable process ancestry');
   const context = browser.contexts()[0];
   assert(context, 'Portable runtime must expose its actual browser context');
   let page;
@@ -119,24 +123,23 @@ try {
   failure = error;
   receipt.failure = String(error?.message || error).replaceAll(profile || '\u0000', '<owned-profile>').slice(0, 1000);
 } finally {
-  if (browser) {
-    try { const session = await browser.newBrowserCDPSession(); await session.send('Browser.close'); } catch { /* Closing may disconnect the transport immediately. */ }
-    await browser.close().catch(() => {});
-  }
-  if (child?.pid && child.exitCode === null) {
-    await Promise.race([new Promise(done => child.once('exit', done)), delay(5000)]);
-    if (child.exitCode === null) {
-      try { await execute(join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'taskkill.exe'), ['/PID', String(child.pid), '/T', '/F'], { timeout: 10_000, windowsHide: true }); }
-      catch (error) { failure ||= error; receipt.cleanupFailure = 'Could not close the owned portable process tree'; }
-    }
-  }
-  if (profile) {
-    try { await rm(profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 }); }
-    catch (error) { failure ||= error; receipt.cleanupFailure = 'Could not remove the owned temporary profile'; }
-  }
-  if (launchDirectory) {
-    try { await rm(launchDirectory, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 }); }
-    catch (error) { failure ||= error; receipt.cleanupFailure = 'Could not remove the owned isolated launch directory'; }
+  try {
+    receipt.cleanup = await finishOwnedCleanup({
+      browser,
+      stopAndVerify: async () => {
+        if (!child?.pid) return;
+        const owned = identities.length ? identities : [{pid:child.pid, executable:isolatedArtifact}];
+        await stopOwnedProcesses({identities:owned, launchedAt, profile});
+      },
+      removeOwnedFiles: async () => {
+        if (profile) await rm(profile, {recursive:true, force:true, maxRetries:20, retryDelay:250});
+        if (launchDirectory) await rm(launchDirectory, {recursive:true, force:true, maxRetries:20, retryDelay:250});
+      }
+    });
+  } catch (error) {
+    failure ||= error;
+    receipt.cleanup = {complete:false};
+    receipt.cleanupFailure = 'Exact owned process cleanup or temporary-file removal could not be verified';
   }
   receipt.verified = !failure;
   await writeFile(join(evidence, 'result.json'), JSON.stringify(receipt, null, 2));
