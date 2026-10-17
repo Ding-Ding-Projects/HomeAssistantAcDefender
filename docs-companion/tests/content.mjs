@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile,readdir,stat} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {load} from 'cheerio';
+const catalog=JSON.parse(await readFile('app/catalog.json','utf8'));
+test('every source wiki article is bundled as rendered HTML',async()=>{const source=(await readdir('../docs/wiki')).filter(x=>x.endsWith('.md'));assert(catalog.articles.length>=source.length);for(const name of source)assert(catalog.articles.some(a=>a.path===`site/wiki/${name.slice(0,-3)}.html`));});
+test('all local article and site links and assets resolve',async()=>{const broken=[];for(const path of ['site/index.html',...catalog.articles.map(a=>a.path)]){const $=load(await readFile('app/'+path,'utf8'));for(const el of $('[href],[src]').toArray()){for(const attr of ['href','src']){const value=$(el).attr(attr);if(!value||value.startsWith('#')||value.startsWith('data:'))continue;const target=new URL(value,'https://reader/'+path);assert.equal(target.origin,'https://reader');const file=resolve('app','.'+decodeURIComponent(target.pathname)+(target.pathname.endsWith('/')?'index.html':''));try{await stat(file);}catch{broken.push(`${path} -> ${value}`);}}}}assert.deepEqual(broken,[]);});
+test('artifact provenance is real and complete',()=>{assert.match(catalog.metadata.source,/^[a-f0-9]{40}$/);assert.match(catalog.metadata.version,/^\d+\.\d+\.\d+/);assert(!Number.isNaN(Date.parse(catalog.metadata.builtAt)));});
+test('article scripts, inline handlers and active remote URLs are stripped',async()=>{for(const article of catalog.articles){const $=load(await readFile('app/'+article.path,'utf8'));assert.equal($('script,iframe,form,object,embed').length,0);assert.equal($('[href^="http"],[src^="http"]').length,0);for(const el of $('*').toArray())assert(!Object.keys(el.attribs||{}).some(x=>x.startsWith('on')));}});
