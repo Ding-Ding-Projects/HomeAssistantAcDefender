@@ -1,3 +1,8 @@
+---
+layout: doc
+title: "Feature compliance and delivery boundaries"
+---
+
 # Feature compliance and delivery boundaries
 
 The complete requested product goal remains **incomplete**. This source inventory records

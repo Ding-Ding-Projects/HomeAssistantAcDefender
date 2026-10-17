@@ -1,3 +1,8 @@
+---
+layout: doc
+title: "Portable hosting setup"
+---
+
 # Portable hosting setup
 
 AC Defender Setup is a separate Windows companion that creates a new Docker deployment of Home Assistant AC Defender. The existing desktop controller and public documentation site remain available.

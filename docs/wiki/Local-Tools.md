@@ -1,3 +1,8 @@
+---
+layout: doc
+title: "Local tools"
+---
+
 # Local file tools and app logo
 
 Open **Local tools** at `/local-tools` after signing in. Select one file, inspect the detected signature and optional plain-text preview, then choose a conversion from its category. Each category has its own search and adjacent regular-expression builder. The explicit **Convert** action accepts the changes described beside that adapter. **Download validated result** saves actual output with its MIME type and suggested extension. The source remains unchanged. **Cancel operation** terminates the worker.
