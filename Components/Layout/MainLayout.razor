@@ -28,8 +28,9 @@
                 <span class="ops-brand__ping"></span>
             </div>
             <div>
-                <div class="ops-brand__name">SCP AC DEFENDER</div>
-                <div class="ops-brand__sub">SECURE · CONTAIN · PROTECT THE COOL</div>
+                <div class="ops-brand__name" data-personal-wording>SCP AC DEFENDER</div>
+                <BuildProvenance />
+                <div class="ops-brand__sub" data-personal-wording>SECURE · CONTAIN · PROTECT THE COOL</div>
             </div>
         </div>
 
@@ -90,7 +91,7 @@
                        aria-description="@L("Right-click, press Shift+F10, or press and hold to edit this tab.")"
                        @onkeydown="@(args => HandleAppTabKeyDown(args, item.Href))">
                         <span class="ops-app-tab__glyph" aria-hidden="true">@item.Glyph</span>
-                        <span>@Lang.TInline(_langMode, item.Label)</span>
+                        <span data-personal-wording>@Lang.TInline(_langMode, item.Label)</span>
                         @if (IsPinned(item.Href))
                         {
                             <span class="ops-app-tab__pin-mark" aria-label="Pinned">●</span>
@@ -611,6 +612,7 @@
         {
             await JS.InvokeVoidAsync("localStorage.setItem", "ac-defender-lang", _langMode);
             await UpdateDocumentLanguageAsync();
+            await JS.InvokeVoidAsync("acPresentation.language", _langMode);
         }
         catch
         {
@@ -744,6 +746,7 @@
         new("/logs", "≣", "LOGS", "AREA-05", true),
         new("/controls", "⌘", "CONTROLS", "AREA-06", false),
         new("/settings", "⚙", "ORDERS", "AREA-07", true),
+        new("/setup", "✓", "SETUP", "SETUP", false),
         new("/repository", "⇄", "REPO", "AREA-08", false),
         new("/guide", "✦", "GUIDE", "AREA-09", false),
         new("/wiki", "⎘", "WIKI", "AREA-10", true),
@@ -1491,6 +1494,7 @@
             _cantoneseFunnyLevel = ParseFunnyLevel(await JS.InvokeAsync<string?>("localStorage.getItem", "ac-defender-funny-yue"));
 
             await UpdateDocumentLanguageAsync();
+            await JS.InvokeVoidAsync("acPresentation.language", _langMode);
 
             await LoadAppTabsAsync();
             StateHasChanged();

@@ -10,6 +10,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 
+await HomeAssistantAcDefender.Tests.SetupReadOnlyHandlerTests.RunAsync();
+
 var tests = new DefenderSetPointRegressionTests();
 var settingsRepositoryTests = new SettingsGitRepositoryRegressionTests();
 var uiLanguageTests = new UiLanguageRegressionTests();

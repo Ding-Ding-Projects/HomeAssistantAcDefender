@@ -11,3 +11,16 @@ App_Data/
 .env.*
 !*.env.example
 README.local.md
+
+**/node_modules/
+**/dist/
+**/bin/
+**/obj/
+.agents/
+.claude/
+desktop/
+desktop-electron/
+hosting-wizard/
+docs-companion/
+design/
+HomeAssistantAcDefender.Tests/

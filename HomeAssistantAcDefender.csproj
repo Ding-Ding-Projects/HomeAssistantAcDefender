@@ -6,6 +6,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <SourceRevision Condition="'$(SourceRevision)' == ''">$(SourceRevisionId)</SourceRevision>
+    <BuildTimestampUtc Condition="'$(BuildTimestampUtc)' == ''">$(AC_DEFENDER_BUILD_TIME)</BuildTimestampUtc>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="SourceRevision" Value="$(SourceRevision)" />
+    <AssemblyMetadata Include="BuildTimestampUtc" Value="$(BuildTimestampUtc)" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="MudBlazor" Version="9.5.0" />
     <PackageReference Include="Markdig" Version="0.37.0" />
@@ -13,6 +23,9 @@
 
   <ItemGroup>
     <Compile Remove="HomeAssistantAcDefender.Tests\**\*.cs" />
+    <Compile Remove="desktop\**\*.cs;desktop-electron\**\*.cs;hosting-wizard\**\*.cs;docs-companion\**\*.cs" />
+    <Content Remove="desktop\**\*;desktop-electron\**\*;hosting-wizard\**\*;docs-companion\**\*" />
+    <None Remove="desktop\**\*;desktop-electron\**\*;hosting-wizard\**\*;docs-companion\**\*" />
     <Content Remove="HomeAssistantAcDefender.Tests\**\*" />
     <!-- Runtime state can contain password hashes, data-protection keys, entity history,
          and user settings. It belongs in the runtime data volume, never in a publish tree. -->
