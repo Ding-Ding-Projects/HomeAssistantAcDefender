@@ -26,6 +26,13 @@ const html=`<!doctype html><html><body><div data-local-logo>Original</div>
         assert.deepEqual(output,{type:'text/plain;charset=utf-8',text:'one\ntwo\nthree'});
         // Fetch of a generated blob is local; no HTTP upload/network request is made by the product.
         assert.equal(requests.filter(u=>/^https?:/.test(u)).length,baseline);
+        // Delay signature inspection deterministically; explicit Convert must supersede it.
+        await page.evaluate(()=>{window.NativeWorker=window.Worker;window.Worker=class extends window.NativeWorker{postMessage(message,transfer){if(message.id==='inspect')setTimeout(()=>super.postMessage(message,transfer),250);else super.postMessage(message,transfer);}};});
+        await page.locator('#tools input').setInputFiles({name:'race.json',mimeType:'application/json',buffer:Buffer.from('{"value":42}')});
+        await page.evaluate(()=>localTools.convert('tools','json'));
+        assert.deepEqual(JSON.parse(await page.locator('[data-preview]').textContent()),{value:42});
+        assert.equal(await page.locator('[data-download]').getAttribute('download'),'race.json');
+        await page.evaluate(()=>{window.Worker=window.NativeWorker;});
         const png=await page.evaluate(async()=>{const c=new OffscreenCanvas(20,10),x=c.getContext('2d');x.fillStyle='#ff0000';x.fillRect(0,0,10,10);x.fillStyle='#0000ff';x.fillRect(10,0,10,10);return Array.from(new Uint8Array(await(await c.convertToBlob({type:'image/png'})).arrayBuffer()));});
         await page.locator('#tools input').setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from(png)});
         await page.waitForFunction(()=>document.querySelector('#tools [data-status]').textContent.includes('image/png'));

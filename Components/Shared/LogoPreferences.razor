@@ -35,13 +35,21 @@
 </MudPaper>
 
 @code {
+    private bool _initialized;
     private string _language = "both", _query = "", _mode = "plain", _flags = "im";
     private readonly (string Id, string Name, string Zh)[] _presets = [("shield", "Shield", "護盾"), ("snow", "Snowflake", "雪花"), ("ring", "Control ring", "控制環")];
     private string T(string en, string zh) => _language == "en" ? en : _language == "yue" ? zh : $"{en} / {zh}";
-    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) await JS.InvokeVoidAsync("localTools.initLogo", "logo-preferences"); }
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) { await JS.InvokeVoidAsync("localTools.initLogo", "logo-preferences"); _initialized = true; } }
     private Task Save(string preset) => JS.InvokeVoidAsync("localTools.saveLogo", "logo-preferences", preset).AsTask();
     private Task Preview() => JS.InvokeVoidAsync("localTools.previewLogo", "logo-preferences").AsTask();
     private Task Reset() => JS.InvokeVoidAsync("localTools.resetLogo", "logo-preferences").AsTask();
     private Task Cancel() => JS.InvokeVoidAsync("localTools.cancel", "logo-preferences").AsTask();
-    public async ValueTask DisposeAsync() { try { await JS.InvokeVoidAsync("localTools.dispose", "logo-preferences"); } catch (JSDisconnectedException) { } }
+    public async ValueTask DisposeAsync()
+    {
+        // Static prerender instances never initialize a browser session.
+        if (!_initialized) return;
+        _initialized = false;
+        try { await JS.InvokeVoidAsync("localTools.dispose", "logo-preferences"); }
+        catch (JSDisconnectedException) { }
+    }
 }

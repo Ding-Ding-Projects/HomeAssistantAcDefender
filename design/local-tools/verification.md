@@ -11,3 +11,9 @@ Executed against the source in this task branch:
 The Chromium test uses a small DOM fixture with the production JavaScript. It is deliberately not a screenshot, authenticated Razor-route test, mobile-layout measurement or packaged-artifact acceptance receipt. Fixtures are authored non-sensitive test bytes. No user-selected file or logo appears in repository evidence.
 
 Pending integration acceptance: root shell script/style registration, navigation and settings mount; actual authenticated `/local-tools` and settings interactions; visible shell logo binding; independent production layout probes at 320/1280px, EN/Cantonese/Both, light/dark and 100/125/150/200 percent scaling; keyboard and screen-reader checks. The component itself carries `[Authorize]` and references no climate state or command services.
+
+## Prerender lifecycle correction
+
+The integrated authenticated app exposed teardown interop during static prerender. Both components now track successful interactive initialization and skip browser-session disposal for prerender-only instances. Initialized disposal runs once, disconnected circuits are tolerated, and unrelated interop errors still propagate.
+
+`LocalToolsLifecycleTests.PrerenderSkipsInteropAndInteractiveDisposalIsBounded` was executed with an isolated .NET console runner referencing the built app. Both components passed prerender/no-interop, initialized/exactly-once, disconnect and unexpected-error cases. The final build passed with zero warnings/errors. Production-worker and Chromium tests passed again; Chromium now also delays inspection deliberately and verifies an immediate JSON conversion supersedes inspection without losing its preview or download. Actual integrated authenticated HTTP verification remains owned by the application integration test.
