@@ -57,6 +57,7 @@
 </div>
 
 @code {
+    private bool _initialized;
     private string _language = "both";
     private BrowserCapabilities _capabilities = new();
     private readonly Dictionary<string, SearchState> _searches = LocalToolAdapter.Categories.ToDictionary(c => c, _ => new SearchState());
@@ -67,9 +68,16 @@
     private bool Available(LocalToolAdapter a) => _capabilities.Worker && a.Requirement switch { "unavailable" => false, "images" => a.Id switch { "png" => _capabilities.Png, "jpeg" => _capabilities.Jpeg, "webp" => _capabilities.Webp, _ => false }, "gzip" => _capabilities.Gzip, _ => true };
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender) { await JS.InvokeVoidAsync("localTools.init", "local-tools"); _capabilities = await JS.InvokeAsync<BrowserCapabilities>("localTools.capabilities"); StateHasChanged(); }
+        if (firstRender) { await JS.InvokeVoidAsync("localTools.init", "local-tools"); _initialized = true; _capabilities = await JS.InvokeAsync<BrowserCapabilities>("localTools.capabilities"); StateHasChanged(); }
     }
     private Task Convert(string adapter) => JS.InvokeVoidAsync("localTools.convert", "local-tools", adapter).AsTask();
     private Task Cancel() => JS.InvokeVoidAsync("localTools.cancel", "local-tools").AsTask();
-    public async ValueTask DisposeAsync() { try { await JS.InvokeVoidAsync("localTools.dispose", "local-tools"); } catch (JSDisconnectedException) { } }
+    public async ValueTask DisposeAsync()
+    {
+        // Static prerender instances never initialize a browser session.
+        if (!_initialized) return;
+        _initialized = false;
+        try { await JS.InvokeVoidAsync("localTools.dispose", "local-tools"); }
+        catch (JSDisconnectedException) { }
+    }
 }

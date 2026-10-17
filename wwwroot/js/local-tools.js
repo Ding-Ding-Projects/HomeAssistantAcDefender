@@ -159,23 +159,25 @@
     }
     function init(id) {
         const root=document.getElementById(id);if(!root||sessions.has(id))return;
-        const session={root,file:null,cancel:null,url:null,generation:0};sessions.set(id,session);
+        const session={root,file:null,cancel:null,url:null,generation:0,phase:null};sessions.set(id,session);
         root.querySelector('input[type=file]').addEventListener('change',async e=>{
-            session.cancel?.();revoke(session);const generation=++session.generation;
+            session.generation++;session.cancel?.();session.phase=null;root.removeAttribute('aria-busy');revoke(session);const generation=session.generation;
             root.querySelector('[data-download]').hidden=true;root.querySelector('[data-preview]').textContent='';
             session.file=e.target.files?.[0]||null;
             if(!session.file){status(root,localized(root,'Choose one file to begin.','揀一個檔案開始啦。'));return;}
             if(session.file.size>LIMIT){session.file=null;status(root,localized(root,'Input exceeds the 8 MiB limit.','檔案超過 8 MiB 上限。'));return;}
+            session.phase='inspect';
             status(root,localized(root,'Inspecting locally…','喺瀏覽器檢查緊…'));
             try {const bytes=await session.file.arrayBuffer();if(generation!==session.generation)return;const result=await job('inspect',bytes,null,session);if(generation!==session.generation)return;root.querySelector('[data-preview]').textContent=result.preview;status(root,`${session.file.name} · ${session.file.size} bytes · ${result.type}`);}
             catch(error){if(generation===session.generation)status(root,error.message);}
+            finally{if(generation===session.generation)session.phase=null;}
         });
     }
     async function convert(id,adapter) {
         const s=sessions.get(id);if(!s)return;
         if(!s.file){status(s.root,localized(s.root,'Choose a file first.','請先揀檔案。'));return;}
-        if(s.cancel){status(s.root,localized(s.root,'Cancel the current operation first.','請先取消而家嘅工作。'));return;}
-        const generation=++s.generation;revoke(s);s.root.querySelector('[data-download]').hidden=true;
+        if(s.phase==='convert'){status(s.root,localized(s.root,'Cancel the current operation first.','請先取消而家嘅工作。'));return;}
+        const generation=++s.generation;s.cancel?.();s.phase='convert';revoke(s);s.root.querySelector('[data-download]').hidden=true;
         status(s.root,localized(s.root,'Converting locally…','喺瀏覽器轉換緊…'));s.root.setAttribute('aria-busy','true');
         try {
             const bytes=await s.file.arrayBuffer();if(generation!==s.generation)return;
@@ -187,9 +189,9 @@
             status(s.root,localized(s.root,`Ready: ${result.bytes.byteLength} bytes · ${result.mime}`,`完成：${result.bytes.byteLength} bytes · ${result.mime}`));
             const li=document.createElement('li');li.textContent=`${adapter} · ${result.bytes.byteLength} bytes · ${new Date().toLocaleTimeString()}`;const history=s.root.querySelector('[data-history]');history.prepend(li);while(history.children.length>10)history.lastChild.remove();
         } catch(error){if(generation===s.generation)status(s.root,error.message);}
-        finally {s.root.removeAttribute('aria-busy');}
+        finally {if(generation===s.generation){s.phase=null;s.root.removeAttribute('aria-busy');}}
     }
-    function cancel(id){const s=sessions.get(id);if(s){s.generation++;s.cancel?.();s.root.removeAttribute('aria-busy');status(s.root,localized(s.root,'Cancelled.','已取消。'));}}
+    function cancel(id){const s=sessions.get(id);if(s){s.generation++;s.cancel?.();s.phase=null;s.root.removeAttribute('aria-busy');status(s.root,localized(s.root,'Cancelled.','已取消。'));}}
     function dispose(id){const s=sessions.get(id);if(s){s.generation++;s.cancel?.();revoke(s);sessions.delete(id);}}
     function validLogo(value){
         if(!value||value.version!==1||!['shield','snow','ring','custom'].includes(value.preset))return false;
