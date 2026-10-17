@@ -1,7 +1,7 @@
 import { chromium } from 'playwright-core';
 import { spawn, execFile } from 'node:child_process';
 import { createServer } from 'node:net';
-import { mkdtemp, mkdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, mkdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
@@ -18,6 +18,7 @@ const evidence = resolve(evidenceArgument);
 await mkdir(evidence, { recursive: true });
 const receipt = { schemaVersion: 1, route: 'native-windows-exact-portable-loopback-cdp', verified: false, checks: [] };
 let profile;
+let launchDirectory;
 let child;
 let browser;
 let failure;
@@ -33,16 +34,21 @@ try {
   const expectedVersion = process.env.AC_DEFENDER_VERSION || pkg.version;
   const expectedSource = process.env.AC_DEFENDER_REVISION;
   profile = await mkdtemp(join(tmpdir(), 'ac-defender-docs-native-'));
+  launchDirectory = await mkdtemp(join(tmpdir(), 'ac-defender-docs-portable-'));
+  const isolatedArtifact = join(launchDirectory, basename(artifact));
+  await copyFile(artifact, isolatedArtifact);
+  assert.equal(createHash('sha256').update(await readFile(isolatedArtifact)).digest('hex'), receipt.artifactSha256);
+  receipt.checks.push('Exact portable bytes copied into an otherwise empty owned launch directory');
   const reservation = createServer();
   await new Promise((done, reject) => { reservation.once('error', reject); reservation.listen(0, '127.0.0.1', done); });
   const port = reservation.address().port;
   await new Promise(done => reservation.close(done));
-  child = spawn(artifact, [
+  child = spawn(isolatedArtifact, [
     `--user-data-dir=${profile}`,
     '--remote-debugging-address=127.0.0.1',
     `--remote-debugging-port=${port}`,
     '--enable-automation'
-  ], { windowsHide: true, stdio: 'ignore' });
+  ], { cwd: launchDirectory, windowsHide: true, stdio: 'ignore' });
   let launchError;
   child.once('error', error => { launchError = error; });
   const deadline = Date.now() + 45_000;
@@ -120,13 +126,17 @@ try {
   if (child?.pid && child.exitCode === null) {
     await Promise.race([new Promise(done => child.once('exit', done)), delay(5000)]);
     if (child.exitCode === null) {
-      try { await execute('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], { timeout: 10_000, windowsHide: true }); }
+      try { await execute(join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'taskkill.exe'), ['/PID', String(child.pid), '/T', '/F'], { timeout: 10_000, windowsHide: true }); }
       catch (error) { failure ||= error; receipt.cleanupFailure = 'Could not close the owned portable process tree'; }
     }
   }
   if (profile) {
     try { await rm(profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 }); }
     catch (error) { failure ||= error; receipt.cleanupFailure = 'Could not remove the owned temporary profile'; }
+  }
+  if (launchDirectory) {
+    try { await rm(launchDirectory, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 }); }
+    catch (error) { failure ||= error; receipt.cleanupFailure = 'Could not remove the owned isolated launch directory'; }
   }
   receipt.verified = !failure;
   await writeFile(join(evidence, 'result.json'), JSON.stringify(receipt, null, 2));
