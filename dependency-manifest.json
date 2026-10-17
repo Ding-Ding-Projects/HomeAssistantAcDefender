@@ -38,19 +38,47 @@
     "sdk": {
       "reference": "mcr.microsoft.com/dotnet/sdk:10.0",
       "digest": "sha256:e1ffd2a92ae84c1291bc1b6887501f8af98e6331e7af6d4c8d37168c5e87a64c",
-      "platforms": ["linux/amd64", "linux/arm/v7", "linux/arm64"]
+      "platforms": [
+        "linux/amd64",
+        "linux/arm/v7",
+        "linux/arm64"
+      ]
     },
     "aspnet": {
       "reference": "mcr.microsoft.com/dotnet/aspnet:10.0",
-      "digest": "sha256:a4556ed033fa96f984bb7a8d348851cb2d36b1281dd2420075f664fbb5f94",
-      "platforms": ["linux/amd64", "linux/arm/v7", "linux/arm64"]
+      "digest": "sha256:a4556ed033fa96f984bb7a8d348851cb2d36b1281dd2420070045f664fbb5f94",
+      "platforms": [
+        "linux/amd64",
+        "linux/arm/v7",
+        "linux/arm64"
+      ]
     }
   },
   "containerPackages": {
     "baseDistribution": "Ubuntu 24.04 Noble",
     "git": "1:2.43.0-1ubuntu7.3",
-    "curl": "8.5.0-2ubuntu10.12",
-    "repositoryProof": "noble-updates Packages.gz independently listed both exact versions for amd64 and arm64 during this correction pass"
+    "curl": "8.5.0-2ubuntu10.16",
+    "repositoryProof": "Signed apt-get update in the pinned ASP.NET base image verified noble-security/main curl 8.5.0-2ubuntu10.16 and noble-updates/main git 1:2.43.0-1ubuntu7.3 for amd64 and arm64; exact package downloads passed APT hash verification on both architectures. The amd64 packages were also installed successfully.",
+    "repositories": {
+      "amd64": [
+        "http://security.ubuntu.com/ubuntu noble-security main",
+        "http://archive.ubuntu.com/ubuntu noble-updates main"
+      ],
+      "arm64": [
+        "http://ports.ubuntu.com/ubuntu-ports noble-security main",
+        "http://ports.ubuntu.com/ubuntu-ports noble-updates main"
+      ]
+    },
+    "packageSha256": {
+      "amd64": {
+        "curl_8.5.0-2ubuntu10.16_amd64.deb": "3c5ca6af64370cfb0fac85876d8025563005cbd399fcaf7e34bbde9051058ae0",
+        "git_1%3a2.43.0-1ubuntu7.3_amd64.deb": "099bb129f543adc4c14203334b0fa0a909f8bf038c4d56bc9cc7c774ebf78f87"
+      },
+      "arm64": {
+        "curl_8.5.0-2ubuntu10.16_arm64.deb": "b3f66040e895d5a2bb9eb3fca5d98766997348080e445c209a29b1819a9a7d60",
+        "git_1%3a2.43.0-1ubuntu7.3_arm64.deb": "db7f9a9a06a5dd6d6d5bd4bc3b14a2a0f0aaf0cc48f6e096e7ba3f4db63503ee"
+      }
+    }
   },
   "runtimeFallback": {
     "version": "10.0.11",

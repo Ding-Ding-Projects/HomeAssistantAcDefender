@@ -39,6 +39,22 @@ class DeploymentContract(unittest.TestCase):
             self.assertTrue(service["read_only"])
             self.assertEqual(service["restart"], "unless-stopped")
 
+    def test_container_pin_manifest_matches_build(self):
+        manifest = json.loads((ROOT / "dependency-manifest.json").read_text())
+        dockerfile = (ROOT / "Dockerfile").read_text()
+        for name in ("git", "curl"):
+            self.assertIn(f"{name}={manifest['containerPackages'][name]}", dockerfile)
+        for image in manifest["containerImages"].values():
+            self.assertRegex(image["digest"], r"^sha256:[a-f0-9]{64}$")
+            self.assertIn(image["reference"] + "@" + image["digest"], dockerfile)
+        for architecture in ("amd64", "arm64"):
+            checksums = manifest["containerPackages"]["packageSha256"][architecture]
+            for name in ("git", "curl"):
+                package = next(filename for filename in checksums if filename.startswith(name + "_"))
+                self.assertIn(manifest["containerPackages"][name].replace(":", "%3a"), package)
+                self.assertTrue(package.endswith("_" + architecture + ".deb"))
+                self.assertRegex(checksums[package], r"^[a-f0-9]{64}$")
+
     def test_release_assets_and_dependency_graph(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/release.yml").read_text())
         jobs = workflow["jobs"]

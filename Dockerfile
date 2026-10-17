@@ -26,7 +26,7 @@ ENV Defender__StateFilePath=/data/defender-state.json
 ENV Defender__SettingsRepositoryPath=/data/settings-repo
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git=1:2.43.0-1ubuntu7.3 curl=8.5.0-2ubuntu10.12 \
+    && apt-get install -y --no-install-recommends git=1:2.43.0-1ubuntu7.3 curl=8.5.0-2ubuntu10.16 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /data
