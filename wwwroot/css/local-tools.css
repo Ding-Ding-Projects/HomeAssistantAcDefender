@@ -1,0 +1,24 @@
+.local-tools { display: grid; gap: 1rem; min-width: 0; }
+.local-tools-panel { padding: 1rem; border: 1px solid var(--mud-palette-lines-default); border-radius: 12px; min-width: 0; overflow-wrap: anywhere; }
+.local-tools-categories { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%, 25rem),1fr)); gap: 1rem; }
+.local-tools h2,.local-tools h3 { margin: 0 0 .6rem; }
+.local-tools label,.logo-preferences label { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .6rem 0; }
+.local-tools input,.local-tools select,.logo-preferences input,.logo-preferences select { max-width: 100%; min-width: 0; padding: .5rem; border: 1px solid var(--mud-palette-lines-default); border-radius: 6px; background: var(--mud-palette-surface); color: var(--mud-palette-text-primary); }
+.local-tools input[type=file],.logo-preferences input[type=file] { width: 100%; }
+.local-tools select,.logo-preferences select { flex-shrink: 1; }
+.local-tools input:focus-visible,.local-tools select:focus-visible,.logo-preferences input:focus-visible,.logo-preferences select:focus-visible,.local-tools-download:focus-visible { outline: 3px solid var(--mud-palette-primary); outline-offset: 2px; }
+.local-tool-adapter { padding: .8rem 0; border-top: 1px solid var(--mud-palette-lines-default); }
+.local-tool-adapter p { margin: .35rem 0 .6rem; }
+.local-tools pre { white-space: pre-wrap; word-break: break-word; max-height: 18rem; overflow: auto; padding: .5rem; }
+.local-tools-download { display: inline-block; padding: .7rem; text-decoration: underline; }
+.local-tools-download[hidden] { display: none; }
+.local-tools-actions,.local-tools-options { display:flex; flex-wrap:wrap; gap:.5rem; margin:.7rem 0; }
+.local-tools-options input[type=number] { width: 5rem; }
+.local-logo-previews { display:flex; align-items:center; gap: 1.3rem; padding: 1rem; flex-wrap: wrap; }
+.local-logo-preview { display: inline-flex; align-items:center; justify-content:center; outline: 1px dashed currentColor; outline-offset: 3px; }
+.local-logo-preview img { width:100%; height:100%; object-fit:contain; }
+.local-logo-preview-small { width:24px; height:24px; font-size:24px; }
+.local-logo-preview-medium { width:40px; height:40px; font-size:40px; }
+.local-logo-preview-large { width:96px; height:96px; font-size:80px; }
+[data-local-logo] img { width:100%; height:100%; max-width:96px; max-height:96px; object-fit:contain; }
+@media (prefers-reduced-motion: reduce) { .local-tools *, .logo-preferences * { animation:none !important; transition:none !important; } }

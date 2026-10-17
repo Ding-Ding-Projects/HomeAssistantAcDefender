@@ -1,0 +1,47 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<MudPaper Class="local-tools-panel logo-preferences" Elevation="0">
+    <div id="logo-preferences" data-language="@_language">
+        <MudText Typo="Typo.h5">@T("App logo", "應用程式標誌")</MudText>
+        <label>@T("Language", "語言")<select @bind="_language"><option value="en">English</option><option value="yue">廣東話</option><option value="both">English / 廣東話</option></select></label>
+        <p>@T("Choose a shipped mark or create a local raster logo. This only changes presentation in this browser. To edit a saved custom image, select the original file again.", "揀原裝標誌，或者用本機圖片建立標誌。只會改變呢個瀏覽器嘅外觀。要再編輯已儲存圖片，請重新選擇原檔案。")</p>
+        <label>@T("Search logo presets", "搜尋標誌款式")<input type="search" @bind="_query" @bind:event="oninput" maxlength="512" /></label>
+        <RegexSearchBuilder Id="logo-preset-search" @bind-Value="_query" @bind-Mode="_mode" @bind-Flags="_flags" />
+        <div class="local-tools-actions">
+            @foreach (var preset in _presets.Where(p => RegexSearchMatcher.Matches(_query, _mode, _flags, p.Name, p.Zh)))
+            { <MudButton Variant="Variant.Outlined" OnClick="@(() => Save(preset.Id))">@T(preset.Name, preset.Zh)</MudButton> }
+        </div>
+        <label for="logo-source">@T("Custom PNG / JPEG / WebP (4 MiB maximum)", "自訂 PNG／JPEG／WebP（最多 4 MiB）")</label>
+        <input type="file" id="logo-source" accept="image/png,image/jpeg,image/webp" />
+        <p>@T("Static images only, at most 4096 pixels per axis and 8 million pixels. SVG and animated images are refused. Saving creates a 128 × 128 PNG, removes metadata and may flatten color profiles. Fill crops the image; contain preserves its aspect ratio.", "只接受靜態圖片，每邊最多 4096 像素、總共最多 800 萬像素。唔接受 SVG 或動畫。儲存會建立 128 × 128 PNG、移除中繼資料，亦可能移除色彩描述檔。填滿會裁剪圖片；完整顯示會保留比例。")</p>
+        <div class="local-tools-options">
+            <label for="logo-fit">@T("Fit", "顯示方式")<select id="logo-fit" data-fit><option value="contain">Contain / 完整顯示</option><option value="cover">Fill / 填滿裁剪</option></select></label>
+            <label for="logo-x">@T("Focal point X (%)", "焦點 X（%）")<input id="logo-x" data-x type="number" min="0" max="100" value="50" /></label>
+            <label for="logo-y">@T("Focal point Y (%)", "焦點 Y（%）")<input id="logo-y" data-y type="number" min="0" max="100" value="50" /></label>
+            <label for="logo-background">@T("Background color", "背景顏色")<input id="logo-background" data-background type="color" value="#ffffff" /></label>
+            <label><input data-transparent type="checkbox" checked /> @T("Transparent background", "透明背景")</label>
+        </div>
+        <div class="local-tools-actions">
+            <MudButton Variant="Variant.Outlined" OnClick="Preview">@T("Create preview", "建立預覽")</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => Save("custom"))">@T("Apply preview", "套用預覽")</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="Reset">@T("Reset to shipped logo", "還原原裝標誌")</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="Cancel">@T("Cancel", "取消")</MudButton>
+        </div>
+        <p data-status role="status" aria-live="polite">@T("No new custom image selected. Preview shows the saved selection.", "未揀新自訂圖片，預覽顯示已儲存款式。")</p>
+        <div class="local-logo-previews" aria-label="Logo previews at 24, 40 and 96 pixels"><span data-logo-preview class="local-logo-preview local-logo-preview-small"></span><span data-logo-preview class="local-logo-preview local-logo-preview-medium"></span><span data-logo-preview class="local-logo-preview local-logo-preview-large"></span></div>
+        <p>@T("Dashed outlines show display boundaries. Check contrast on both light and dark themes before saving. Existing saved selection is retained if validation or browser storage fails.", "虛線顯示標誌邊界。儲存前請檢查淺色及深色主題嘅對比度。如果驗證或瀏覽器儲存失敗，會保留原先款式。")</p>
+    </div>
+</MudPaper>
+
+@code {
+    private string _language = "both", _query = "", _mode = "plain", _flags = "im";
+    private readonly (string Id, string Name, string Zh)[] _presets = [("shield", "Shield", "護盾"), ("snow", "Snowflake", "雪花"), ("ring", "Control ring", "控制環")];
+    private string T(string en, string zh) => _language == "en" ? en : _language == "yue" ? zh : $"{en} / {zh}";
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) await JS.InvokeVoidAsync("localTools.initLogo", "logo-preferences"); }
+    private Task Save(string preset) => JS.InvokeVoidAsync("localTools.saveLogo", "logo-preferences", preset).AsTask();
+    private Task Preview() => JS.InvokeVoidAsync("localTools.previewLogo", "logo-preferences").AsTask();
+    private Task Reset() => JS.InvokeVoidAsync("localTools.resetLogo", "logo-preferences").AsTask();
+    private Task Cancel() => JS.InvokeVoidAsync("localTools.cancel", "logo-preferences").AsTask();
+    public async ValueTask DisposeAsync() { try { await JS.InvokeVoidAsync("localTools.dispose", "logo-preferences"); } catch (JSDisconnectedException) { } }
+}
