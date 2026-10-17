@@ -1,0 +1,53 @@
+{
+  "name": "ac-defender-hosting-setup",
+  "version": "0.1.0",
+  "private": true,
+  "productName": "AC Defender Setup",
+  "description": "Portable setup wizard for the Home Assistant AC Defender Docker service.",
+  "author": "Ding-Ding Projects",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.cjs",
+    "start": "electron .",
+    "dist": "npm run build && electron-builder --win portable"
+  },
+  "dependencies": {
+    "@material/web": "2.4.1"
+  },
+  "devDependencies": {
+    "electron": "43.4.1",
+    "electron-builder": "26.0.12",
+    "esbuild": "0.25.12"
+  },
+  "build": {
+    "appId": "com.dingdingprojects.acdefender.setup",
+    "productName": "AC Defender Setup",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**",
+      "renderer/**",
+      "resources/**",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": false,
+      "icon": "resources/icon.ico"
+    },
+    "portable": {
+      "artifactName": "AC-Defender-Setup-${version}-portable.exe"
+    },
+    "publish": null
+  }
+}

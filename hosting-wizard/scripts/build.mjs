@@ -1,0 +1,10 @@
+import fs from 'node:fs/promises';
+import {build} from 'esbuild';
+const pkg=JSON.parse(await fs.readFile('package.json','utf8'));
+const metadata={version:process.env.AC_DEFENDER_VERSION||pkg.version,revision:process.env.AC_DEFENDER_REVISION||'unavailable',buildTime:process.env.AC_DEFENDER_BUILD_TIME||null};
+if(metadata.buildTime&&!Number.isFinite(Date.parse(metadata.buildTime)))throw new Error('Invalid build timestamp');
+await fs.mkdir('resources',{recursive:true});await fs.copyFile('../desktop-electron/public/icon.ico','resources/icon.ico');await fs.mkdir('renderer',{recursive:true});
+await fs.writeFile('resources/build.json',JSON.stringify(metadata));const compose=await fs.readFile('../docker-compose.yml','utf8');
+await fs.writeFile('resources/compose.yml',compose.replace('container_name: homeassistant-ac-defender','container_name: ${AC_DEFENDER_CONTAINER_NAME:-homeassistant-ac-defender}'));
+await build({entryPoints:['src/app.js'],bundle:true,outfile:'renderer/app.js',format:'esm',minify:true});
+await Promise.all(['index.html','style.css'].map(file=>fs.copyFile(`src/${file}`,`renderer/${file}`)));
