@@ -1,7 +1,8 @@
 import {build} from 'esbuild';
 import {readFile,writeFile,cp,mkdir,readdir,stat,rm} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
-import {resolve,relative,dirname} from 'node:path';
+import {resolve} from 'node:path';
+import {articleUrl} from './catalog-path.mjs';
 import {load} from 'cheerio';
 const source = resolve(process.env.DOCS_SITE_DIR || 'site');
 const target = resolve('app/site');
@@ -26,7 +27,8 @@ for(const file of (await walk(target)).filter(x=>x.endsWith('.html'))){
  }});
  $('head').append('<style>@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}body{overflow-wrap:anywhere}pre{max-width:100%;overflow:auto}img{max-width:100%}.masthead-note{white-space:normal!important;min-width:0;overflow-wrap:anywhere}</style>');
  await writeFile(file,$.html());
- if(relative(target,file).startsWith('wiki/') && !relative(target,file).includes('/images/')) articles.push({path:'site/'+relative(target,file),title:$('h1').first().text() || $('title').text(),text:$('main').text() || $('body').text()});
+ const url = articleUrl(target,file);
+ if(url) articles.push({path:url,title:$('h1').first().text() || $('title').text(),text:$('main').text() || $('body').text()});
 }
 for(const name of wiki)if(!articles.some(x=>x.path===`site/wiki/${name.slice(0,-3)}.html`))throw Error('Missing rendered article: '+name);
 const version=process.env.AC_DEFENDER_VERSION || pkg.version;
