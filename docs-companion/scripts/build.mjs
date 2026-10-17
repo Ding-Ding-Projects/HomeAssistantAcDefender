@@ -29,7 +29,13 @@ for(const file of (await walk(target)).filter(x=>x.endsWith('.html'))){
  if(relative(target,file).startsWith('wiki/') && !relative(target,file).includes('/images/')) articles.push({path:'site/'+relative(target,file),title:$('h1').first().text() || $('title').text(),text:$('main').text() || $('body').text()});
 }
 for(const name of wiki)if(!articles.some(x=>x.path===`site/wiki/${name.slice(0,-3)}.html`))throw Error('Missing rendered article: '+name);
-const metadata={version:pkg.version,source:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),builtAt:new Date().toISOString(),articleCount:articles.length};
+const version=process.env.AC_DEFENDER_VERSION || pkg.version;
+const revision=process.env.AC_DEFENDER_REVISION || execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+const builtAt=process.env.AC_DEFENDER_BUILD_TIME || new Date().toISOString();
+if(!/^\d+\.\d+\.\d+$/.test(version)||version!==pkg.version)throw Error('Build version must match the package version');
+if(!/^[a-f0-9]{40}$/.test(revision))throw Error('Build revision must be a complete Git SHA');
+if(!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$/.test(builtAt)||Number.isNaN(Date.parse(builtAt)))throw Error('Build time must be a valid recorded UTC ISO timestamp');
+const metadata={version,source:revision,builtAt,articleCount:articles.length};
 await writeFile('app/catalog.json',JSON.stringify({metadata,articles}));
 for(const name of ['index.html','style.css'])await cp('src/'+name,'app/'+name);
 console.log(`Bundled ${articles.length} rendered articles and complete site assets.`);
