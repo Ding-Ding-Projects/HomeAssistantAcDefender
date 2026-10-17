@@ -65,7 +65,10 @@ class DeploymentContract(unittest.TestCase):
         self.assertEqual(image["with"]["platforms"], "linux/amd64,linux/arm64")
         self.assertIn("sha-${{ github.sha }}", image["with"]["tags"])
         probe = next(step for step in release["steps"] if step.get("id") == "anonymous_image")
-        self.assertTrue(probe["continue-on-error"])
+        self.assertNotIn("continue-on-error", probe)
+        self.assertIn("Change visibility", probe["run"])
+        self.assertIn("rerun this workflow", probe["run"])
+        self.assertIn("do not bypass this gate", probe["run"])
         self.assertIn('docker --config "${anonymous_config}" pull', probe["run"])
         publisher = next(step for step in release["steps"] if step.get("name") == "Create the immutable GitHub release")
         for expected in ("image-reference.txt", "docker-compose.published.yml", "release-assets/hosting-wizard/*portable*.exe", "release-assets/docs-companion/*portable.exe", "isPrerelease"):
