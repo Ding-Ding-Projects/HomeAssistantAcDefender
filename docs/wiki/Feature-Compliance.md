@@ -31,8 +31,8 @@ check must never be reported as complete implementation.
 | `webapp` | Docker-hosted ASP.NET/Blazor climate application | `Components/`, `Services/`, `Program.cs` |
 | `publicdocs` | Existing public landing and documentation site | `docs/`, `.github/workflows/pages.yml`; preserve GitHub Pages |
 | `controller` | Existing Windows Electron remote controller | `desktop-electron/`; currently three controller destinations |
-| `setupwizard` | Requested application-specific Electron deployment wizard | Expected deployment modules inside `desktop-electron/`; pending integration, not verified |
-| `docscompanion` | Requested packaged offline documentation companion | Expected `desktop-docs/`; pending integration, not verified; additional to Pages |
+| `setupwizard` | Requested application-specific Electron deployment wizard | `hosting-wizard/`; integrated source, local package/configuration proof, real-host acceptance incomplete |
+| `docscompanion` | Requested packaged offline documentation companion | `docs-companion/`; integrated source and Linux Electron proof; additional to Pages |
 | `tauri` | Retained legacy Tauri controller source | `desktop/`; retained and unverified until an explicit supported/retired decision |
 
 An existing controller does not prove deployment wizard or offline companion delivery.
@@ -65,11 +65,20 @@ terminology or private source locations. They preserve identity and family bound
 - `not-applicable`: the row or surface has an explicit capability/scope reason above or
   in its applicability cell; this never excuses an applicable independent feature.
 
-The snapshot was inspected from base revision `117f42d`. Other work may subsequently add
-expected files: those remain pending until integration and verification update the row.
-Evidence fields name existing source and honest limitations. Every row separately records
-documentation, localization, persistence, tests, artifact interaction and captures. Historical
-screenshots in `docs/wiki/images/` demonstrate historical UI, not the current revision.
+The original snapshot used base revision `117f42d`; this refresh inspected integrated
+revision `b79589a`. Existing receipts remain bound to their own recorded revisions and
+hashes, not automatically to that latest commit. The CSV names their exact paths and
+scoped outcomes. Local web upload/reload/clear, setup missing-token refusal and JSON
+conversion proof exists in `design/delivery-evidence/receipt.json`, with eight real
+1440/390-pixel captures. This does not prove live device connectivity or a LAN deployment.
+Wizard configuration interaction and local Windows package hash receipts exist under
+`design/hosting-wizard/evidence/`; real deployment and native Windows execution remain
+separate acceptance. Companion evidence under `design/docs-companion/evidence/` includes
+built-output browser interaction, actual Linux Electron offline/sandbox/navigation proof,
+and the Windows portable package hash. Its package receipt explicitly records native
+Windows launch as unverified. Historical and newer captures therefore coexist; neither
+is silently promoted to complete current-source acceptance.
+
 Before upgrading any row to `implemented`, replace its pending fields with exact repository
 paths, source revision and artifact hash, test result, interaction receipt and inspected
 capture proof. Stateful features also need restart/reset proof; stateless ones need an
@@ -80,22 +89,22 @@ missing boundaries; it cannot inspect pixels or independently establish truthful
 
 ## Immediate delivery order
 
-1. Publish the real multi-platform Docker image to a pullable registry, record immutable
+1. Verify the integrated registry publication workflow against a real run. Publish the multi-platform image and record immutable
    revision/digest metadata and verify anonymous pulls where publication is public. Existing
    CI Docker archives are useful release assets but do not prove registry publication.
-2. Keep tracked `docker-compose.yml`, persistent state and port `8888`. Add expected
-   `host.bat` detached startup and real interactive management. Never automatically stop,
+2. Keep tracked `docker-compose.yml`, persistent state and port `8888`. Verify integrated
+   `host.bat` and `scripts/hosting/host.ps1` detached startup and interactive management. Never automatically stop,
    reset or overwrite an existing deployment or report healthy before `/healthz` succeeds.
-3. Extend the existing Electron application with a practical deployment/setup wizard:
+3. Verify the integrated separate Electron `hosting-wizard/` deployment/setup wizard:
    inspect prerequisites and existing destination, review actual configuration, preserve
    private settings, show real progress, support Back/Next/resume/cancellation, and verify
    deployment through read-only health checks. Release the requested single portable `.exe`
    through CI. Existing Squirrel controller assets remain separately identified; a portable
    wizard is not evidence of Squirrel installation or update lifecycle acceptance.
-4. Add a packaged offline documentation companion and retain the public GitHub Pages site.
+4. Verify the integrated `docs-companion/` package and retain the public GitHub Pages site.
    Bundle complete landing, feature and wiki content with working navigation. Verify both
    the actual packaged artifact and hosted output rather than substituting a file browser.
-5. Deliver resumable in-app onboarding separately from installation, complete front-screen
+5. Verify integrated resumable in-app onboarding separately from installation and front-screen
    artifact provenance, then work through the explicit personalization, navigation, safety,
    records, tools, documentation and evidence gaps in the CSV.
 
@@ -117,3 +126,20 @@ non-actuating routes. Never add dummy thermostat state, fake deployment progress
 credentials, production data or private vocabulary to source or evidence. External host,
 registry, release, Pages and installed-Windows evidence remains unverified until actually
 observed through an authorized route.
+
+## Refresh verification and remaining acceptance
+
+The CSV keeps `source-only` for partially verified subsets because its status vocabulary
+reserves `implemented` for the entire contract. Exact receipts identify the verified subset
+without waiving broader requirements. The web wording loader now has a versioned bounded
+schema and scoped persistence/clear evidence; the companion wording control remains a
+limited session-local subset in the inspected source. New native-proof scripts in CI are
+source capabilities until a genuine successful run and its receipts are observed. No CI
+execution, registry availability, published release download or native Windows launch is
+claimed from workflow text.
+
+The structural guard must still pass and `--require-complete` must still fail. Remaining
+universal requirements include full per-surface localization and funny-level behavior,
+School mode, narration, presentation schedules, complete tooling, locks/recovery, complete
+Material controls, per-control guidance, and the complete state/language/theme/scale proof
+matrix. Implementations may continue independently while these gaps remain explicit.
