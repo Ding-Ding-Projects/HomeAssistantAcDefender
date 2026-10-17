@@ -9,6 +9,8 @@
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 
+<PresentationPreferences />
+
 @* Presentation preferences intentionally live in the browser, not DefenderSettings. They change
    how the website speaks without changing a single real Home Assistant command. *@
 @if (Show("appearance theme light dark density compact comfortable spacious accent seed color font family typeface size scale reset preview"))

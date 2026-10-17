@@ -85,6 +85,10 @@ builder.Services.AddOptions<HomeAssistantOptions>()
     .ValidateOnStart();
 builder.Services.Configure<DefenderOptions>(builder.Configuration.GetSection(DefenderOptions.SectionName));
 builder.Services.Configure<KioskOptions>(builder.Configuration.GetSection(KioskOptions.SectionName));
+builder.Services.AddTransient<SetupReadOnlyHandler>();
+builder.Services.AddHttpClient<SetupValidationService>(client => client.Timeout = TimeSpan.FromSeconds(15))
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false })
+    .AddHttpMessageHandler<SetupReadOnlyHandler>();
 builder.Services.AddSingleton<SettingsGitRepository>();
 builder.Services.AddSingleton<NotificationHistoryStore>();
 builder.Services.AddSingleton<NotificationExportService>();
@@ -197,6 +201,7 @@ app.MapGet("/healthz", (HttpContext context, IConfiguration configuration) => Re
     status = "ok",
     version = configuration["APP_VERSION"] ?? "unknown",
     revision = configuration["APP_REVISION"] ?? "unknown",
+    buildTimeUtc = PresentationBuildInfo.TimestampUtc,
     scheme = context.Request.Scheme,
 })).AllowAnonymous();
 
