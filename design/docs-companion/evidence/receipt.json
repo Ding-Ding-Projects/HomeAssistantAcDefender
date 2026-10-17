@@ -1,0 +1,579 @@
+{
+  "route": "isolated-headless-chromium-built-output",
+  "metadata": {
+    "version": "0.1.0",
+    "source": "e9920236aace5ac5daa7ebb3c3e8f45dc468b8b7",
+    "builtAt": "2026-10-17T09:35:12.534Z",
+    "articleCount": 85
+  },
+  "files": {
+    "catalog.json": "f52f90a58971f8337699e77c38f9c0d06fec5479161317dfe1201dae54b547f4",
+    "index.html": "0cee38ccada478acfde86508a32643d4b7369fccfb5ec26f40996cba1cad1346",
+    "main.js": "d7e49754abe21961bd6b15e449c8c62ffe96ee2f3941aef728d263ba3b4bed1d",
+    "reader.js": "8ca6fd585693708e22d36da5291ee1be98769acbad8757d07e6a90e4e958c77e",
+    "search-worker.js": "72975e427793a1a2f42a6133477b4950624a7e3e47eb1991bc02f64c87b6471f",
+    "site/assets/newsroom-wire.svg": "9a68397db2483398c7e53efcc86c476cff0248c5c67ec225832150b8d8870671",
+    "site/feature-compliance.csv": "e6173f72e3428fe0365d337b4b43325bcf14461e8b7bf2dc14f93bb535175c1e",
+    "site/handoffs/2026-07-18-a11y-hvac-races-weather.md": "db47c73a54fb91bdee745a6ff469517ecacd70296a6c7ef84cdabc25c74954ac",
+    "site/handoffs/2026-07-20-all-day-outdoor-lockout.md": "ed9ab3477cc7f3cc19f8db5148c4196332e63f2770fa324301dcd407427d370a",
+    "site/index.html": "85e1d70a4a4352c6610714719c2986a5bf1e5f1c4c9226e26ab472d4aeae0600",
+    "site/wiki/API.html": "470d552dfcef65ae3a1077cdd16503502b678a86fbed9db277c9c6ac497fe917",
+    "site/wiki/Accessibility.html": "c47339e1765e9e119ea844f80982260c3f01cca69875413462072241fc3f5fad",
+    "site/wiki/Algorithm-alectra-peak-power-saver.html": "b634d03800e0f11c8ceee9bfe3951f5c3392aa107bec30d292d93e3f611ceb64",
+    "site/wiki/Algorithm-comfort-budget.html": "5d54e3bb9b7e186af9c8e4abb012cd6804dfcafa28e1407d6d4085a113da1cbc",
+    "site/wiki/Algorithm-comfort-compromise.html": "d106babb2ea1e4742014376ed2b2285ccd1c8dc520cb97dcebd8117f720f3e52",
+    "site/wiki/Algorithm-comfort-envelope.html": "3bd2afbee43420572020abc41bd2957bbf00587a9fdf2dfe69fc520a782fb553",
+    "site/wiki/Algorithm-comfort-memory.html": "e0a77be71cdcd8d831b5ec73e8e41d6db6cdf6e94827b6a536f5ba1cf6363afb",
+    "site/wiki/Algorithm-comfort-pace.html": "a0838af5f7e0aeb9f1717345df085676e9f192fc62df7e96f40621254eb097d4",
+    "site/wiki/Algorithm-comfort-sync-quiet-recovery.html": "7979b54309f1e21605502c19a5f814facf8dd6c507d774a8a2bf71770139d422",
+    "site/wiki/Algorithm-command-camouflage.html": "e3626add658584e9ebc62d0721054e23ec0be5ae037f661df9f706f1d51c954c",
+    "site/wiki/Algorithm-conflict-quiet.html": "9f85e853f8bd1a3c1ae5a3bf8288333a7c52421be0458cdeff5d58dc6fb805a4",
+    "site/wiki/Algorithm-cool-mode-restore.html": "6a4ed311d216e1c75adede499af0b46e1fd735a5e4d677a6a4fbb417cf616b2f",
+    "site/wiki/Algorithm-cool-outdoor-shutdown-open-window-armistice.html": "8eb285a683bccc88cd0a465eec31f319de86c5680b6970c406def7d50877fe51",
+    "site/wiki/Algorithm-cooler-intent-fast-lane.html": "95b3791930fe84b1899e7fcc904696d3e339841e1c1b13524981d799d700ee78",
+    "site/wiki/Algorithm-cooling-failure-watch.html": "f89e93063609bb4443703e50105ca931d0d9fc8396baa92131fdf2caef3e5cff",
+    "site/wiki/Algorithm-cooling-runway.html": "31b526a8d5f1ddb5106ae1a9db170ef08e360e3a2e3095cdcfaf80e1c4be9be4",
+    "site/wiki/Algorithm-desired-state-enforcer.html": "f5b45401d6df5bcda5077347a8940029ebc9da25eb63aab894e4bedeedaa27f4",
+    "site/wiki/Algorithm-dynamic-cooldown.html": "52e494df13115a315209120feb1a3d462aa3ca8e185a50727012be4995612a4f",
+    "site/wiki/Algorithm-emergency-protocols.html": "721c382a1335221f9792c630dcccf08e7224f3223e971c11d243c7ceac57d71d",
+    "site/wiki/Algorithm-fan-energy-saver.html": "45deb723bea84fb16462107da5e0d93243541458ff315778e05f77711f9bf36c",
+    "site/wiki/Algorithm-field-kitchen-food-rations.html": "424cbd8d659dcfe039f1831faa7bb87da9be60e295041b103d983ccf40bd5f55",
+    "site/wiki/Algorithm-front-door-guard-post.html": "b2ca71777b559b04bda45443cfbc961d82203625b4e37e3054e9fc552ec868f5",
+    "site/wiki/Algorithm-human-nudge.html": "d6ad37fd15eac1f38e18d045c07406cc80464dc39fc9e310db30f6394b090fa2",
+    "site/wiki/Algorithm-hvac-alibi.html": "9d367a3abf82379fad27376f7733fc82110e4782ad7ae934e6a5e97f96fd49cf",
+    "site/wiki/Algorithm-manual-comfort-grace.html": "677909bd94c708854175278a743e02bb3c6b908cf835ff00d9b9051cc9c59777",
+    "site/wiki/Algorithm-natural-cadence.html": "b0ebb440aa16e5593b6b073fe4a837da6b5ecfbc99f9cddadbc397a0232f6fc8",
+    "site/wiki/Algorithm-natural-walkback.html": "238a1debbb89dc9d9b8c3ea4d68df060025e587b0991bd85d067761b0e88460f",
+    "site/wiki/Algorithm-remote-settling-guard.html": "2736a935522fe93be6683f7e00806d47564e39449178b055b6bfadc76aa9c9f9",
+    "site/wiki/Algorithm-repeat-quiet.html": "73328658c88c4908f318d43e4c117ea6d986a2a135d0fbfc700d225488331f5f",
+    "site/wiki/Algorithm-repeated-raise-surrender.html": "341f299333f7162d7337983be94b795e39b1b4b6f7e8d1a09bbc582b69747773",
+    "site/wiki/Algorithm-rival-schedule-watch.html": "b39fb6ae351d314269a4fd8be5e901d735ebf3974e6994e4eb3f4d20a1dece35",
+    "site/wiki/Algorithm-room-trend-guard.html": "295a63dbe2ab557db0b34c1f756a80f9d8772d63f4d9429e5901205f273f5120",
+    "site/wiki/Algorithm-routine-timing.html": "89d1c3e4efd2afb300f1295c079f9f7a401d0efbea0b8d15ca6e9247df03bb8d",
+    "site/wiki/Algorithm-schedule-and-weather-rules.html": "4beead3a3136885011a352de58cb04e7c9cfa960f8e8647f910ced6eecd08c07",
+    "site/wiki/Algorithm-sensor-rhythm.html": "58b4fdcd857a35455ffad34eb562e587d5261d3f38c4047ccde89d857ad72209",
+    "site/wiki/Algorithm-setpoint-echo.html": "b5efcc58fff2e669302c3982c7055c91d9a129584d9f0daa752fed9fa2c79825",
+    "site/wiki/Algorithm-setpoint-stillness.html": "fa7b998d13ca466411759a7a325a9007e39f5617fb00920af45fdb1fbb724cbd",
+    "site/wiki/Algorithm-siesta-watch-mess-hall.html": "abac031b3686a92ea1a0152cb457bc0354bf1de030e7f4d78864798a7e5182fd",
+    "site/wiki/Algorithm-stealth-governor.html": "927e46b112ee29a99a603f961aa76d8f578ab1a6210b474843dea73a382df942",
+    "site/wiki/Algorithm-super-defender.html": "27b72eb2496f1f7a7ad904b8f6d4a586e6cc2c647242028bb5c614cdbb470c53",
+    "site/wiki/Algorithm-tamper-truce.html": "72083081a5fd2601fc4a5f3cdf47248ad631bc098355e3ae373b117f68a6f6f9",
+    "site/wiki/Algorithm-telemetry-alibi.html": "0f6142eee4bebe0ac4fb330dba69a4c9129f8ae0eb6a71c6e3d62dcec0e01bba",
+    "site/wiki/Algorithm-thermal-momentum.html": "b2f57ff3f464b1340054cef68fa058ad5683e5e24307f2ae3481d7c02253c9df",
+    "site/wiki/Algorithm-touch-intent.html": "67964808b04f896e3e627b869246945780df1a7fe8864d5933006e387d65f380",
+    "site/wiki/Algorithm-touch-signature.html": "2c2507616f35acea3f8508b16549436ab02dc0b0564300a7f858bf48f7b47d5c",
+    "site/wiki/Algorithm-tug-of-war-truce.html": "94bf6ae2339b9ed82b1e6dab28eb88f0c04f41352e84ab701cb243c609770af1",
+    "site/wiki/Algorithm-upstairs-comfort-guard.html": "a7d1ee48791dc0a51ea755012b8bcebd074833acb3a19547c7cf91ff450a6961",
+    "site/wiki/Algorithm-visibility-guard.html": "2a9f4dc98460e4f208648351a9aef9c77bb5e298a6324698b788073ffd0099f7",
+    "site/wiki/Algorithm-wake-up-truce-door-sensor.html": "f3c2a62ddf82ad0b5da56ff56e378553b68b0767ceaa04f4889088232e025a10",
+    "site/wiki/Algorithm-wall-settling.html": "73971136d363f85877034fca580feb87112ecb36b08ac202259a58218db63a95",
+    "site/wiki/Algorithm-weather-drift-timing.html": "1026e24abe17431332a194d949db96b63ea23c136691000d23c67b3b088b8025",
+    "site/wiki/Algorithm-website-debounce.html": "ce328a91b22c349c981960ccc495cc245bef7b8a8c4fed0e05578b30dc1476d1",
+    "site/wiki/Algorithms.html": "e4867bb4f18e67d6c5c1b07e202686e272904ec377b3fe37d87982f37ba56a82",
+    "site/wiki/App-tabs.html": "0ba1593258d5fd25bde90865c1ad2f20cf052bad83738340502a4615e16fc3a1",
+    "site/wiki/Appearance-editor.html": "34cdb61f9b289921dc567060505716c351aaf663edf43b6f7aee635c6f9bcdee",
+    "site/wiki/Architecture.html": "0b4afaa88f9c26b5f65d93c75cf4960c9b645e4f286ca307eceb43d782589f39",
+    "site/wiki/Changelog.html": "5339b62ad86a3dec1408c9210b8512e7954358c80eb284685bc1c20e23e4b334",
+    "site/wiki/Command-palette.html": "c5501839b5719f8041d61a31c078dc25f232d5588f837992b4dd89e6ca35bae9",
+    "site/wiki/Context-menus.html": "d8ec9ed406dfaaf5c502b2a0623d620510b331844e344c8d485ae41d5fdaf4f5",
+    "site/wiki/Defender-Logic.html": "755a455558b2a353fe60fbb9e1fd44b0555fc493d4f2ab4a64d5b2be2832c379",
+    "site/wiki/Deployment.html": "9a7f444888a9a84a65fc1526645f0f2c3115a3861b91a48df78eb0c1f708e044",
+    "site/wiki/Dim-sum-surprise.html": "5223879fe7baf5ce1df6c3ceb08399533c006ea711add80b0e8cce510168e72f",
+    "site/wiki/Energy-and-Costs.html": "84a89b438fb55a6d8b9650c09b207c4c45dc26ed1a5450a55afc22fe853f2286",
+    "site/wiki/Every-Guard-Explained.html": "03eadef6149be3feef5dc475ce21e23427a11c2edb263577c65afdf19586b135",
+    "site/wiki/Feature-Compliance.html": "e333fe6bbb2c9c6eef627c98170850d91d31bac6018356414b4a7ee5c395e324",
+    "site/wiki/Feature-briefs.html": "60feb94a64bea48b44bd9356cc7347310cb79ace362df1c9b7b00f14c29ddc5e",
+    "site/wiki/Heat-Pain-and-Survival-Facts.html": "10584283905d2c47223a3c6848ae968cc801944e9fb839f12baf23a673fdccd6",
+    "site/wiki/Home.html": "642f04d8bf7211eccb0cccf676a4f52ee322ec2b9d5e3bedbd5319745a8dca9f",
+    "site/wiki/Local-Tools.html": "580a2683f72ce7b36796b9f40f1b0a20587302e8a0ef0e51fe2378430be937d2",
+    "site/wiki/Notification-history.html": "31aae7d091ebf4f1c37e1b910464d9561c0d6a82d229bc845966d223cc42a5e0",
+    "site/wiki/Regex-search.html": "31215520d460ffd273eddf044082722cf2095243fdc7d1dfcfb87cf76b1d3768",
+    "site/wiki/Settings-history-filters.html": "5f52731fe3fd33fe26f09a621c5a9a2f86c9c7affcf55a5ce91a2c35208402f8",
+    "site/wiki/Settings.html": "af1b2258cf914ed0077ebe83dfb128089e303f1d3ea33d3e53e20127825f4e71",
+    "site/wiki/Super-confirmation.html": "190c423405f61433e66d8a93d09222f8658ed6cb5027bf0acdee03396bcc4990",
+    "site/wiki/Website-Tour.html": "b90611f657ea7decb3787a9630d42eee56f8d3a4e3e5913ea84728f342b7fe56",
+    "site/wiki/Windows-Electron-controller.html": "9aeed33b33e9fdf078c31a21fc23a6d1cfd8e3b58b81476159897f5f99f175d9",
+    "site/wiki/Yelling-Predictions.html": "5d94dc7b5cecc39b58c24ab0b450a70689a6d737bb2935c6afcc3d603d6057dd",
+    "site/wiki/Yelling-Survival-Guide.html": "af6cfb7f61b9befeff65e1cee65525239a75de0e4bf9f78d6cb65e4d3b654d89",
+    "site/wiki/documentation-companion.html": "68b2262ceb485db5c0c7ace7d53b4087d1d813b7d465478ed090939facb8284e",
+    "site/wiki/hosting-release.html": "bb2b574ea3dff8a7f86a3aafb5613da566461c509a316b9a5b941eb54831f721",
+    "site/wiki/hosting-windows.html": "4c645464dbd37702f0567c08791116cb8b6259eddb703ebb07ee3616a44c754a",
+    "site/wiki/hosting-wizard.html": "fa75e090d4250e568e45cbacfc296ae244fa828b84a4c51b10876ca0c64ac182",
+    "site/wiki/images/algorithm-command-board.png": "05c1c6d2b4a296ae0d9a5b4ee681fdc4f3a05ff50197f27ade0d860e3f64ec58",
+    "site/wiki/images/algorithms/article-alectra-peak-power-saver.svg": "0dd901bd007bea6eaa58d7a5e803e9fd10c188287d766cc5ca38047fa266071d",
+    "site/wiki/images/algorithms/article-comfort-budget.svg": "5230aeccc056bb3dc9c0c1fb1670ceb86a9401e58860886d10e8d8990e512dce",
+    "site/wiki/images/algorithms/article-comfort-compromise.svg": "54884ae74c8bc91eb86de1e0d63b6501560c5b88e9e6f0990329ebec664a6ed9",
+    "site/wiki/images/algorithms/article-comfort-envelope.svg": "598c05c4db3b27eab20b803189cc9f5e2eed5717e187c723273570b61dcf36e3",
+    "site/wiki/images/algorithms/article-comfort-memory.svg": "0ba691ad5294aa0278b02456599ff8ccaa79248a17f29f055951dc67c3cf43e0",
+    "site/wiki/images/algorithms/article-comfort-pace.svg": "e7a1c0b9f42e2f24917776f967177505be55adbf4611f245a965646566681f5c",
+    "site/wiki/images/algorithms/article-comfort-sync-quiet-recovery.svg": "8636ad285d3721e3e2f8f77801734f907b3a7fb07508be20033a4b78fb83e5ed",
+    "site/wiki/images/algorithms/article-command-camouflage.svg": "1306b183cf685f71ab8731de88fb5e18481ddd518b74f7bc5e1f40d0a814407b",
+    "site/wiki/images/algorithms/article-conflict-quiet.svg": "6d9bcd979c0c685e8f3c5436e431c7ff4cb2a1b51eaff62f2087dfc9995b5929",
+    "site/wiki/images/algorithms/article-cool-mode-restore.svg": "3e2fc64cda2dee5bf6dfed229574c99a7bc34730cb15e27fdf8d906773fa1dc6",
+    "site/wiki/images/algorithms/article-cool-outdoor-shutdown-open-window-armistice.svg": "dd0d9406f280a51dd9809558ed7f1b845ac9537c16e705679a0c8afcf5c0f852",
+    "site/wiki/images/algorithms/article-cooler-intent-fast-lane.svg": "47d818aee898e80824d44b8d5bc6ec868214aefd32b18f7edaf126d3d5a8944c",
+    "site/wiki/images/algorithms/article-cooling-failure-watch.svg": "0be8233b7374c66ce3fe4aae533cc11144da1eb2fa0ed2fec8b2fceda2ffa4c4",
+    "site/wiki/images/algorithms/article-cooling-runway.svg": "85a64edc5baa8463a196de9be226304a3fff061ca1e1acdf962281ab58d48d47",
+    "site/wiki/images/algorithms/article-desired-state-enforcer.svg": "78ad661022d418da9d6a978f1bf9c4670d0ec1d376a19233f6c4aa3330cfb2bf",
+    "site/wiki/images/algorithms/article-dynamic-cooldown.svg": "421a96011d43809bd5d1a9fe975dda5a720a6a9e7c23ae65f245e451d48bc0a1",
+    "site/wiki/images/algorithms/article-emergency-protocols.svg": "0fb93ad5c765d8f0dcd86af4a9e2fdb13978e993628ac3b3f4d54365fc2a4da5",
+    "site/wiki/images/algorithms/article-fan-energy-saver.svg": "3a246722fe310c77ee43b4d00d747d06996d47bed7769841c282d8831ae20270",
+    "site/wiki/images/algorithms/article-field-kitchen-food-rations.svg": "a045feec5bf26264729aa318ca371816b3b3e456d9403431b64c073867b0622e",
+    "site/wiki/images/algorithms/article-front-door-guard-post.svg": "1e229aa7fdba497598551232044c275554ccb6f9b14f139e170bc9a370b3eeca",
+    "site/wiki/images/algorithms/article-human-nudge.svg": "9c1cd427b5e0a2483dcc84cda39ba28f0b108da0a29301fd336cc88e67ba1946",
+    "site/wiki/images/algorithms/article-hvac-alibi.svg": "da30b0c2006db5dd81e5885d1fff7f4574b06777e60666dd78bf878ffdd34033",
+    "site/wiki/images/algorithms/article-manual-comfort-grace.svg": "5d807062f51fdc3fef6291f23860f4b687d35c4a3d1e53eabde78ed8581c53cc",
+    "site/wiki/images/algorithms/article-natural-cadence.svg": "818667ce0e5735a4891e30c48a85a42ed71bee5c55e69c02739ffb182cb9460e",
+    "site/wiki/images/algorithms/article-natural-walkback.svg": "59f18d092ab172f47116c212ea8c89322f39ce251c01facbfd3f719c967d6bcf",
+    "site/wiki/images/algorithms/article-remote-settling-guard.svg": "ba18cb91f57f7ddcada5b6d1e7140d6a45c7087b975ff79e09f1c63a4f5b5cc1",
+    "site/wiki/images/algorithms/article-repeat-quiet.svg": "c24a176543099a58ec71e177c911cce5f4d36f9d8f78b1af52b75fa8ee4b7c88",
+    "site/wiki/images/algorithms/article-repeated-raise-surrender.svg": "0606f13b84463957477a98b2e741e28ec462e583cb81bc21c99e69ad55abee02",
+    "site/wiki/images/algorithms/article-rival-schedule-watch.svg": "fbc78148846fd6e3321e58804e18b3099f757455bf4906362cd5025a61839a0c",
+    "site/wiki/images/algorithms/article-room-trend-guard.svg": "82c0378901c599c854f4896cb4e20dff977636f0d7c4330e4c9767a6a0e03136",
+    "site/wiki/images/algorithms/article-routine-timing.svg": "2d190a8449b5f65d9e134a2af184c9fac82861d84664b9500956629105db3612",
+    "site/wiki/images/algorithms/article-schedule-and-weather-rules.svg": "3826d13723d7663b1e8c8bf1166ad5bc9439d65a8b5a623c42c9d750deac39b5",
+    "site/wiki/images/algorithms/article-sensor-rhythm.svg": "59034f891aeb34f995d27c4413a546c9244f7bbf5b3a079255131c85631211c0",
+    "site/wiki/images/algorithms/article-setpoint-echo.svg": "e196538f3507026ee7cdb74b0b266cabb6f3caf3f7f8a09c8a4615239977e008",
+    "site/wiki/images/algorithms/article-setpoint-stillness.svg": "1aaea0de751340f0fe136f87e32c829011d3e383673734f8a1fc671638aa5fbe",
+    "site/wiki/images/algorithms/article-siesta-watch-mess-hall.svg": "8fe7f6e515cf1a975dde65aed77ce23079f81654b97bbd3d2cc7e9c777371c3d",
+    "site/wiki/images/algorithms/article-stealth-governor.svg": "4445d6b3e91ec47c0aaf3ca1edca7c5d00c183fbf001d7d3312cb98eef7da8c2",
+    "site/wiki/images/algorithms/article-super-defender.svg": "16e3f7ffa8166c6fa7b9b1f3f42c0fc5c3ac767f5c097c993d7e81422cf8088a",
+    "site/wiki/images/algorithms/article-tamper-truce.svg": "4806fdb11cbd337b9a98e8d4a2196aa18ca331d779937b9b69782e4bd882f8ad",
+    "site/wiki/images/algorithms/article-telemetry-alibi.svg": "7b2c06cc96edf840b08d74fc20f4567f8f932160ae6b9f602e81d7006427322c",
+    "site/wiki/images/algorithms/article-thermal-momentum.svg": "6f68537d4df21c7e20425063980715440f86d75300434a9df477cd3688d20f45",
+    "site/wiki/images/algorithms/article-touch-intent.svg": "86edee6163a60c6ee5146cd43333c2f846e37daee8f992e4f4d68fe97cb75635",
+    "site/wiki/images/algorithms/article-touch-signature.svg": "7cd05e8002d745a65d6758dd0f61c7f71dcf9bdd19484209888315c469d969bd",
+    "site/wiki/images/algorithms/article-tug-of-war-truce.svg": "77fe148b24f36a6d864ff86b977a99f32c4b0a63e726c1e60b526062ce9f7a66",
+    "site/wiki/images/algorithms/article-upstairs-comfort-guard.svg": "5266cf57474f416a9644871539eff0d9bf8a8030860048a8363c8847d65458bf",
+    "site/wiki/images/algorithms/article-visibility-guard.svg": "02159f623a8d6762bd9ce8550f0a05749deb20a541c936cb5385dbd74340d56c",
+    "site/wiki/images/algorithms/article-wake-up-truce-door-sensor.svg": "5f4c81574f8b564aa716ab5eb2a445dcffdcfeec8a8fc6634f9f301fee92be2a",
+    "site/wiki/images/algorithms/article-wall-settling.svg": "e6e72ae56104ec193c64a595837b49ddc8737347e2eab653f585c0a6e43adab8",
+    "site/wiki/images/algorithms/article-weather-drift-timing.svg": "91f422bcfe19e4cc7c5bf30f215714100b143ee602fee938d0bc4e464c0f95b2",
+    "site/wiki/images/algorithms/article-website-debounce.svg": "f344f6d66451fb06beaa173241d094dc91e9ac34c5e580620713e304a027750d",
+    "site/wiki/images/algorithms/plain-thumb-alectra-peak-power-saver.svg": "dc32910d51fd6af0032c9b5a86fb3c270d60503689336637de23d4a3f5fadb8d",
+    "site/wiki/images/algorithms/plain-thumb-comfort-budget.svg": "4c57a68c913d3c5fa6c8c970d5f114e1ed818cee1df75537d414ed30b18d0789",
+    "site/wiki/images/algorithms/plain-thumb-comfort-compromise.svg": "90ec8991b256dd286dc7fef34bcd3a50e3faa4c3b1d8e1b22728e664b8ed95e1",
+    "site/wiki/images/algorithms/plain-thumb-comfort-envelope.svg": "80a5380224ec58421e10008507c5e4a193ffd6ffc102b79ffcafd499938303f4",
+    "site/wiki/images/algorithms/plain-thumb-comfort-memory.svg": "5a20e1fec1f6605617e5949f72b42ed9a0d444cad07bbd63d3e803ead9f1831b",
+    "site/wiki/images/algorithms/plain-thumb-comfort-pace.svg": "8a15f0adec893a969a483190bb7b45939a1ec45a7eeba39e7ff2b8a92fa56885",
+    "site/wiki/images/algorithms/plain-thumb-comfort-sync-quiet-recovery.svg": "95dbc84e23ee2cd908449ddbfd1c3f0100a3d5d6a76cc257c0136077d309fd2f",
+    "site/wiki/images/algorithms/plain-thumb-command-camouflage.svg": "f6de2f08733ba4d85095439a6a355ade7157612001dc1efd1cfee7f9793cedb8",
+    "site/wiki/images/algorithms/plain-thumb-conflict-quiet.svg": "ce33eb312c11a2a49ed003ce39a625f5a6352ed5e4cfe0385336f2393c12f763",
+    "site/wiki/images/algorithms/plain-thumb-cool-mode-restore.svg": "b5cacdde6f3709cea0e249ef8733d31c50c523f070e564cfc417e7cb4a914235",
+    "site/wiki/images/algorithms/plain-thumb-cool-outdoor-shutdown-open-window-armistice.svg": "7bc0aeaff4f109233d10d61dd2a94b38e4010e3cd843cc5e1fefe744f3d507f3",
+    "site/wiki/images/algorithms/plain-thumb-cooler-intent-fast-lane.svg": "757736d1e5a3fe0287311124a21340d6e92cb6e1245f644b86d20615de622047",
+    "site/wiki/images/algorithms/plain-thumb-cooling-failure-watch.svg": "c0f6acec2fa577f29f899748576c7711cadf1a6a7754b856bc9e1fda8b51a6eb",
+    "site/wiki/images/algorithms/plain-thumb-cooling-runway.svg": "fe6908bf1fca0723c3ec008beb5d7793a241bc1758b38311b23032a72dc9a362",
+    "site/wiki/images/algorithms/plain-thumb-desired-state-enforcer.svg": "5171ead49c31ac985ea2fa3d9ce47dadb7725f0dc952244ff781c86da0bb33ba",
+    "site/wiki/images/algorithms/plain-thumb-dynamic-cooldown.svg": "2247f608f0230703300458944a4e6e64e58df909c62924859fc849be421ff06a",
+    "site/wiki/images/algorithms/plain-thumb-emergency-protocols.svg": "845e59cc06805fbf1b44251873530688ca49e9f95c0a7392b07099d302e55c71",
+    "site/wiki/images/algorithms/plain-thumb-fan-energy-saver.svg": "795dd68a6a694edecbaeca47a00cbf44ed9c64cfdccae627a3372f84bab713ac",
+    "site/wiki/images/algorithms/plain-thumb-field-kitchen-food-rations.svg": "00708b21722c5c360efbbf80becee0f34ac9f77a0b9b83c8f4cc0bf539bd9954",
+    "site/wiki/images/algorithms/plain-thumb-front-door-guard-post.svg": "c1476d14a8b9ba5ba5db4d37c0cdd9a3dd2c8e948ad255b62bc95a09b6e9e575",
+    "site/wiki/images/algorithms/plain-thumb-human-nudge.svg": "7aa17971376b7d4a0c980682dd6389656634135500793fe563e59650f2b8e3fc",
+    "site/wiki/images/algorithms/plain-thumb-hvac-alibi.svg": "6d06620a2b0a42e98b999eb83ca510f4e759a8969160b5b6734794ffd063ffc2",
+    "site/wiki/images/algorithms/plain-thumb-manual-comfort-grace.svg": "769456212ca3e95b5dc039c1b06e5f8f5b6171a0668a235642d2fb3282095692",
+    "site/wiki/images/algorithms/plain-thumb-natural-cadence.svg": "2b2b0e4fac13deb54861527a48c3467f280cd15fc0d13e959e09defb332c8640",
+    "site/wiki/images/algorithms/plain-thumb-natural-walkback.svg": "f1ef6e7ff2728c22324bc419b0de82348f8dc225c79ae2f5e572151a71b9671f",
+    "site/wiki/images/algorithms/plain-thumb-remote-settling-guard.svg": "74da074f4e73f45b29773165f1a04fccad3126123458693077a6a2e3fe8a12b5",
+    "site/wiki/images/algorithms/plain-thumb-repeat-quiet.svg": "8510f65ae7be73ad82db3ae3acb15ebe6590c91aa6b62ac895f2ef4fbe81ea7c",
+    "site/wiki/images/algorithms/plain-thumb-repeated-raise-surrender.svg": "b7d41488bdb6f39a61c8bdd3f1d5d9dc3b31ef3a208e0a30c7cbcb0118cf428b",
+    "site/wiki/images/algorithms/plain-thumb-rival-schedule-watch.svg": "035df98bd3f3bb1066eca7209fbf71a59b815ec2f39894bf2ef1c498033350cd",
+    "site/wiki/images/algorithms/plain-thumb-room-trend-guard.svg": "4048add47dc0f49abf7b264677bc004f6885700ff13e0de47f283ae7d724a9bc",
+    "site/wiki/images/algorithms/plain-thumb-routine-timing.svg": "14b607ccb9863318f0645d89d728be053e94be30d87a7e21fca0e477a2ebd990",
+    "site/wiki/images/algorithms/plain-thumb-schedule-and-weather-rules.svg": "43d232848aa73caee4d32b77c7a31cd204fa3ac80116c2d7bbc1536d583eeee5",
+    "site/wiki/images/algorithms/plain-thumb-sensor-rhythm.svg": "e2d529a47c4127b62546703b9686c6c654ab148fbcfb3b069e272ca532a3de1d",
+    "site/wiki/images/algorithms/plain-thumb-setpoint-echo.svg": "ab8ee89333258dbfc553fae2eb0d9e9ad855baab2cb13d92f2d18bce84e9a096",
+    "site/wiki/images/algorithms/plain-thumb-setpoint-stillness.svg": "9feb6b974d2b38aed736551def7c987be1730269d7e445fed12ffbdf773a8792",
+    "site/wiki/images/algorithms/plain-thumb-siesta-watch-mess-hall.svg": "7b2a1c77bfa46585d39ea32130f44593f440c7708ad6bd6fa7d7236dc495d821",
+    "site/wiki/images/algorithms/plain-thumb-stealth-governor.svg": "804fb879a22214836c2e23bd71932b1dfc7dff6362f7a921b0e573899ff28ad5",
+    "site/wiki/images/algorithms/plain-thumb-super-defender.svg": "00aa2cc33786979188e386162ce65bb865e0bc81674d186016edcdffa9bec6c3",
+    "site/wiki/images/algorithms/plain-thumb-tamper-truce.svg": "5c5e6028b0f763bc14535995bc6d2c7680ce56396d102d04eb4e0456dcd24518",
+    "site/wiki/images/algorithms/plain-thumb-telemetry-alibi.svg": "85cb7ffa86a292f8715c38b5a9dfa22058822763e40155d31fe526adb613e50a",
+    "site/wiki/images/algorithms/plain-thumb-thermal-momentum.svg": "475516b7e52a5718de5c7c58ee245306c5180fa8e1921aad3b4a38d82b062db6",
+    "site/wiki/images/algorithms/plain-thumb-touch-intent.svg": "e6705e19590e1f827c83466c327739ee561757cc90b5604a2e872ca90bac7b7b",
+    "site/wiki/images/algorithms/plain-thumb-touch-signature.svg": "4c3ea2477c04695d18306a591c0f14466afa3cc97d4efcdc9ad213b6c5dcb6d9",
+    "site/wiki/images/algorithms/plain-thumb-tug-of-war-truce.svg": "4dbd4eb68b873680e33ca0e63ced65903245d7209e4dd48d4bbd9eca42800840",
+    "site/wiki/images/algorithms/plain-thumb-upstairs-comfort-guard.svg": "950c42794eea85f5f2f4d338c2cc2187f465492bf1dd800f88b5ce1073522022",
+    "site/wiki/images/algorithms/plain-thumb-visibility-guard.svg": "62b8608b33df7bf1eafcf15e6ba49d2080f32db5f14c45f53bc933bbea78b115",
+    "site/wiki/images/algorithms/plain-thumb-wake-up-truce-door-sensor.svg": "ebcda4ad539d6ea6b5096dfc7c53db3cc6791e85a999ba825aac7f491687615a",
+    "site/wiki/images/algorithms/plain-thumb-wall-settling.svg": "8bcd0b46a28536d88042d8fed50926ffb19f79d6955dd0fab7e44331a2c1600f",
+    "site/wiki/images/algorithms/plain-thumb-weather-drift-timing.svg": "b70a6b2ca7739c5231a2a24400e7120e28a68c5fc4b1cedfba9d1ee5ab78d3b5",
+    "site/wiki/images/algorithms/plain-thumb-website-debounce.svg": "1c56c3afe38e11ab03c1e523ac3b67a113ef428e967459d7c73c42a5dc09402d",
+    "site/wiki/images/algorithms/thumb-alectra-peak-power-saver.svg": "9b6fae64b226a6fc88ae000b573a5de4f848b357fd70451eb037e80da9f4e9e6",
+    "site/wiki/images/algorithms/thumb-comfort-budget.svg": "b56b80507261bc94e375b0a1577f7ee108e5cb10d1717a737d0a1c44bec2d69f",
+    "site/wiki/images/algorithms/thumb-comfort-compromise.svg": "c151bec08d228b70198de57a090e3ac12f0b76aa16b5086d6bf0a9a0c73ccf42",
+    "site/wiki/images/algorithms/thumb-comfort-envelope.svg": "d4074f3c1d51d049cafaa417a4c44f335c5e2c983ae5ca4e5388cbd036346c63",
+    "site/wiki/images/algorithms/thumb-comfort-memory.svg": "2677ec498a796311544041b564a3ec0c15795e955000fcbf381ee942d519b786",
+    "site/wiki/images/algorithms/thumb-comfort-pace.svg": "10df09e70632455ac8c3e350c02c6326e6563d309d10eb9d9cfc57d742418480",
+    "site/wiki/images/algorithms/thumb-comfort-sync-quiet-recovery.svg": "9ed4ad4cab7868338ac090e1492ae00acde82f8ea56c18c9cbb4089f87e7c169",
+    "site/wiki/images/algorithms/thumb-command-camouflage.svg": "dcdeb91f1ef69cd78b5189b9f4b424fcfd9b37f9eddcc3d9f53129cd0aa2b1fa",
+    "site/wiki/images/algorithms/thumb-conflict-quiet.svg": "06f13d4123970246293bb0dbe556dade36345bab83fbe16516220f0c82a94434",
+    "site/wiki/images/algorithms/thumb-cool-mode-restore.svg": "8e206ca99ef5ab7e798e0029f43872766076b1f4f4db3be2c413032bad25c462",
+    "site/wiki/images/algorithms/thumb-cool-outdoor-shutdown-open-window-armistice.svg": "1f78d50652bb9fcc2d49c219bc816544db7fe5beb10c63745b9fe45f546d28ab",
+    "site/wiki/images/algorithms/thumb-cooler-intent-fast-lane.svg": "c8d846170378b45ce7a1ffa4b5602d1182de335504d590b6076bf1c49c976e13",
+    "site/wiki/images/algorithms/thumb-cooling-failure-watch.svg": "63cbe1a017c00124e467ba5f78cfdd9008a386543388bf028867a05986bd2856",
+    "site/wiki/images/algorithms/thumb-cooling-runway.svg": "6f6d44deaed555a86d07c7e49401439c13082850d9672909876fa6cd5d4570a5",
+    "site/wiki/images/algorithms/thumb-desired-state-enforcer.svg": "f5834fea8b7dc63ef012beacc4b0cef897b685bfe666482dfeafcf4eae46f1f7",
+    "site/wiki/images/algorithms/thumb-dynamic-cooldown.svg": "c810f3c688c23edba51964b3f0b9e4fea030b68ac98cef2a9af3174e55d457b2",
+    "site/wiki/images/algorithms/thumb-emergency-protocols.svg": "39912e806987c66d96a2bd51943ffddf670b3b9a3f5186082e266520f561768e",
+    "site/wiki/images/algorithms/thumb-fan-energy-saver.svg": "e0311089d6a6c02c402866ea9d00bfcfa31772ea6470db08e7fe4d66c391cc6a",
+    "site/wiki/images/algorithms/thumb-field-kitchen-food-rations.svg": "3316ad765e9e424e7d322fb8e1d110c758c27e8dbe00ab75f0db8ad0a9dfcde1",
+    "site/wiki/images/algorithms/thumb-front-door-guard-post.svg": "04074b979df469f5117b4d0db0fcb5dd8cd33593b3d6e63d8d2428877100e092",
+    "site/wiki/images/algorithms/thumb-human-nudge.svg": "8533fe358e77414d8c1b3c5129251f0951d0ae2f366e7caee01c9b6301183a7b",
+    "site/wiki/images/algorithms/thumb-hvac-alibi.svg": "937aa619c91c3bb345b82934e82a5df7db7182069864f3e57c5decfa60bbcc9c",
+    "site/wiki/images/algorithms/thumb-manual-comfort-grace.svg": "d5edff187521771ea8387648cdadb7a07c48053c4cc099733cd6880457cd2ed3",
+    "site/wiki/images/algorithms/thumb-natural-cadence.svg": "b948fd741d81c3b106353f03ef88cce4d35831ba359f491e378646143f5c04eb",
+    "site/wiki/images/algorithms/thumb-natural-walkback.svg": "16bcf020cad65284ee92ac16a80f8fb7d8408646ec27400e5c41c665d7c52f94",
+    "site/wiki/images/algorithms/thumb-remote-settling-guard.svg": "e42b12204f489815b933133cf4f13317123cd6eb400346e83f21a022ad55ac05",
+    "site/wiki/images/algorithms/thumb-repeat-quiet.svg": "7440a21ff54432f0afb223e80a73ad7ab60bc926e055c28760ca9c7cf5b184d2",
+    "site/wiki/images/algorithms/thumb-repeated-raise-surrender.svg": "708226f3afd4013e44186225ab8f619646328306bc864aaf0038c78a06d151a4",
+    "site/wiki/images/algorithms/thumb-rival-schedule-watch.svg": "613cee6f6343885c374d5676c1fe7e9e7bfad6cbeb63c79a926ebbbecd25f6fc",
+    "site/wiki/images/algorithms/thumb-room-trend-guard.svg": "03aec0a8c348a09109559725971acd11832ea7d4c77f96685468533030c7aa0b",
+    "site/wiki/images/algorithms/thumb-routine-timing.svg": "65dff3ae82126ec727f72f4421079e10a441aa6af757fa19257275652a21687e",
+    "site/wiki/images/algorithms/thumb-schedule-and-weather-rules.svg": "fe82313e63636eb6e9ad6d538d7d85665b4cec9c448e129eadea3d03eead26fb",
+    "site/wiki/images/algorithms/thumb-sensor-rhythm.svg": "1523d14b243effff2f26eab3c075b40e7219f92b7114f361714d3edf2991500f",
+    "site/wiki/images/algorithms/thumb-setpoint-echo.svg": "d99d52f563349465f083a09be0f0dbdd57dfc0196d7e1ebea3c196512205b236",
+    "site/wiki/images/algorithms/thumb-setpoint-stillness.svg": "4fd7ec7024357fbcb440be9e5cd2ec1f039362c5b2c6ce6c3279f0794058cf25",
+    "site/wiki/images/algorithms/thumb-siesta-watch-mess-hall.svg": "3f4753e7435a37af6bac98db8b8a3fba98b6070f168ba5c3382b3908b94117d1",
+    "site/wiki/images/algorithms/thumb-stealth-governor.svg": "dc44bbc9da87ec716a1d43b1a9a3b5d56d5e2aa4318788fd01c6d04e46c88144",
+    "site/wiki/images/algorithms/thumb-super-defender.svg": "d10870a3b01cee47f6d69de6212ef7e1c723ba7eeeec7008fd02d9033657d7f6",
+    "site/wiki/images/algorithms/thumb-tamper-truce.svg": "cf57534cbe0301530a9c95839fb602c25aca88a83c121cfc5926c96ce7410682",
+    "site/wiki/images/algorithms/thumb-telemetry-alibi.svg": "805871390aa464ce0bb1cf3a42db29cf2fad8db533f9c2cc0b489adab8008e3e",
+    "site/wiki/images/algorithms/thumb-thermal-momentum.svg": "21499d658e9b38c1fc5bc696c394464f5a00aa68beddae83ba9bd24c97ba4039",
+    "site/wiki/images/algorithms/thumb-touch-intent.svg": "4dc879056f92d55954dd27f4062b66b827e83c90a32bfde8db8acda661c4e234",
+    "site/wiki/images/algorithms/thumb-touch-signature.svg": "2befa2b7c562ccd50044773f75257e105bbdd62a463654b98b474e0afd82a4e8",
+    "site/wiki/images/algorithms/thumb-tug-of-war-truce.svg": "9aafe795be815d803e12a2c95c8a0383eb36f02e8b0a9347a449bd134508a5fc",
+    "site/wiki/images/algorithms/thumb-upstairs-comfort-guard.svg": "9fea4710fc723cc84525dce69b7b31d6bb2947254a202eaa388e940f92dfe447",
+    "site/wiki/images/algorithms/thumb-visibility-guard.svg": "d51e927ff7df3d62424651766e493980df5058dc4209f65923126038e1053919",
+    "site/wiki/images/algorithms/thumb-wake-up-truce-door-sensor.svg": "923c18caab6ca86f2c3ed24d139c8d666dc5d7397e6dac47c08bb0af770ee46d",
+    "site/wiki/images/algorithms/thumb-wall-settling.svg": "b1fac968bd0a8a1e89df58e623e3ae2b72b0a54d88837df21c9ae0f8ce0c56d6",
+    "site/wiki/images/algorithms/thumb-weather-drift-timing.svg": "b51ee7193c4fb1218b51f6621873bc5e155e772472ad0ddd080258eb02d6caa4",
+    "site/wiki/images/algorithms/thumb-website-debounce.svg": "18ebec4384ee2c0506c7825e2fa44ca2a52867dcb402c7408dd2a4bdd1fc8855",
+    "site/wiki/images/comfort.png": "d548082160c479f695c83c9f135debad1004f1483edb9e98a229d9ae6c324261",
+    "site/wiki/images/controls.png": "0a769b2c3ea91fec59953138afe9dc721921dc9ecd2df0491c22390970e567f7",
+    "site/wiki/images/dashboard.png": "13658bedc11a80399a55cd39ed815e41241952ef53c8010dda71301b162d1cf4",
+    "site/wiki/images/defense.png": "347a2c236b2edc5fd796083dd9f519a8c32338d1146a07da7a967d66c4753ff3",
+    "site/wiki/images/energy-calendar.png": "404a9fcb9d38b84c931e7711f02a40ff973f67eb21f41e69d287d4c66f45ae38",
+    "site/wiki/images/energy-overview.png": "782db79fb07035c2c2e64fb73f2b8155a462db555841a7d876d8ea2defe98712",
+    "site/wiki/images/guide.png": "b05cea95e6424a774aa8b40e2cc98ff6cdd90e2f8b6b1e6e25d303f79f6dcd30",
+    "site/wiki/images/hero-hot-thermostat.png": "e6f88e24bb8f6cf4847637e2a72ed7ddec5f7c0d3b875e45cef04ea92af1311a",
+    "site/wiki/images/landing-flow-map.svg": "3cb1ff8750c8e21fc40ffb1ded5b17bc9670bfe559b67436ce3a8530b3fddf3a",
+    "site/wiki/images/logic-search-map.svg": "5978198c206a6b6d85e3a194c8dc45c5487732dccd6509f214e64bfbb2a146dd",
+    "site/wiki/images/logs.png": "2d48c9ede24550ac4cc424d097a5d07b86a11d2e5c393c8cd8d9c24687b25c17",
+    "site/wiki/images/plain-guard-map.svg": "1908df8e9a9a9b26713df3748a31806589bfabc6e18749f903f1a06d4591d26c",
+    "site/wiki/images/settings-budget.png": "d9c214ff587cca1e0b0932419adeba2f5da1a1de6b79a408969c379fcfce730f",
+    "site/wiki/images/settings.png": "57a1c7807549fcb28a86a78f3442de48edbdb85c5eb194a37f181b881b51b9d8",
+    "site/wiki/images/thermostat-warmer-touch.png": "f8ea156a4e3b718d257f64f6091f04cb84bb4951213580d3c611a4bdd1a96fbf",
+    "site/wiki/images/yelling-overthinking-mobile.png": "fa84c91e9e3a67a65be87a23e9a2763524886f92f36723ff56735776fd3e0e93",
+    "site/wiki/images/yelling-survival-mobile.png": "055ebc8d476ec91af71e1390b4f21037daeed9c47709ad4b29b1b1cc83a8833c",
+    "site/wiki/release/README.html": "d6ed7db2dbef1ee7a1e58ee0253d210314a9271b90464655471d77396f36ba45",
+    "site/wiki/release/line-counts.html": "f81c5c0756f73bb9512ce705556a8982d3edae4b73bf67e7d8ecfe5057f5f443",
+    "site/wiki/release/windows-update-feed.html": "6b533050b4dfccff02c535e04664721f40031f6880b0957d1c9451a21376e147",
+    "style.css": "6a14f3dac8cc6507dcd800282702fa59ac24dda0997de5e9b411c3d381cf54a4"
+  },
+  "captures": [
+    {
+      "file": "evidence/initial-guide.png",
+      "state": "initial-guide",
+      "viewport": {
+        "width": 1100,
+        "height": 760
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 272.5,
+          "width": 1100,
+          "height": 774.34375
+        },
+        "display": "grid",
+        "gridTemplateColumns": "270px 764px",
+        "overflow": "visible",
+        "scrollWidth": 1100,
+        "clientWidth": 1100
+      }
+    },
+    {
+      "file": "evidence/library.png",
+      "state": "library",
+      "viewport": {
+        "width": 1100,
+        "height": 760
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 272.5,
+          "width": 1100,
+          "height": 551.1875
+        },
+        "display": "grid",
+        "gridTemplateColumns": "270px 764px",
+        "overflow": "visible",
+        "scrollWidth": 1100,
+        "clientWidth": 1100
+      }
+    },
+    {
+      "file": "evidence/search-article.png",
+      "state": "search-article",
+      "viewport": {
+        "width": 1100,
+        "height": 760
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 272.5,
+          "width": 1100,
+          "height": 551.1875
+        },
+        "display": "grid",
+        "gridTemplateColumns": "270px 764px",
+        "overflow": "visible",
+        "scrollWidth": 1100,
+        "clientWidth": 1100
+      }
+    },
+    {
+      "file": "evidence/search-empty.png",
+      "state": "search-empty",
+      "viewport": {
+        "width": 1100,
+        "height": 760
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 272.5,
+          "width": 1100,
+          "height": 551.1875
+        },
+        "display": "grid",
+        "gridTemplateColumns": "270px 764px",
+        "overflow": "visible",
+        "scrollWidth": 1100,
+        "clientWidth": 1100
+      }
+    },
+    {
+      "file": "evidence/invalid-expression.png",
+      "state": "invalid-expression",
+      "viewport": {
+        "width": 1100,
+        "height": 760
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 272.5,
+          "width": 1100,
+          "height": 551.1875
+        },
+        "display": "grid",
+        "gridTemplateColumns": "270px 764px",
+        "overflow": "visible",
+        "scrollWidth": 1100,
+        "clientWidth": 1100
+      }
+    },
+    {
+      "file": "evidence/settings.png",
+      "state": "settings",
+      "viewport": {
+        "width": 1100,
+        "height": 760
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 272.5,
+          "width": 1100,
+          "height": 989.34375
+        },
+        "display": "grid",
+        "gridTemplateColumns": "270px 764px",
+        "overflow": "visible",
+        "scrollWidth": 1100,
+        "clientWidth": 1100
+      }
+    },
+    {
+      "file": "evidence/library-en-light.png",
+      "state": "library-en-light",
+      "viewport": {
+        "width": 1100,
+        "height": 760
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 272.5,
+          "width": 1100,
+          "height": 551.1875
+        },
+        "display": "grid",
+        "gridTemplateColumns": "270px 764px",
+        "overflow": "visible",
+        "scrollWidth": 1100,
+        "clientWidth": 1100
+      }
+    },
+    {
+      "file": "evidence/library-en-dark.png",
+      "state": "library-en-dark",
+      "viewport": {
+        "width": 1100,
+        "height": 760
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 272.5,
+          "width": 1100,
+          "height": 551.1875
+        },
+        "display": "grid",
+        "gridTemplateColumns": "270px 764px",
+        "overflow": "visible",
+        "scrollWidth": 1100,
+        "clientWidth": 1100
+      }
+    },
+    {
+      "file": "evidence/library-yue-light.png",
+      "state": "library-yue-light",
+      "viewport": {
+        "width": 1100,
+        "height": 760
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 282.5,
+          "width": 1100,
+          "height": 551.1875
+        },
+        "display": "grid",
+        "gridTemplateColumns": "270px 764px",
+        "overflow": "visible",
+        "scrollWidth": 1100,
+        "clientWidth": 1100
+      }
+    },
+    {
+      "file": "evidence/library-yue-dark.png",
+      "state": "library-yue-dark",
+      "viewport": {
+        "width": 1100,
+        "height": 760
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 282.5,
+          "width": 1100,
+          "height": 551.1875
+        },
+        "display": "grid",
+        "gridTemplateColumns": "270px 764px",
+        "overflow": "visible",
+        "scrollWidth": 1100,
+        "clientWidth": 1100
+      }
+    },
+    {
+      "file": "evidence/library-both-light.png",
+      "state": "library-both-light",
+      "viewport": {
+        "width": 1100,
+        "height": 760
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 330.5,
+          "width": 1100,
+          "height": 551.1875
+        },
+        "display": "grid",
+        "gridTemplateColumns": "270px 764px",
+        "overflow": "visible",
+        "scrollWidth": 1100,
+        "clientWidth": 1100
+      }
+    },
+    {
+      "file": "evidence/library-both-dark.png",
+      "state": "library-both-dark",
+      "viewport": {
+        "width": 1100,
+        "height": 760
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 330.5,
+          "width": 1100,
+          "height": 551.1875
+        },
+        "display": "grid",
+        "gridTemplateColumns": "270px 764px",
+        "overflow": "visible",
+        "scrollWidth": 1100,
+        "clientWidth": 1100
+      }
+    },
+    {
+      "file": "evidence/narrow-bilingual-dark.png",
+      "state": "narrow-bilingual-dark",
+      "viewport": {
+        "width": 360,
+        "height": 740
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 626.5,
+          "width": 360,
+          "height": 825
+        },
+        "display": "grid",
+        "gridTemplateColumns": "340px",
+        "overflow": "visible",
+        "scrollWidth": 360,
+        "clientWidth": 360
+      }
+    },
+    {
+      "file": "evidence/minimum-bilingual-dark.png",
+      "state": "minimum-bilingual-dark",
+      "viewport": {
+        "width": 680,
+        "height": 520
+      },
+      "geometry": {
+        "rect": {
+          "x": 0,
+          "y": 362,
+          "width": 680,
+          "height": 664
+        },
+        "display": "grid",
+        "gridTemplateColumns": "660px",
+        "overflow": "visible",
+        "scrollWidth": 680,
+        "clientWidth": 680
+      }
+    }
+  ],
+  "checks": [
+    "Reading progress persists across reload",
+    "Local vocabulary input validates and clears",
+    "Packaged original site home opens",
+    "No uncaught renderer errors",
+    "External requests blocked by test route",
+    "Reduced-motion preference active"
+  ]
+}
