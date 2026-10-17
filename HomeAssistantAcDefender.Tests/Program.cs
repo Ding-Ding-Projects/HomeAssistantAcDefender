@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 
 await HomeAssistantAcDefender.Tests.SetupReadOnlyHandlerTests.RunAsync();
+await LocalToolsLifecycleTests.PrerenderSkipsInteropAndInteractiveDisposalIsBounded();
 
 var tests = new DefenderSetPointRegressionTests();
 var settingsRepositoryTests = new SettingsGitRepositoryRegressionTests();
