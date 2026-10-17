@@ -40,6 +40,12 @@ Assistant climate entity or returns a real error.
 | **[API](API.html)** | The JSON endpoints and SSE stream |
 | **[Architecture](Architecture.html)** | How the code is put together |
 | **[Deployment](Deployment.html)** | Docker hosting |
+| **[One-click Windows hosting](hosting-windows.html)** | Detached startup and the interactive live-log console |
+| **[Portable hosting setup](hosting-wizard.html)** | App-specific local Docker installation and credential handling |
+| **[Published container releases](hosting-release.html)** | Immutable images, Compose and release verification |
+| **[Offline documentation companion](documentation-companion.html)** | The additional portable reader; GitHub Pages remains available |
+| **[Local file tools](Local-Tools.html)** | Browser-only conversions and local logo preferences |
+| **[Feature coverage](Feature-Compliance.html)** | Explicit implementation and verification gaps |
 | **[Release operations](release/README.html)** | CI verification, Docker release archives, checksums, and line-count reports |
 
 ## The big ideas
