@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "sourceCommit": "89452864d1cf147dba18e4c10146fcbe8ae825b3",
+  "artifact": {
+    "path": "hosting-wizard/dist/AC-Defender-Setup-0.1.0-portable.exe",
+    "sha256": "2a27a8ce2b67b7edd696e4c49deebaac6125191552a32f11de3c027c4afbcc9f",
+    "bytes": 382156944
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "revision": "89452864d1cf147dba18e4c10146fcbe8ae825b3",
+    "buildTime": "2026-10-17T09:32:25Z"
+  },
+  "packaging": "electron-builder 26.0.12, Windows x64 portable, local verification compression=store",
+  "packagedSourceHashChecks": true,
+  "nativeWindowsLaunchVerified": false,
+  "testsPassed": 21
+}
