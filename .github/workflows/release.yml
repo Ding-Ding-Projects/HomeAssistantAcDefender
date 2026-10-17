@@ -357,7 +357,6 @@ jobs:
 
       - name: Check anonymous image availability
         id: anonymous_image
-        continue-on-error: true
         env:
           IMAGE_DIGEST: ${{ steps.published_image.outputs.digest }}
         run: |
@@ -365,7 +364,7 @@ jobs:
           anonymous_config="$(mktemp -d)"
           trap 'rm -rf -- "${anonymous_config}"' EXIT
           if ! docker --config "${anonymous_config}" pull --platform linux/amd64 "ghcr.io/ding-ding-projects/homeassistantacdefender@${IMAGE_DIGEST}"; then
-            echo '::error::Anonymous image pull failed. Hosting delivery is incomplete; the package owner must enable public registry read access and verify a new anonymous pull.'
+            echo '::error::Anonymous image pull failed; release publication is blocked. A package owner must open https://github.com/orgs/Ding-Ding-Projects/packages/container/homeassistantacdefender/settings, choose Change visibility in the Danger Zone, select Public, and confirm. Then rerun this workflow so the anonymous pull gate verifies access before any release is published. If that setting is unavailable, an organization owner must review package visibility policy; do not bypass this gate.'
             exit 1
           fi
 
@@ -514,7 +513,7 @@ jobs:
                 echo "- ${release_archive}: run \`gunzip ${release_archive}\`, then \`docker load --input ${release_tar}\`; use the exact image reference from its metadata."
               done
               echo
-              echo "Published service image: \`$(cat release-assets/image-reference.txt)\`. The attached Compose manifest pins this digest. Anonymous pull verification: ${ANONYMOUS_IMAGE_OUTCOME}. If this is not success, hosting delivery remains incomplete until the package owner enables public read access and verifies an anonymous pull."
+              echo "Published service image: \`$(cat release-assets/image-reference.txt)\`. The attached Compose manifest pins this digest. Anonymous pull verification: ${ANONYMOUS_IMAGE_OUTCOME}. A successful anonymous pull is required before this release can be published."
               echo
               echo "Portable Windows hosting setup is attached separately from the existing Squirrel controller."
               echo
