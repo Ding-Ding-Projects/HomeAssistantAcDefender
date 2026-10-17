@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "sourceCommit": "a6ca54fb8903260358a5666dbf70bb82f4524c9f",
+  "artifact": {
+    "path": "hosting-wizard/dist/AC-Defender-Setup-0.1.0-portable.exe",
+    "sha256": "06f7e55a4422280dbcac32fdf266267b6d77f0ef83ccc6456915e407f16e6bcf",
+    "bytes": 382157027
+  },
+  "metadata": {
+    "version": "0.1.0",
+    "revision": "a6ca54fb8903260358a5666dbf70bb82f4524c9f",
+    "buildTime": "2026-10-17T09:34:01Z"
+  },
+  "assets": [
+    {
+      "path": "hosting-wizard/electron/engine.cjs",
+      "sha256": "a94535ada1433a986f31f2ed122190ea10f600a68ff73bc754d28cc441f03a37"
+    },
+    {
+      "path": "hosting-wizard/electron/main.cjs",
+      "sha256": "491be0959ef74ff2e21de73def3e9cbbc743552ed8c96f3ca1a89b12ec3d9147"
+    },
+    {
+      "path": "hosting-wizard/electron/preload.cjs",
+      "sha256": "f84d5ccec7170bc993813ac8006abf61ab9ac628ec0538460e6dc0c3dc884c6e"
+    },
+    {
+      "path": "hosting-wizard/renderer/app.js",
+      "sha256": "3bde26afa8c67c88058026069b6a74cb84f698769ec4e39beee93b7a67a7c005"
+    },
+    {
+      "path": "hosting-wizard/renderer/style.css",
+      "sha256": "85bd5787d7e1fd3fda5365309fa497b1985ece29d702c83deb974fa742c0ff6c"
+    },
+    {
+      "path": "hosting-wizard/renderer/index.html",
+      "sha256": "b09b47bf4e3b1f0f6a074cae611be40ddacebad4dc292eafb2dc1e8abd67de17"
+    },
+    {
+      "path": "hosting-wizard/resources/build.json",
+      "sha256": "0961a693f954eb3f1d034e390a720a18bf20a8b3d36b608bfd253ea1e3939b12"
+    },
+    {
+      "path": "hosting-wizard/resources/compose.yml",
+      "sha256": "ee154ded54298afc923e82b87759244521d603a74ef6d9b6d835fde6b973f4f0"
+    }
+  ],
+  "packaging": "electron-builder 26.0.12, Windows x64 portable, local verification compression=store",
+  "packagedSourceHashChecks": true,
+  "nativeWindowsLaunchVerified": false,
+  "testsPassed": 21
+}

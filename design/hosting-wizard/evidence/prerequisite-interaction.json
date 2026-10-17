@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "a6ca54fb8903260358a5666dbf70bb82f4524c9f",
+  "route": "linux-isolated-xorg-electron-cdp",
+  "interaction": "Activated Check Docker & Compose through its actual rendered control",
+  "result": {
+    "phase": "prerequisites",
+    "error": null,
+    "ready": true
+  },
+  "noDeploymentStarted": true
+}
