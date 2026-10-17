@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:e1ffd2a92ae84c1291bc1b6887501f8af98e6331e7af6d4c8d37168c5e87a64c AS build
 WORKDIR /src
 
-ARG APP_VERSION=local
+ARG APP_VERSION=0.0.0-local
 ARG APP_REVISION=unknown
 ARG APP_BUILD_TIME=unknown
 
@@ -9,12 +9,12 @@ COPY HomeAssistantAcDefender.csproj ./
 RUN dotnet restore
 
 COPY . ./
-RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false /p:BuildTimestampUtc="${APP_BUILD_TIME}" /p:SourceRevision="${APP_REVISION}" /p:SourceRevisionId="${APP_REVISION}"
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false /p:Version="${APP_VERSION}" /p:BuildTimestampUtc="${APP_BUILD_TIME}" /p:SourceRevision="${APP_REVISION}" /p:SourceRevisionId="${APP_REVISION}"
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:a4556ed033fa96f984bb7a8d348851cb2d36b1281dd2420070045f664fbb5f94 AS runtime
 WORKDIR /app
 
-ARG APP_VERSION=local
+ARG APP_VERSION=0.0.0-local
 ARG APP_REVISION=unknown
 ARG APP_BUILD_TIME=unknown
 

@@ -9,6 +9,36 @@ Assert (Test-ImmutableImage "${prefix}:sha-$(('a' * 40))") 'Commit reference rej
 foreach ($bad in @("${prefix}:latest", "${prefix}:sha-abc", "$prefix@sha256:$(('a' * 63))", "other.example/app@sha256:$(('a' * 64))", "$prefix@sha256:$(('a' * 64))`nextra")) {
     Assert (-not (Test-ImmutableImage $bad)) 'Unsafe image reference accepted'
 }
+# A healthy response must identify the selected published release, not just return 200.
+$script:expectedRevision = 'a' * 40
+$script:expectedVersion = '0.1.123'
+$script:response = @{ StatusCode = 200; Content = '{"status":"ok","revision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","version":"0.1.123"}' }
+function Invoke-WebRequest { return $script:response }
+Assert (Get-Health) 'Matching release health rejected'
+$script:response.StatusCode = 503
+Assert (-not (Get-Health)) 'Failed HTTP status accepted'
+$script:response.StatusCode = 200
+foreach ($body in @('{"status":"error","revision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","version":"0.1.123"}', '{"status":"ok","revision":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","version":"0.1.123"}', '{"status":"ok","revision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","version":"0.1.124"}', '<html>ok</html>', '{}')) {
+    $script:response.Content = $body
+    Assert (-not (Get-Health)) 'Incorrect release health accepted'
+}
+
+# Drive the actual event loop with a virtual clock and nonblocking keyboard.
+$script:tick = 0
+$script:frames = [Collections.Generic.List[object]]::new()
+function Test-ConsoleInteractive { return $true }
+function Get-RefreshTime { return ([DateTime]'2026-01-01T00:00:00Z').AddSeconds($script:tick) }
+function Wait-ConsoleTick { $script:tick++; if ($script:tick -gt 12) { throw 'Console failed to exit' } }
+function Get-ConsoleKey {
+    switch ($script:tick) { 3 { return 'P' } 6 { return 'Spacebar' } 10 { return 'Q' } }
+    return $null
+}
+function Show-ConsoleFrame([string]$View, [bool]$Follow) { $script:frames.Add(@{ Tick = $script:tick; View = $View; Follow = $Follow }) }
+Show-Menu 'logs'
+Assert (($frames.Tick -join ',') -eq '0,2,4,7,9') 'Timed refresh or pause/resume timing is incorrect'
+Assert ($frames[0].View -eq 'logs') 'Logs mode lost its initial pane'
+Assert (-not $frames[2].Follow -and $frames[3].Follow) 'Follow state did not pause and resume'
+
 $temporary = Join-Path ([IO.Path]::GetTempPath()) ('hosting-check-' + [guid]::NewGuid())
 $priorImage = $env:AC_DEFENDER_IMAGE
 try {
@@ -24,10 +54,11 @@ try {
         $script:calls.Add(($args -join ' '))
         $global:LASTEXITCODE = $script:dockerExit
         if ($args[0] -eq 'info') { 'linux' }
+        if ($args[0] -eq 'image') { '{"org.opencontainers.image.revision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","org.opencontainers.image.version":"0.1.123"}' }
     }
     function Get-Health { return $true }
     function Show-Status { $script:calls.Add('status') }
-    function Show-Menu { $script:menus++ }
+    function Show-Menu { $script:menus++; $script:initialView = $args[0] }
     function Read-Host { return $script:confirmation }
     $Arguments = @('--detached')
     Main
@@ -38,7 +69,7 @@ try {
     $Arguments = @('--logs')
     Main
     Assert ($menus -eq 1) 'Logs mode did not enter keyboard console'
-    Assert (@($calls | Where-Object { $_ -match 'logs --tail 60 --no-color ac-defender$' }).Count -eq 1) 'Log snapshot missing'
+    Assert ($script:initialView -eq 'logs') 'Logs mode did not select live logs'
     Assert (@($calls | Where-Object { $_ -match ' (up|pull|stop|down) ' }).Count -eq 0) 'Logs mode changed service state'
     $calls.Clear()
     $Arguments = @('--stop')
