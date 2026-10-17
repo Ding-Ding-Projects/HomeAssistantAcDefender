@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "run": "https://github.com/Ding-Ding-Projects/HomeAssistantAcDefender/actions/runs/39023775909",
+  "source": "d3a55dc0009d1d4f3e9d0b3760acf67cee29871c",
+  "version": "0.1.4585",
+  "setup": {
+    "artifact": "AC-Defender-Setup-0.1.4585-portable.exe",
+    "sha256": "2854f12de1b191e86afef487c548c9fbbc222801e1ca8d9b59ed9bb4d6527851",
+    "bytes": 96527459,
+    "nativeInitialWindow": "passed",
+    "standaloneBytesAndProvenance": "passed",
+    "ownedProcessCleanup": "passed",
+    "limitations": "Initial window only; Docker installation, deployment, credentials, elevation, LAN access and operational cancellation were not exercised."
+  },
+  "documentation": {
+    "artifact": "AC-Defender-Docs-0.1.4585-portable.exe",
+    "sha256": "b975a90dce462973e12f020e95850e1f536d3938dfa88d912a1351a9a01994d1",
+    "standaloneBytesAndProvenance": "passed",
+    "nativeReaderAndOfflineArticleNavigation": "passed",
+    "articleCount": 85,
+    "ownedProcessCleanup": "failed",
+    "cleanupStage": "identity-verification",
+    "cleanupCode": "WindowsOperationFailed"
+  },
+  "release": "Not published by this run because the documentation cleanup gate failed. This receipt does not establish acceptance of later source or artifacts."
+}

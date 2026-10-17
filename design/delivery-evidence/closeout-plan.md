@@ -24,7 +24,19 @@ close acknowledgement. The correction bounds graceful close and still requires e
 process cleanup. The documentation Windows build also needed normalized path separators.
 Those corrections require a fresh CI run; earlier evidence does not establish their result.
 
+The subsequent Windows run `39023775909`, source
+`d3a55dc0009d1d4f3e9d0b3760acf67cee29871c`, passed the setup executable's native
+renderer, standalone-byte, provenance, process-ownership and cleanup checks. This
+verifies its initial window only; it does not verify Docker installation or deployment.
+The documentation executable also passed its actual offline reader and article-navigation
+checks, but process cleanup failed at identity verification. Publication remains blocked
+until a fresh run passes that gate. The completed setup branch was verified as an ancestor
+of the pushed default branch, preserved in a verified bundle, and removed with its clean
+worktree. Its older local portable executable was retained separately from release evidence.
+
 Production/LAN deployment is separate from the isolated loopback review container.
 The intended host has not been supplied. Port 8888 is preserved, and no production
 credentials or Home Assistant commands were used during verification. The full feature
 inventory remains incomplete and must not be represented as accepted.
+After the browser checks, the exact task-owned loopback review container was stopped and
+removed. Its captures and source-bound receipt remain; it is not a running deployment.
