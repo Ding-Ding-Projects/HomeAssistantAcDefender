@@ -1,0 +1,21 @@
+<div class="build-provenance" data-build-provenance>
+    <span>@T("Version", "版本") @PresentationBuildInfo.Version</span>
+    <span>@T("Updated", "更新時間"):
+        @if (PresentationBuildInfo.TimestampUtc is { } timestamp)
+        {
+            <time datetime="@timestamp" data-build-time="@timestamp">@timestamp (UTC)</time>
+        }
+        else
+        {
+            <span>@T("Build time unavailable", "未有建置時間資料")</span>
+        }
+    </span>
+    @if (PresentationBuildInfo.SourceRevision is { } source)
+    {
+        <span>@T("Source", "來源"): @source</span>
+    }
+</div>
+@code {
+    [CascadingParameter(Name = "LangMode")] public string? Language { get; set; }
+    private string T(string en, string yue) => Language == Lang.Cantonese ? yue : Language == Lang.Both ? en + " · " + yue : en;
+}

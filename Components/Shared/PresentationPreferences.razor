@@ -1,0 +1,30 @@
+@inject IJSRuntime JS
+<section class="presentation-preferences" aria-labelledby="presentation-heading" data-personal-wording>
+    <MudPaper Class="pa-4 my-3" Outlined="true">
+        <MudText Typo="Typo.h6" id="presentation-heading">@T("Browser preferences", "瀏覽器顯示設定")</MudText>
+        <p>@T("These preferences stay in this browser. Thermostat operation is unchanged.", "呢啲設定只儲存喺呢個瀏覽器，唔會改動冷氣運作。")</p>
+        <label class="presentation-option"><input type="checkbox" data-presentation-focus /> @T("Strong keyboard focus", "加強鍵盤焦點顯示")</label>
+        <label class="presentation-option"><input type="checkbox" data-presentation-motion /> @T("Reduce motion", "減少動態效果")</label>
+        <hr />
+        <h3>@T("Personal wording", "個人用語")</h3>
+        <p>@T("Choose a local JSON file or drop it anywhere in the app. It is validated and stored only in this browser, never uploaded. Supported presentation text changes immediately; device readings and identifiers stay exact.", "揀本機 JSON 檔案，或者拖放到程式任何位置。檔案只會喺呢個瀏覽器驗證同儲存，唔會上傳。支援嘅顯示文字會即時更新，裝置讀數同識別碼保持原樣。")</p>
+        <label class="presentation-upload" for="personal-wording-upload">@T("Choose or replace wording JSON", "揀選或替換用語 JSON")</label>
+        <input id="personal-wording-upload" type="file" accept=".json,application/json" data-wording-upload aria-describedby="personal-wording-status personal-wording-schema" />
+        <p id="personal-wording-status" data-wording-status role="status" aria-live="polite">@T("No personal wording loaded.", "未載入個人用語。")</p>
+        <MudButton Variant="Variant.Outlined" data-wording-clear="true">@T("Clear personal wording", "清除個人用語")</MudButton>
+        <details id="personal-wording-schema">
+            <summary>@T("Supported JSON format and limits", "支援嘅 JSON 格式同限制")</summary>
+            <p>@T("Use exactly schemaVersion (1) and entries (an object of text replacements). Limit: 256 KiB UTF-8, depth 8, keys 160 Unicode characters and values 1,000. Duplicate keys, unsafe keys and extra fields are rejected. Invalid files leave the last valid wording unchanged. Clearing restores original wording.", "只接受 schemaVersion（1）同 entries（文字替換物件）。上限：256 KiB UTF-8、深度 8、鍵名 160 個 Unicode 字元、值 1,000 個。重複鍵名、不安全鍵名同額外欄位會被拒絕。無效檔案唔會影響原有用語，清除後會恢復原有文字。")</p>
+        </details>
+        <MudButton Href="/setup" Class="mt-3" Variant="Variant.Text">@T("Open setup checklist", "開啟設定清單")</MudButton>
+    </MudPaper>
+</section>
+@code {
+    [CascadingParameter(Name = "LangMode")] public string? Language { get; set; }
+    private string T(string en, string yue) => Language == Lang.Cantonese ? yue : Language == Lang.Both ? en + " · " + yue : en;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try { await JS.InvokeVoidAsync("acPresentation.language", Language ?? Lang.English); }
+        catch (JSDisconnectedException) { }
+    }
+}

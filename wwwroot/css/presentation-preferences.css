@@ -1,0 +1,18 @@
+.build-provenance { display: flex; flex-wrap: wrap; gap: .4rem 1rem; padding: .75rem; font-size: .8rem; line-height: 1.6; overflow-wrap: anywhere; color: inherit; }
+.build-provenance span { min-width: 0; }
+.setup-checklist { max-width: 64rem; margin: 0 auto; padding: 1rem; overflow-wrap: anywhere; }
+.setup-checklist h2 { margin-block: 1rem; }
+.presentation-preferences { min-width: 0; overflow-wrap: anywhere; }
+.presentation-preferences input[type=file] { display: block; max-width: 100%; min-height: 44px; padding-block: .5rem; }
+.presentation-option { display: flex; align-items: center; gap: .75rem; min-height: 44px; cursor: pointer; }
+.presentation-option input { width: 1.25rem; height: 1.25rem; }
+.presentation-upload { display: block; margin-top: .5rem; }
+.presentation-preferences summary { min-height: 44px; padding-block: .75rem; cursor: pointer; }
+.presentation-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-block: 1rem; }
+.presentation-focus :focus-visible { outline: 3px solid var(--mud-palette-primary, #3ddc97) !important; outline-offset: 4px !important; box-shadow: 0 0 0 7px var(--mud-palette-background, #101820) !important; }
+.presentation-reduced-motion *, .presentation-reduced-motion *::before, .presentation-reduced-motion *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+.presentation-celebration { pointer-events: none; position: fixed; inset: 0; z-index: 1600; display: grid; place-items: center; padding: 2rem; text-align: center; overflow-wrap: anywhere; font-size: clamp(1.5rem, 5vw, 3rem); font-weight: 700; color: var(--mud-palette-text-primary, #fff); background: color-mix(in srgb, var(--mud-palette-surface, #101820) 85%, transparent); animation: presentation-arrival 3.4s ease both; }
+@keyframes presentation-arrival { 0%,100% { opacity: 0; transform: translateY(.75rem); } 10%,90% { opacity: 1; transform: none; } }
+.presentation-reduced-motion .presentation-celebration { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .presentation-celebration { animation: none; } }
+#presentation-status { position: fixed; bottom: 1rem; left: 1rem; right: 1rem; z-index: 1600; padding: 1rem; background: var(--mud-palette-surface, #101820); color: var(--mud-palette-text-primary, #fff); border: 1px solid currentColor; overflow-wrap: anywhere; pointer-events: none; }

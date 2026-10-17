@@ -29,6 +29,7 @@
             <div class="login-header">
                 <div class="login-mark" aria-hidden="true">❆</div>
                 <h1 class="login-title">AC DEFENDER</h1>
+                <BuildProvenance />
                 <p class="login-code">TACTICAL OPS // FIRST BOOT</p>
                 <p class="login-subtitle">Create the owner account. This first account is the owner. Later sign-ups need a registration code you set in Standing Orders.</p>
             </div>
@@ -54,6 +55,7 @@ else if (_formMode == "signup")
             <div class="login-header">
                 <div class="login-mark" aria-hidden="true">❆</div>
                 <h1 class="login-title">AC DEFENDER</h1>
+                <BuildProvenance />
                 <p class="login-code">TACTICAL OPS // RECRUITMENT</p>
                 <p class="login-subtitle">Create an account. Ask the owner for the registration code.</p>
             </div>
@@ -84,6 +86,7 @@ else if (_formMode == "google")
             <div class="login-header">
                 <div class="login-mark" aria-hidden="true">❆</div>
                 <h1 class="login-title">AC DEFENDER</h1>
+                <BuildProvenance />
                 <p class="login-code">TACTICAL OPS // GOOGLE HANDSHAKE</p>
                 <p class="login-subtitle">On any device, open the link below and enter this code with the Google account on the defender's allow-list.</p>
             </div>
@@ -101,6 +104,7 @@ else
             <div class="login-header">
                 <div class="login-mark" aria-hidden="true">❆</div>
                 <h1 class="login-title">AC DEFENDER</h1>
+                <BuildProvenance />
                 <p class="login-code">TACTICAL OPS // GUARD POST</p>
                 <p class="login-subtitle">Identify yourself to enter the command tent.</p>
             </div>
@@ -469,7 +473,7 @@ else
         if (httpContext.User.Identity?.IsAuthenticated == true
             && !httpContext.Request.Method.Equals("POST", StringComparison.OrdinalIgnoreCase))
         {
-            httpContext.Response.Redirect("/");
+            httpContext.Response.Redirect("/setup");
             return;
         }
 
@@ -498,7 +502,7 @@ else
                 case GoogleDeviceLogin.PollStatus.SignedIn:
                     httpContext.Response.Cookies.Delete(GooglePendingCookie);
                     await SignInAsync(httpContext, poll.Email!, poll.KeepSignedIn);
-                    httpContext.Response.Redirect("/");
+                    httpContext.Response.Redirect("/setup");
                     return;
                 case GoogleDeviceLogin.PollStatus.Pending:
                     _formMode = "google";
@@ -593,7 +597,7 @@ else
         }
 
         await SignInAsync(httpContext, username, KeepSignedInForm);
-        httpContext.Response.Redirect("/");
+        httpContext.Response.Redirect("/setup");
     }
 
     private static async Task SignInAsync(HttpContext httpContext, string username, bool persistent)

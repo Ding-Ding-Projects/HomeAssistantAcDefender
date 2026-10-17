@@ -1,0 +1,93 @@
+@page "/setup"
+@implements IDisposable
+@inject SetupValidationService Validation
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+<PageTitle>Setup · AC Defender</PageTitle>
+<section class="setup-checklist" data-personal-wording>
+    <MudText Typo="Typo.h4">@T("Setup checklist", "設定清單")</MudText>
+    <p>@T("Review this installation safely. The background defender continues running throughout setup. This checklist only reads the configured climate entity.", "安全檢查呢個安裝。設定期間背景防護會繼續運作，呢份清單只會讀取已設定嘅冷氣實體。")</p>
+    <p role="status">@T("Step", "步驟") @(_step + 1) / 3</p>
+    <MudProgressLinear Value="@((_step + 1) * 100.0 / 3)" aria-label="@T("Setup progress", "設定進度")" />
+    <h2 id="setup-step-heading" tabindex="-1">@StepTitle</h2>
+    @if (_step == 0)
+    {
+        <p>@T("Check that Home Assistant responds with a usable reading for the explicitly configured climate entity. No temperature, mode or settings will be changed.", "檢查 Home Assistant 能否傳回已指定冷氣實體嘅有效讀數。唔會改動溫度、模式或者設定。")</p>
+        <MudButton OnClick="Check" Disabled="@_checking" Variant="Variant.Filled" Color="Color.Primary">@T(_checking ? "Checking…" : "Check connection and entity", _checking ? "檢查緊…" : "檢查連線同實體")</MudButton>
+        @if (_checking)
+        {
+            <MudButton OnClick="CancelCheck">@T("Cancel check", "取消檢查")</MudButton>
+        }
+        <div id="setup-check-result" tabindex="-1" role="status" class="my-3">
+            @if (_result is not null)
+            {
+                <MudAlert Severity="@(_result.Success ? Severity.Success : Severity.Warning)">@ResultText</MudAlert>
+                @if (_result.EntityId is { } entity) { <p data-factual>@entity</p> }
+            }
+        </div>
+        <p>@T("If configuration is missing, open Settings to configure the Home Assistant token. The deployment owner sets the Home Assistant address and climate entity. Return here and retry.", "如果未完成設定，請去設定頁加入 Home Assistant 權杖。部署管理員需要設定 Home Assistant 地址同冷氣實體，之後返嚟重試。")</p>
+        <MudButton Href="/settings">@T("Open Settings", "開啟設定")</MudButton>
+    }
+    else if (_step == 1)
+    {
+        <PresentationPreferences />
+        <p>@T("This step is optional. Skip keeps your existing browser preferences.", "呢一步可以略過，原有瀏覽器設定會保持不變。")</p>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">@T("You have reached the end of this checklist. Checklist progress is not proof of current connectivity. You can go Back to check again at any time.", "你已到達清單最後一步，但進度唔代表目前連線一定正常。你隨時可以返回再檢查。")</MudAlert>
+        <p>@T("Open the dashboard for live state and normal controls.", "開啟控制台查看即時狀態同日常控制。")</p>
+    }
+    @if (_saveFailed) { <p role="alert">@T("Browser storage is unavailable; progress will not survive a reload.", "瀏覽器儲存空間無法使用，重新載入後進度會消失。")</p> }
+    <div class="presentation-actions">
+        <MudButton OnClick="Back" Disabled="@(_step == 0 || _checking)" Variant="Variant.Outlined">@T("Back", "返回")</MudButton>
+        @if (_step < 2)
+        {
+            <MudButton OnClick="Next" Disabled="@(_checking || (_step == 0 && _result?.Success != true))" Variant="Variant.Filled" Color="Color.Primary">@T("Next", "下一步")</MudButton>
+            @if (_step == 1) { <MudButton OnClick="Next">@T("Skip optional preferences", "略過選填設定")</MudButton> }
+        }
+        else
+        {
+            <MudButton OnClick="Finish" Variant="Variant.Filled" Color="Color.Primary">@T("Finish and open dashboard", "完成並開啟控制台")</MudButton>
+        }
+        <MudButton Href="/">@T("Save and leave", "儲存並離開")</MudButton>
+    </div>
+    <BuildProvenance />
+</section>
+@code {
+    [CascadingParameter(Name = "LangMode")] public string? Language { get; set; }
+    private int _step;
+    private bool _checking, _saveFailed;
+    private SetupValidationResult? _result;
+    private CancellationTokenSource? _checkCancellation;
+    private string T(string en, string yue) => Language == Lang.Cantonese ? yue : Language == Lang.Both ? en + " · " + yue : en;
+    private string StepTitle => _step switch { 0 => T("1. Validate the connection", "1. 檢查連線"), 1 => T("2. Browser preferences", "2. 瀏覽器設定"), _ => T("3. Ready to review live state", "3. 準備查看即時狀態") };
+    private string ResultText => _result?.Code switch {
+        "ready" => T("A usable reading was received. No climate command was sent.", "已收到有效讀數，冇發送任何冷氣指令。"),
+        "not-configured" => T("A Home Assistant token is not configured. Open Settings to configure it, then retry.", "未設定 Home Assistant 權杖。請去設定頁完成設定後重試。"),
+        "entity-required" => T("An explicit climate entity is required. Ask the deployment owner to configure it, then retry.", "需要指定冷氣實體，請部署管理員設定後重試。"),
+        "interrupted" => T("The check was cancelled or timed out. Retry when ready.", "檢查已取消或逾時，準備好可以重試。"),
+        _ => T("The configured entity could not be read. Check connection, permissions and entity availability, then retry.", "未能讀取已設定實體，請檢查連線、權限同實體狀態後重試。") };
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _step = await JS.InvokeAsync<int>("acPresentation.loadProgress");
+        await JS.InvokeVoidAsync("acPresentation.language", Language ?? Lang.English);
+        StateHasChanged();
+    }
+    private async Task Check()
+    {
+        _result = null; _checking = true;
+        _checkCancellation?.Dispose(); _checkCancellation = new(TimeSpan.FromSeconds(15));
+        _result = await Validation.ValidateAsync(_checkCancellation.Token);
+        _checking = false;
+        await JS.InvokeVoidAsync("acAccessibility.focusElementById", "setup-check-result");
+    }
+    private void CancelCheck() => _checkCancellation?.Cancel();
+    private async Task Save() => _saveFailed = !await JS.InvokeAsync<bool>("acPresentation.saveProgress", _step);
+    private async Task Move(int step) { _step = step; if (step == 0) _result = null; await Save(); await JS.InvokeVoidAsync("acAccessibility.focusElementById", "setup-step-heading"); }
+    private Task Back() => Move(Math.Max(0, _step - 1));
+    private Task Next() => Move(Math.Min(2, _step + 1));
+    private async Task Finish() { await Save(); Navigation.NavigateTo("/"); }
+    public void Dispose() { _checkCancellation?.Cancel(); _checkCancellation?.Dispose(); }
+}
