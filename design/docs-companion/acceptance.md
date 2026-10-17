@@ -24,3 +24,9 @@ This is a documentation reader, not the live HVAC controller. Shell translation 
 ## Portable artifact
 
 Built successfully as `dist/AC-Defender-Docs-0.1.0-portable.exe` (99787191 bytes). SHA-256: `09df099f5a3b9f40f80b4268c27f0f8cbf6648e304821f3f57904d02d9940ea5`. All 264 files in the packaged Windows ASAR match the hashes of the tested browser/Electron bundle. See [artifact receipt](evidence/portable-artifact.json). The executable itself remains an ignored build output, not a tracked source file.
+
+## Later wording and native-CI source verification
+
+Source `5c47edb246d159e2e8e6ae2076353db0c677f921` adds the neutral wording validator and native Windows CI launch proof. The reader was rebuilt with 85 articles. All seven focused tests passed, including shared reader/web schema fixtures, duplicate/unsafe keys, byte/depth/code-point limits and fatal UTF-8 decoding. Built Chromium interaction proved exact original-text replacement, persistence and startup revalidation, duplicate-import rejection, genuine browser-storage quota failure preserving prior wording, and clear removing the private cache. Actual Linux Electron checks passed again. The [later browser receipt](evidence/wording-regression/receipt.json), [later Electron receipt](evidence/wording-regression/electron-linux.json) and associated unmodified captures bind to this later source.
+
+The existing local portable executable remains bound to the earlier source above; it was not recompressed after these changes. Native Windows CI proof is implemented and syntax checked; its Linux unsupported-host path fails with an honest unverified result. No native Windows execution result is claimed here. The CI proof copies the exact executable bytes into an otherwise empty owned directory, validates the copied SHA-256, launches with an owned profile and loopback CDP port, verifies visible release provenance and real article navigation, records a capture, and closes the owned runtime/profile.
