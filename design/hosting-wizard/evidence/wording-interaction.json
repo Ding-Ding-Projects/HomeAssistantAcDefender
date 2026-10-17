@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "route": "linux-isolated-xorg-electron-cdp",
+  "sourceCommit": "87dde0ffb4c94472f3b224ef099459d0e5f37fcf",
+  "rendererSha256": "4273222d272158aadebee8ed7f50be644b46979fba533cddad42e46429850345",
+  "checks": {
+    "visibleUpload": true,
+    "validImport": true,
+    "localPersistence": true,
+    "invalidPreservesLastValid": true,
+    "factualProvenanceUnchanged": true,
+    "clearRestoresOriginal": true,
+    "clearPurgesCache": true,
+    "noNetworkRequests": true,
+    "noRendererErrors": true
+  },
+  "screenshot": {
+    "file": "wording-cleared-window.png",
+    "sha256": "43766d3f2c0d5bfab1d34913de6abc099cdf2d26046e9e9153ef7a1011d14da7"
+  },
+  "privacy": "Capture was taken only after clearing the synthetic test wording; no imported payload or file metadata is recorded.",
+  "nativeWindowsProof": false
+}
