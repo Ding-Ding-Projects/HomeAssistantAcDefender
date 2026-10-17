@@ -1,6 +1,6 @@
 import { chromium } from 'playwright-core';
 import { spawn } from 'node:child_process';
-import {finishOwnedCleanup, inspectOwnedListener, stopOwnedProcesses} from './native-cleanup.mjs';
+import {finishOwnedCleanup, inspectOwnedListener, stopOwnedProcesses, captureOwnedDescendants, cleanupStage, safeCleanupDiagnostic} from './native-cleanup.mjs';
 import { createServer } from 'node:net';
 import { copyFile, mkdtemp, mkdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
@@ -123,22 +123,30 @@ try {
   failure = error;
   receipt.failure = String(error?.message || error).replaceAll(profile || '\u0000', '<owned-profile>').slice(0, 1000);
 } finally {
+  if(child?.pid){
+    try {
+      const known=identities.length ? identities : [{pid:child.pid, executable:isolatedArtifact}];
+      identities=await cleanupStage('descendant-snapshot',()=>captureOwnedDescendants({identities:known,launchedAt}),15000);
+      receipt.ownedProcessCount=identities.length;
+    } catch(error){failure ||= error;receipt.cleanupDiagnostic=safeCleanupDiagnostic(error,'descendant-snapshot');}
+  }
   try {
     receipt.cleanup = await finishOwnedCleanup({
       browser,
       stopAndVerify: async () => {
         if (!child?.pid) return;
         const owned = identities.length ? identities : [{pid:child.pid, executable:isolatedArtifact}];
-        await stopOwnedProcesses({identities:owned, launchedAt, profile});
+        receipt.processCleanup = await stopOwnedProcesses({identities:owned, launchedAt, profile});
       },
       removeOwnedFiles: async () => {
-        if (profile) await rm(profile, {recursive:true, force:true, maxRetries:20, retryDelay:250});
-        if (launchDirectory) await rm(launchDirectory, {recursive:true, force:true, maxRetries:20, retryDelay:250});
+        if (profile) await cleanupStage('profile-removal',()=>rm(profile, {recursive:true, force:true, maxRetries:4, retryDelay:200}),10000);
+        if (launchDirectory) await cleanupStage('launch-directory-removal',()=>rm(launchDirectory, {recursive:true, force:true, maxRetries:4, retryDelay:200}),10000);
       }
     });
   } catch (error) {
     failure ||= error;
     receipt.cleanup = {complete:false};
+    receipt.cleanupDiagnostic=safeCleanupDiagnostic(error,'owned-cleanup');
     receipt.cleanupFailure = 'Exact owned process cleanup or temporary-file removal could not be verified';
   }
   receipt.verified = !failure;
