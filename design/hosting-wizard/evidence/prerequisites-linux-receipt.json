@@ -1,16 +1,16 @@
 {
   "version": 1,
   "route": "linux-isolated-xorg-electron-cdp",
-  "sourceStartCommit": "89452864d1cf147dba18e4c10146fcbe8ae825b3",
-  "sourceEndCommit": "89452864d1cf147dba18e4c10146fcbe8ae825b3",
+  "sourceStartCommit": "a6ca54fb8903260358a5666dbf70bb82f4524c9f",
+  "sourceEndCommit": "a6ca54fb8903260358a5666dbf70bb82f4524c9f",
   "artifact": {
     "path": "hosting-wizard/renderer/app.js",
     "sha256": "3bde26afa8c67c88058026069b6a74cb84f698769ec4e39beee93b7a67a7c005"
   },
   "buildMetadata": {
     "version": "0.1.0",
-    "revision": "89452864d1cf147dba18e4c10146fcbe8ae825b3",
-    "buildTime": "2026-10-17T09:32:25Z"
+    "revision": "a6ca54fb8903260358a5666dbf70bb82f4524c9f",
+    "buildTime": "2026-10-17T09:34:01Z"
   },
   "privacy": {
     "visibleDesktopUntouched": true,
@@ -147,7 +147,7 @@
       ],
       "screenshot": {
         "path": "prerequisites-en-light-1120.png",
-        "sha256": "e765e79b960c43d3635bb40be19649b963809e929e024af365c3c173906c82c5"
+        "sha256": "0aa5ffeb72c7cb0ab2f254f907ce78d2a251944b0e84ca48fbe14dde8ad5af19"
       }
     },
     {
@@ -273,7 +273,7 @@
       ],
       "screenshot": {
         "path": "prerequisites-en-dark-1120.png",
-        "sha256": "2cd5b3fd204ee05f630739ace01009a9777e10afce1365722574beb673308591"
+        "sha256": "33d5d9d94fcfd92f27d0847b100be2653b3895c3d980293cb5b0013edad8634c"
       }
     },
     {
@@ -399,7 +399,7 @@
       ],
       "screenshot": {
         "path": "prerequisites-yue-light-1120.png",
-        "sha256": "9b1143d0e8acafc250b054b2d8d39b57f2a3ab6dc3db63e28e756e77d954a6d2"
+        "sha256": "1de4c1f988a767c0fc1ab6ad9b4f370166afdd357e73d2ba98e3fbe2a06958b9"
       }
     },
     {
@@ -525,7 +525,7 @@
       ],
       "screenshot": {
         "path": "prerequisites-yue-dark-1120.png",
-        "sha256": "2c89a78e67f6aa72b3aaaefb82802703b63c1014a8f633b4a447cf3e56b8f6f9"
+        "sha256": "1afde97382ea79194792b46b6198a5e7eeebcb31a502e38d7a31b42b3eafef69"
       }
     },
     {
@@ -651,7 +651,7 @@
       ],
       "screenshot": {
         "path": "prerequisites-both-light-1120.png",
-        "sha256": "69fcd55dab992085b025ed1215a8642cdbdbc020a6136ce93aabf846c28cb9c5"
+        "sha256": "d57908cdcb4b7e203c680cd9b433ece8e97f69f54829c8c51edc9136eeb98df7"
       }
     },
     {
@@ -777,7 +777,7 @@
       ],
       "screenshot": {
         "path": "prerequisites-both-dark-1120.png",
-        "sha256": "36e63dfa0dfb7475cad45bee3cc6846e65711bf6c6e8565133517f2f33387229"
+        "sha256": "e132cfe90f8f574260991219de0e433dfa5861bd67148cfa57010e19882a03bd"
       }
     },
     {
@@ -903,7 +903,7 @@
       ],
       "screenshot": {
         "path": "prerequisites-en-light-720.png",
-        "sha256": "4e081e6bd866a383fe1f4e702d91a865da837e2879bac3d9c7a7d4c5e1eed6fe"
+        "sha256": "df5bfe7b0f3b4dd23ae0b7643d2d7ebce7e5dad9cec1db9e6c0a74264207a623"
       }
     },
     {
@@ -1029,7 +1029,7 @@
       ],
       "screenshot": {
         "path": "prerequisites-en-dark-720.png",
-        "sha256": "4a872f3249467f51f258a4eba02e77677e739ae4a526a17ea3d0d0c72bd6271f"
+        "sha256": "6343c69bae77a8844ecceb3b35823790aca977991e7474cabec176ad84e42005"
       }
     },
     {
@@ -1155,7 +1155,7 @@
       ],
       "screenshot": {
         "path": "prerequisites-yue-light-720.png",
-        "sha256": "21ad1b06ea7d1e7ec42d29703f1353f48320e009c8b1f0a0731a383e12420492"
+        "sha256": "2c654f3bded11a272ccebed208dc072c2a7013360895077dcd91c56bd529359b"
       }
     },
     {
@@ -1281,7 +1281,7 @@
       ],
       "screenshot": {
         "path": "prerequisites-yue-dark-720.png",
-        "sha256": "c1369c93f81a44d512a885678bf0fbc869ae5edc82ed670916e3aa03465e42a1"
+        "sha256": "7dfbc9ab26cc1a405226a1a7225c2cf0374237e02d9aff7eec5d03df95190b8b"
       }
     },
     {
@@ -1407,7 +1407,7 @@
       ],
       "screenshot": {
         "path": "prerequisites-both-light-720.png",
-        "sha256": "efda331b7c942fd99302151d66bfa8214be5b151ccf1d1a15e9b7a9f535ef0a8"
+        "sha256": "06d8c293c6cc418a4eb119936ed3cb3282c4edb3518b7d8d75f696cb5e36fe37"
       }
     },
     {
@@ -1533,12 +1533,46 @@
       ],
       "screenshot": {
         "path": "prerequisites-both-dark-720.png",
-        "sha256": "910bbec52dfa0a78d7b491cd704ce99e7bedc1590365b32f38e0fb7a5896478a"
+        "sha256": "ae8d3214d21088d9706cad4fd3eb7438750b18272e8cf0cc0fb7f541b1f042de"
       }
     }
   ],
   "limitations": [
     "Linux Electron evidence only; Windows portable launch and native installation unverified.",
     "Only real prerequisite and unconfigured configuration screens are captured. Other states and display scales remain pending."
+  ],
+  "assets": [
+    {
+      "path": "hosting-wizard/electron/engine.cjs",
+      "sha256": "a94535ada1433a986f31f2ed122190ea10f600a68ff73bc754d28cc441f03a37"
+    },
+    {
+      "path": "hosting-wizard/electron/main.cjs",
+      "sha256": "491be0959ef74ff2e21de73def3e9cbbc743552ed8c96f3ca1a89b12ec3d9147"
+    },
+    {
+      "path": "hosting-wizard/electron/preload.cjs",
+      "sha256": "f84d5ccec7170bc993813ac8006abf61ab9ac628ec0538460e6dc0c3dc884c6e"
+    },
+    {
+      "path": "hosting-wizard/renderer/app.js",
+      "sha256": "3bde26afa8c67c88058026069b6a74cb84f698769ec4e39beee93b7a67a7c005"
+    },
+    {
+      "path": "hosting-wizard/renderer/style.css",
+      "sha256": "85bd5787d7e1fd3fda5365309fa497b1985ece29d702c83deb974fa742c0ff6c"
+    },
+    {
+      "path": "hosting-wizard/renderer/index.html",
+      "sha256": "b09b47bf4e3b1f0f6a074cae611be40ddacebad4dc292eafb2dc1e8abd67de17"
+    },
+    {
+      "path": "hosting-wizard/resources/build.json",
+      "sha256": "0961a693f954eb3f1d034e390a720a18bf20a8b3d36b608bfd253ea1e3939b12"
+    },
+    {
+      "path": "hosting-wizard/resources/compose.yml",
+      "sha256": "ee154ded54298afc923e82b87759244521d603a74ef6d9b6d835fde6b973f4f0"
+    }
   ]
 }
