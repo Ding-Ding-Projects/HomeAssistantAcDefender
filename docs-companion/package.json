@@ -1,0 +1,50 @@
+{
+  "name": "ac-defender-docs",
+  "productName": "AC Defender Documentation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline documentation companion for AC Defender",
+  "author": "Ding-Ding Projects",
+  "type": "module",
+  "main": "app/main.js",
+  "scripts": {
+    "build": "tsc && node scripts/build.mjs",
+    "test": "node --test tests/*.mjs",
+    "start": "electron .",
+    "dist": "npm run build && npm test && electron-builder --win portable"
+  },
+  "devDependencies": {
+    "@material/web": "^2.4.1",
+    "@types/node": "^22.0.0",
+    "cheerio": "1.0.0",
+    "electron": "43.4.1",
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.25.12",
+    "playwright-core": "^1.56.0",
+    "typescript": "~5.8.3"
+  },
+  "build": {
+    "appId": "com.dingdingprojects.acdefender.docs",
+    "asar": true,
+    "files": [
+      "app/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "artifactName": "AC-Defender-Docs-${version}-portable.${ext}",
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": false
+    },
+    "publish": null
+  }
+}
