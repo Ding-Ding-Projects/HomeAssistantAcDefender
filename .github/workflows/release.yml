@@ -194,11 +194,28 @@ jobs:
           foreach ($file in $files) {
             if ((Get-AuthenticodeSignature $file.FullName).Status -ne 'NotSigned') { throw 'Expected an explicitly unsigned portable setup' }
           }
+      - name: Verify native Windows portable renderer
+        timeout-minutes: 3
+        shell: pwsh
+        run: |
+          $portable = Join-Path 'dist' ('AC-Defender-Setup-{0}-portable.exe' -f $env:AC_DEFENDER_VERSION)
+          node scripts/native-portable-proof.mjs "$portable" "../safe-evidence/hosting-portable-native"
       - uses: actions/upload-artifact@v4
         with:
           name: hosting-wizard-portable
           path: hosting-wizard/dist/AC-Defender-Setup-0.1.${{ github.run_number }}-portable.exe
           if-no-files-found: error
+      - name: Upload bounded native Windows evidence
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosting-portable-native-safe-evidence
+          path: |
+            safe-evidence/hosting-portable-native/initial-window.png
+            safe-evidence/hosting-portable-native/receipt.json
+          if-no-files-found: warn
+          retention-days: 7
 
   build-docs-companion-site:
     needs: workflow-start
@@ -257,11 +274,28 @@ jobs:
           $expected = Join-Path 'dist' ('AC-Defender-Docs-{0}-portable.exe' -f $env:AC_DEFENDER_VERSION)
           $files = @(Get-Item -LiteralPath $expected -ErrorAction Stop)
           if ($files.Count -lt 1 -or @($files | Where-Object Length -le 0).Count -gt 0) { throw 'Missing or empty documentation companion' }
+      - name: Verify native Windows portable renderer
+        timeout-minutes: 3
+        shell: pwsh
+        run: |
+          $portable = Join-Path 'dist' ('AC-Defender-Docs-{0}-portable.exe' -f $env:AC_DEFENDER_VERSION)
+          node scripts/native-portable-proof.mjs "$portable" "../safe-evidence/docs-portable-native"
       - uses: actions/upload-artifact@v4
         with:
           name: docs-companion-portable
           path: docs-companion/dist/AC-Defender-Docs-0.1.${{ github.run_number }}-portable.exe
           if-no-files-found: error
+      - name: Upload bounded native Windows evidence
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-portable-native-safe-evidence
+          path: |
+            safe-evidence/docs-portable-native/initial-window.png
+            safe-evidence/docs-portable-native/result.json
+          if-no-files-found: warn
+          retention-days: 7
 
   verify-and-release:
     needs: [workflow-start, build-desktop-electron, build-hosting-wizard, build-docs-companion]

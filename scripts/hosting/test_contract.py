@@ -85,6 +85,25 @@ class DeploymentContract(unittest.TestCase):
             self.assertEqual(artifact["with"]["path"], directory + "/dist/" + prefix + "-0.1.${{ github.run_number }}-portable.exe")
             self.assertEqual(job["defaults"]["run"]["working-directory"], directory)
 
+    def test_native_portable_proof_gates_and_safe_evidence(self):
+        jobs = yaml.safe_load((ROOT / ".github/workflows/release.yml").read_text())["jobs"]
+        for name, prefix, evidence, receipt in (("build-hosting-wizard", "AC-Defender-Setup", "hosting-portable-native", "receipt.json"), ("build-docs-companion", "AC-Defender-Docs", "docs-portable-native", "result.json")):
+            job = jobs[name]
+            self.assertEqual(job["runs-on"], "windows-latest")
+            steps = job["steps"]
+            proof = next(step for step in steps if step.get("name") == "Verify native Windows portable renderer")
+            self.assertEqual(proof["timeout-minutes"], 3)
+            self.assertNotIn("continue-on-error", proof)
+            self.assertIn(prefix + "-{0}-portable.exe", proof["run"])
+            self.assertIn('node scripts/native-portable-proof.mjs "$portable" "../safe-evidence/' + evidence + '"', proof["run"])
+            published = next(step for step in steps if step.get("uses") == "actions/upload-artifact@v4")
+            self.assertLess(steps.index(proof), steps.index(published))
+            upload = next(step for step in steps if step.get("name") == "Upload bounded native Windows evidence")
+            self.assertEqual(upload["if"], "${{ always() }}")
+            self.assertTrue(upload["continue-on-error"])
+            self.assertEqual(upload["with"]["retention-days"], 7)
+            self.assertEqual(upload["with"]["path"].splitlines(), ["safe-evidence/" + evidence + "/initial-window.png", "safe-evidence/" + evidence + "/" + receipt])
+
     def test_embedded_shell_and_python_syntax(self):
         jobs = yaml.safe_load((ROOT / ".github/workflows/release.yml").read_text())["jobs"]
         for job in jobs.values():
