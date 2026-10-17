@@ -8,6 +8,30 @@ function localEndpoint(host){if(typeof host!=='string')throw new SetupError('loc
 const {spawn} = require('node:child_process');
 
 class SetupError extends Error { constructor(code) { super(code); this.code = code; } }
+async function resolvePublishedImage({version,signal,fetcher=fetch,timeoutMs=15000}) {
+  if(!/^\d+\.\d+\.\d+$/.test(version)||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>15000)throw new SetupError('publishedImageUnavailable');
+  if(signal?.aborted)throw new SetupError('cancelled');
+  const controller=new AbortController();const abort=()=>controller.abort();signal?.addEventListener('abort',abort,{once:true});
+  let rejectAbort;const cancelled=new Promise((_,reject)=>{rejectAbort=()=>reject(new SetupError(signal?.aborted?'cancelled':'publishedImageUnavailable'));controller.signal.addEventListener('abort',rejectAbort,{once:true});});
+  const timer=setTimeout(abort,timeoutMs);
+  try{return await Promise.race([cancelled,(async()=>{
+    let url=`https://github.com/Ding-Ding-Projects/HomeAssistantAcDefender/releases/download/v${version}/image-reference.txt`;
+    for(let redirects=0;redirects<=3;redirects++){
+      const target=new URL(url);if(target.protocol!=='https:'||target.username||target.password||target.port||!['github.com','release-assets.githubusercontent.com','objects.githubusercontent.com'].includes(target.hostname))throw new SetupError('publishedImageUnavailable');
+      const response=await fetcher(target.href,{signal:controller.signal,redirect:'manual',credentials:'omit',referrerPolicy:'no-referrer',headers:{Accept:'text/plain'}});
+      if([301,302,303,307,308].includes(response.status)){const location=response.headers.get('location');void response.body?.cancel().catch(()=>{});if(!location)throw new SetupError('publishedImageUnavailable');url=new URL(location,target).href;continue;}
+      if(!response.ok||!response.body?.getReader)throw new SetupError('publishedImageUnavailable');
+      const declared=response.headers.get('content-length');if(declared!==null&&(!/^\d+$/.test(declared)||Number(declared)>512))throw new SetupError('publishedImageUnavailable');
+      const reader=response.body.getReader();let bytes=0;const chunks=[];
+      for(;;){const next=await reader.read();if(next.done)break;bytes+=next.value.byteLength;if(bytes>512){void reader.cancel().catch(()=>{});throw new SetupError('publishedImageUnavailable');}chunks.push(Buffer.from(next.value));}
+      const text=new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks));
+      const match=/^(ghcr\.io\/ding-ding-projects\/homeassistantacdefender@sha256:[a-f0-9]{64})(?:\r?\n)?$/.exec(text);
+      if(!match||match[0].length!==text.length)throw new SetupError('publishedImageUnavailable');return match[1];
+    }
+    throw new SetupError('publishedImageUnavailable');
+  })()]);}catch{throw new SetupError(signal?.aborted?'cancelled':'publishedImageUnavailable');}
+  finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);controller.signal.removeEventListener('abort',rejectAbort);controller.abort();}
+}
 function validate(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw) || Object.keys(raw).sort().join(',') !== 'endpoint,entity,httpConsent,token') throw new SetupError('invalidConfiguration');
   if (typeof raw.endpoint !== 'string' || raw.endpoint.length > 2048 || typeof raw.entity !== 'string' || !/^climate\.[a-z0-9_]{1,150}$/.test(raw.entity) || typeof raw.token !== 'string' || !/^[A-Za-z0-9._~-]{20,4096}$/.test(raw.token) || typeof raw.httpConsent !== 'boolean') throw new SetupError('invalidConfiguration');
@@ -45,8 +69,8 @@ async function protectDirectory(directory,run=runProcess,platform=process.platfo
   } else await fs.chmod(directory,0o700);
 }
 class Engine {
-  constructor({statePath,composePath,metadata,run=runProcess,fetcher=fetch,platform=process.platform,interfaces=os.networkInterfaces}) {
-    Object.assign(this,{statePath,composePath,metadata,run,fetcher,platform,interfaces});
+  constructor({statePath,composePath,metadata,run=runProcess,fetcher=fetch,imageFetcher=fetch,platform=process.platform,interfaces=os.networkInterfaces}) {
+    Object.assign(this,{statePath,composePath,metadata,run,fetcher,imageFetcher,platform,interfaces});
     this.state={phase:'prerequisites',ready:false,config:null,directory:null,urls:[],error:null};this.secret=null;this.operation=null;
   }
   snapshot(){return {...this.state,config:this.state.config?{...this.state.config}:null,busy:!!this.operation,credentialsReady:!!this.secret,metadata:this.metadata};}
@@ -60,16 +84,19 @@ class Engine {
   cancel(){this.operation?.abort();return this.snapshot();}
   async assertOwned(){for(const target of [this.state.directory,...['setup-owner.json','.env','compose.yml'].map(f=>path.join(this.state.directory,f))]){if((await fs.lstat(target)).isSymbolicLink())throw new SetupError('ownershipMismatch');}const marker=JSON.parse(await fs.readFile(path.join(this.state.directory,'setup-owner.json'),'utf8'));if(marker.id!==path.basename(this.state.directory)||marker.revision!==this.metadata.revision||crypto.createHash('sha256').update(await fs.readFile(path.join(this.state.directory,'compose.yml'))).digest('hex')!==crypto.createHash('sha256').update(await fs.readFile(this.composePath)).digest('hex'))throw new SetupError('ownershipMismatch');}
   composeArgs(action){return ['--host',localEndpoint(this.engineEndpoint),'compose','--project-name',path.basename(this.state.directory),'--env-file',path.join(this.state.directory,'.env'),'-f',path.join(this.state.directory,'compose.yml'),...action];}
+  async configuredImage(){const file=path.join(this.state.directory,'.env');const stat=await fs.stat(file);if(stat.size>16384)throw new SetupError('imageIdentityMismatch');const lines=(await fs.readFile(file,'utf8')).split(/\r?\n/).filter(line=>line.startsWith('AC_DEFENDER_IMAGE='));if(lines.length!==1||!/^AC_DEFENDER_IMAGE=ghcr\.io\/ding-ding-projects\/homeassistantacdefender@sha256:[a-f0-9]{64}$/.test(lines[0]))throw new SetupError('imageIdentityMismatch');return lines[0].slice('AC_DEFENDER_IMAGE='.length);}
+  async verifyImage(image,signal){const output=await this.run('docker',['--host',localEndpoint(this.engineEndpoint),'image','inspect','--format','{{json .Config.Labels}}',image],{signal,timeout:30000});let labels;try{if(Buffer.byteLength(output)>65536)throw new Error();labels=JSON.parse(output);}catch{throw new SetupError('imageIdentityMismatch');}if(!labels||typeof labels!=='object'||Array.isArray(labels)||labels['org.opencontainers.image.version']!==this.metadata.version||labels['org.opencontainers.image.revision']!==this.metadata.revision)throw new SetupError('imageIdentityMismatch');if(this.metadata.buildTime&&(!Number.isFinite(Date.parse(labels['org.opencontainers.image.created']))||Date.parse(labels['org.opencontainers.image.created'])!==Date.parse(this.metadata.buildTime)))throw new SetupError('imageIdentityMismatch');}
   async health(url,signal){try{const response=await this.fetcher(`${url}/healthz`,{signal:AbortSignal.any([signal,AbortSignal.timeout(4000)]),redirect:'error'});if(!response.ok)return false;let body='';if(response.body?.getReader){const reader=response.body.getReader();let size=0;for(;;){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>4096){await reader.cancel();return false;}body+=new TextDecoder().decode(value,{stream:true});}}else{body=await response.text();if(body.length>4096)return false;}const data=JSON.parse(body);return data.status==='ok'&&data.revision===this.metadata.revision&&data.version===this.metadata.version;}catch{return false;}}
   async start(){if(this.operation)throw new SetupError('busy');if(this.state.preparationFailed)throw new SetupError('newDestinationRequired');if(!this.state.ready||!this.engineEndpoint||!this.state.directory||!this.state.config)throw new SetupError('notReady');if(!/^[a-f0-9]{40}$/.test(this.metadata.revision)||!/^\d+\.\d+\.\d+$/.test(this.metadata.version))throw new SetupError('provenanceRequired');if(!this.state.created&&!this.secret)throw new SetupError('credentialsRequired');
     const controller=new AbortController();this.operation=controller;const signal=controller.signal;this.state.error=null;this.state.urls=[];
     try{
       const lanHosts=[...new Set(Object.values(this.interfaces()).flat().filter(n=>n.family==='IPv4'&&!n.internal&&privateIPv4(n.address)).map(n=>n.address))].slice(0,8);
-      if(!this.state.created){this.state.preparationFailed=true;await this.persist();await fs.mkdir(this.state.directory,{mode:0o700});await protectDirectory(this.state.directory,this.run,this.platform);if(signal.aborted)throw new SetupError('cancelled');
-        const c=this.state.config;const env=[`AC_DEFENDER_IMAGE=ghcr.io/ding-ding-projects/homeassistantacdefender:sha-${this.metadata.revision}`,`AC_DEFENDER_VERSION=${this.metadata.version}`,`AC_DEFENDER_REVISION=${this.metadata.revision}`,`AC_DEFENDER_CONTAINER_NAME=${path.basename(this.state.directory)}`,`HomeAssistant__BaseUrl=${c.endpoint}`,`HomeAssistant__EntityId=${c.entity}`,`HomeAssistant__AllowInsecurePrivateNetworkHttp=${c.httpConsent}`,`HomeAssistant__AccessToken=${this.secret}`,'FORWARDED_HEADERS_KNOWN_PROXIES=127.0.0.1',`FORWARDED_HEADERS_ALLOWED_HOSTS=${['localhost','127.0.0.1',...lanHosts].join(',')}`, ''];
+      let image;
+      if(!this.state.created){this.state.phase='resolving';await this.persist();image=await resolvePublishedImage({version:this.metadata.version,signal,fetcher:this.imageFetcher});if(signal.aborted)throw new SetupError('cancelled');this.state.preparationFailed=true;await this.persist();await fs.mkdir(this.state.directory,{mode:0o700});await protectDirectory(this.state.directory,this.run,this.platform);if(signal.aborted)throw new SetupError('cancelled');
+        const c=this.state.config;const env=[`AC_DEFENDER_IMAGE=${image}`,`AC_DEFENDER_VERSION=${this.metadata.version}`,`AC_DEFENDER_REVISION=${this.metadata.revision}`,`AC_DEFENDER_CONTAINER_NAME=${path.basename(this.state.directory)}`,`HomeAssistant__BaseUrl=${c.endpoint}`,`HomeAssistant__EntityId=${c.entity}`,`HomeAssistant__AllowInsecurePrivateNetworkHttp=${c.httpConsent}`,`HomeAssistant__AccessToken=${this.secret}`,'FORWARDED_HEADERS_KNOWN_PROXIES=127.0.0.1',`FORWARDED_HEADERS_ALLOWED_HOSTS=${['localhost','127.0.0.1',...lanHosts].join(',')}`, ''];
         await fs.writeFile(path.join(this.state.directory,'.env'),env.join('\n'),{flag:'wx',mode:0o600});this.secret=null;await fs.copyFile(this.composePath,path.join(this.state.directory,'compose.yml'),require('node:fs').constants.COPYFILE_EXCL);await fs.writeFile(path.join(this.state.directory,'setup-owner.json'),JSON.stringify({id:path.basename(this.state.directory),revision:this.metadata.revision}),{flag:'wx',mode:0o600});this.state.created=true;this.state.preparationFailed=false;await this.persist();
-      }else await this.assertOwned();
-      for(const [phase,args] of [['pulling',['pull','--quiet']],['starting',['up','-d','--no-build']],['checking',['ps','--status','running','--quiet']]]){if(signal.aborted)throw new SetupError('cancelled');this.state.phase=phase;await this.persist();const result=await this.run('docker',this.composeArgs(args),{cwd:this.state.directory,signal,timeout:phase==='pulling'?600000:120000});if(phase==='checking'&&!result.trim())throw new SetupError('serviceNotRunning');}
+      }else{await this.assertOwned();image=await this.configuredImage();}
+      for(const [phase,args] of [['pulling',['pull','--quiet']],['starting',['up','-d','--no-build']],['checking',['ps','--status','running','--quiet']]]){if(signal.aborted)throw new SetupError('cancelled');this.state.phase=phase;await this.persist();const result=await this.run('docker',this.composeArgs(args),{cwd:this.state.directory,signal,timeout:phase==='pulling'?600000:120000});if(phase==='checking'&&!result.trim())throw new SetupError('serviceNotRunning');if(phase==='pulling'){this.state.phase='verifyingImage';await this.persist();await this.verifyImage(image,signal);}}
       this.state.phase='health';await this.persist();let healthy=false;
       for(let i=0;i<30&&!signal.aborted;i++){if(await this.health('http://127.0.0.1:8888',signal)){healthy=true;break;}await new Promise(resolve=>{const timer=setTimeout(resolve,2000);signal.addEventListener('abort',()=>{clearTimeout(timer);resolve();},{once:true});});}
       if(signal.aborted)throw new SetupError('cancelled');if(!healthy)throw new SetupError('healthFailed');this.state.urls=['http://127.0.0.1:8888'];
@@ -78,4 +105,4 @@ class Engine {
     }catch(e){this.state.phase=signal.aborted?'cancelled':'failed';this.state.error=e instanceof SetupError?e.code:'operationFailed';}finally{this.secret=null;this.operation=null;await this.persist();}return this.snapshot();
   }
 }
-module.exports={Engine,SetupError,validate,runProcess,protectDirectory,localEndpoint,privateIPv4};
+module.exports={Engine,SetupError,validate,runProcess,protectDirectory,localEndpoint,privateIPv4,resolvePublishedImage};
