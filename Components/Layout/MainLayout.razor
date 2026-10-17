@@ -23,7 +23,7 @@
     @* ═════════ COMMAND BAR ═════════ *@
     <header class="ops-header">
         <div class="ops-brand">
-            <div class="ops-brand__mark" aria-hidden="true">
+            <div class="ops-brand__mark" aria-hidden="true" data-local-logo>
                 SCP
                 <span class="ops-brand__ping"></span>
             </div>
@@ -747,6 +747,7 @@
         new("/controls", "⌘", "CONTROLS", "AREA-06", false),
         new("/settings", "⚙", "ORDERS", "AREA-07", true),
         new("/setup", "✓", "SETUP", "SETUP", false),
+        new("/local-tools", "⇆", "LOCAL TOOLS", "TOOLS", false),
         new("/repository", "⇄", "REPO", "AREA-08", false),
         new("/guide", "✦", "GUIDE", "AREA-09", false),
         new("/wiki", "⎘", "WIKI", "AREA-10", true),
@@ -1385,6 +1386,7 @@
             StateHasChanged();
             await Task.Delay(1);
             await RevealActiveAppTabAsync();
+            await JS.InvokeVoidAsync("localTools.applyLogo");
         });
     }
 
@@ -1476,6 +1478,8 @@
         {
             return;
         }
+
+        await JS.InvokeVoidAsync("localTools.applyLogo");
 
         try
         {

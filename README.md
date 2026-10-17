@@ -67,6 +67,15 @@ It also builds the separate Windows controller with Squirrel.Windows and attache
 `.nupkg`, and `RELEASES` update-feed artifacts after static and non-empty-file checks. Release
 notes include measured workflow start, completion, and duration values. The workflow ignores
 its generated `v0.1.*` tag pushes so release publication cannot recursively create more releases.
+
+GitHub Pages remains the published documentation site. The additional
+[offline documentation companion](docs/wiki/documentation-companion.md) bundles the same rendered
+articles and assets in a single portable Windows executable; it does not replace the site.
+The release workflow also publishes a separate
+[portable hosting setup wizard](docs/wiki/hosting-wizard.md), a multi-platform container image,
+and an immutable image reference for the tracked Compose stack. Use `host.bat` for detached
+hosting or a live log view that leaves the service running when closed. See the
+[hosting guide](docs/wiki/hosting-release.md) for configuration and verification requirements.
 The [release and
 line-count guide](docs/wiki/release/line-counts.md) explains the artifact boundaries and how to
 load the server image.
