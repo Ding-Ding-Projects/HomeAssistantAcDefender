@@ -1,0 +1,13 @@
+{
+  "artifact": "dist/AC-Defender-Docs-0.1.0-portable.exe",
+  "bytes": 99787191,
+  "sha256": "09df099f5a3b9f40f80b4268c27f0f8cbf6648e304821f3f57904d02d9940ea5",
+  "metadata": {
+    "version": "0.1.0",
+    "source": "e9920236aace5ac5daa7ebb3c3e8f45dc468b8b7",
+    "builtAt": "2026-10-17T09:35:12.534Z",
+    "articleCount": 85
+  },
+  "packagedFileHashesVerified": 264,
+  "nativeWindowsLaunchVerified": false
+}
