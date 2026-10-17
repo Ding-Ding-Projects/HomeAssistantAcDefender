@@ -1,0 +1,127 @@
+{
+  "records": [
+    {
+      "route": "/",
+      "width": 1440,
+      "client": 1440,
+      "scroll": 1440,
+      "alert": "none",
+      "build": "Version 0.1.0+ea402c439e01244b5016af404c1da844efaaa218\nUpdated: Oct 17, 2026, 9:36:53 AM UTC\nSource: ea402c439e01244b5016af404c1da844efaaa218"
+    },
+    {
+      "route": "/setup",
+      "width": 1440,
+      "client": 1440,
+      "scroll": 1440,
+      "alert": "none",
+      "build": "Version 0.1.0+ea402c439e01244b5016af404c1da844efaaa218\nUpdated: Oct 17, 2026, 9:36:53 AM UTC\nSource: ea402c439e01244b5016af404c1da844efaaa218"
+    },
+    {
+      "route": "/settings",
+      "width": 1440,
+      "client": 1440,
+      "scroll": 1440,
+      "alert": "none",
+      "build": "Version 0.1.0+ea402c439e01244b5016af404c1da844efaaa218\nUpdated: Oct 17, 2026, 9:36:53 AM UTC\nSource: ea402c439e01244b5016af404c1da844efaaa218"
+    },
+    {
+      "route": "/local-tools",
+      "width": 1440,
+      "client": 1440,
+      "scroll": 1440,
+      "alert": "none",
+      "build": "Version 0.1.0+ea402c439e01244b5016af404c1da844efaaa218\nUpdated: Oct 17, 2026, 9:36:53 AM UTC\nSource: ea402c439e01244b5016af404c1da844efaaa218"
+    },
+    {
+      "route": "/",
+      "width": 390,
+      "client": 390,
+      "scroll": 390,
+      "alert": "none",
+      "build": "Version 0.1.0+ea402c439e01244b5016af404c1da844efaaa218\nUpdated: Oct 17, 2026, 9:36:53 AM UTC\nSource: ea402c439e01244b5016af404c1da844efaaa218"
+    },
+    {
+      "route": "/setup",
+      "width": 390,
+      "client": 390,
+      "scroll": 390,
+      "alert": "none",
+      "build": "Version 0.1.0+ea402c439e01244b5016af404c1da844efaaa218\nUpdated: Oct 17, 2026, 9:36:53 AM UTC\nSource: ea402c439e01244b5016af404c1da844efaaa218"
+    },
+    {
+      "route": "/settings",
+      "width": 390,
+      "client": 390,
+      "scroll": 390,
+      "alert": "none",
+      "build": "Version 0.1.0+ea402c439e01244b5016af404c1da844efaaa218\nUpdated: Oct 17, 2026, 9:36:53 AM UTC\nSource: ea402c439e01244b5016af404c1da844efaaa218"
+    },
+    {
+      "route": "/local-tools",
+      "width": 390,
+      "client": 390,
+      "scroll": 390,
+      "alert": "none",
+      "build": "Version 0.1.0+ea402c439e01244b5016af404c1da844efaaa218\nUpdated: Oct 17, 2026, 9:36:53 AM UTC\nSource: ea402c439e01244b5016af404c1da844efaaa218"
+    }
+  ],
+  "checks": [
+    "authenticated routes",
+    "desktop/mobile overflow",
+    "missing-token onboarding remains blocked",
+    "wording import/reload/clear",
+    "local JSON conversion"
+  ],
+  "errors": [],
+  "sourceCommit": "ea402c439e01244b5016af404c1da844efaaa218",
+  "imageId": "sha256:81c9d94251cde6cb849cf7ccd32113baee728ee40cf94ca3c7db768269f40597",
+  "health": {
+    "status": "ok",
+    "version": "0.1.0",
+    "revision": "ea402c439e01244b5016af404c1da844efaaa218",
+    "buildTimeUtc": "2026-10-17T09:36:53.0000000+00:00",
+    "scheme": "http"
+  },
+  "captures": [
+    {
+      "path": "dashboard-1440.png",
+      "sha256": "99bcfa85d6dbc84015fb11ba65300dd72b3d6bf7c5d4060699bf7d6ff5b47535"
+    },
+    {
+      "path": "dashboard-390.png",
+      "sha256": "e30d4ab96e90193ebd58cd5a9413f7053bb736e6a3f0053d1930033279a3cc03"
+    },
+    {
+      "path": "local-tools-1440.png",
+      "sha256": "9a93e85dca70fbfcdfbc79183a838d39224d0c59efabb72bebdf5732292d6a0d"
+    },
+    {
+      "path": "local-tools-390.png",
+      "sha256": "2fc8c909fb169c0195450721a295003a33bc815bde4af3007eb5c107098749ad"
+    },
+    {
+      "path": "settings-1440.png",
+      "sha256": "e8443e2bf535fa280c673cccd4a93eb86cddccdcd42f308a60d86d1ad5bcef2a"
+    },
+    {
+      "path": "settings-390.png",
+      "sha256": "7b3c33d5e32bf0bd943540474c490bafd3d17a606e0fb5a69a0ab2fc6dca39e1"
+    },
+    {
+      "path": "setup-1440.png",
+      "sha256": "f06397f193ad8aa4f9bcd66ddc9a5eac34ee1dff857270d228bc283c0e91e15c"
+    },
+    {
+      "path": "setup-390.png",
+      "sha256": "6efa208c94023b06290c66eaaa677f1699f3ce1fdb868fbebd261a79d1576084"
+    }
+  ],
+  "limits": [
+    "Isolated Linux Docker review container; no Home Assistant token or live device commands",
+    "Loopback review only; intended LAN host not supplied or verified",
+    "Review build used an external Dockerfile with one builder-only secret-mounted proxy CA trust step; TLS verification remained enabled",
+    "Local image is not proof of a published registry image",
+    "Complete 109-feature acceptance inventory remains incomplete; see docs/feature-compliance.csv",
+    "Windows portable runtime acceptance remains pending CI"
+  ]
+}
