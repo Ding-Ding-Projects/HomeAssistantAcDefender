@@ -1,12 +1,7 @@
 services:
   ac-defender:
-    image: ${AC_DEFENDER_IMAGE:-ac-defender:local}
-    build:
-      context: .
-      args:
-        APP_VERSION: ${AC_DEFENDER_VERSION:-local}
-        APP_REVISION: ${AC_DEFENDER_REVISION:-unknown}
-    container_name: homeassistant-ac-defender
+    image: ${AC_DEFENDER_IMAGE:?Set AC_DEFENDER_IMAGE to a published sha256 digest or sha-<40-character-commit> tag}
+    container_name: ${AC_DEFENDER_CONTAINER_NAME:-homeassistant-ac-defender}
     restart: unless-stopped
     ports:
       - "8888:8080"
@@ -18,8 +13,6 @@ services:
       Defender__StateFilePath: /data/defender-state.json
       Defender__SettingsRepositoryPath: /data/settings-repo
       Defender__PollIntervalSeconds: 5
-      APP_VERSION: ${AC_DEFENDER_VERSION:-local}
-      APP_REVISION: ${AC_DEFENDER_REVISION:-unknown}
       ForwardedHeaders__KnownProxies: ${FORWARDED_HEADERS_KNOWN_PROXIES:-}
       ForwardedHeaders__KnownIPNetworks: ${FORWARDED_HEADERS_KNOWN_IP_NETWORKS:-}
       ForwardedHeaders__AllowedHosts: ${FORWARDED_HEADERS_ALLOWED_HOSTS:?Set FORWARDED_HEADERS_ALLOWED_HOSTS to the exact public host names}
