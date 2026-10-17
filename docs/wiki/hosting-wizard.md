@@ -9,7 +9,7 @@ Download `AC-Defender-Setup-<version>-portable.exe` from the release. It contain
 3. Choose a parent folder. Setup creates a uniquely named child directory, never overwriting an existing deployment. The host port is fixed at **8888**. A port conflict fails deployment rather than silently selecting another port.
 4. Enter a Home Assistant long-lived access token in the password field. It clears after submission. The review screen never displays it.
 5. Review the endpoint, entity and new storage directory. Explicitly acknowledge that starting AC Defender may automatically send real HVAC commands, then select **Pull image and start service**.
-6. Follow actual pull, Compose start, running-service and HTTP health phases. Completion requires `/healthz` to report the expected version and source revision. Open the verified address to continue in AC Defender.
+6. Follow exact-release image resolution, pull, image-identity verification, Compose start, running-service and HTTP health phases. Completion requires `/healthz` to report the expected version and source revision. Open the verified address to continue in AC Defender.
 
 A successful health check proves service availability, not the safety of thermostat settings or complete Home Assistant connectivity. The wizard itself calls no climate command endpoint. The started application operates normally and may control the selected real entity.
 
@@ -42,3 +42,9 @@ Use **Load personal wording JSON** in the setup window, or drop one JSON file on
 The neutral schema is an object containing exactly `schemaVersion: 1` and an `entries` object of exact text keys and string replacements. Files are limited to 256 KiB and depth 8, keys to 160 Unicode codepoints and values to 1000. Duplicate, unsafe or extra keys are rejected. Selected setup titles, navigation and button text can change. Form values and labels, credentials, entity IDs, configuration, artifact provenance and URLs are excluded. No personal mappings ship with the application.
 
 The Windows release pipeline runs `node scripts/native-portable-proof.mjs <portable.exe> <output-directory>` after packaging. It launches a byte-identical copy of the exact executable in an otherwise-empty folder, uses an isolated profile, verifies the owning process tree and exact packaged renderer, then checks the initial controls and artifact provenance and captures the real client area. `receipt.json` reports success only after bounded cleanup. This proof performs no setup, Docker, credential or HVAC action; operational acceptance remains separate.
+
+## Exact release image identity
+
+Before creating a new deployment directory, setup downloads `image-reference.txt` from this wizard version's exact GitHub release (`v<version>`). It permits only bounded HTTPS release-asset redirects, a maximum 512-byte body, and the official image namespace with a 64-character SHA-256 digest. The request carries no Home Assistant credentials. A 15-second deadline or cancellation stops resolution; an unavailable or invalid release asset leaves the deployment directory uncreated and gives retry guidance.
+
+The generated `.env` pins that immutable digest. After pulling it, setup inspects the image's OCI version, source revision and recorded build time before any Compose start. A mismatch prevents the controller from starting. This keeps older setup releases bound to their original image even if a later workflow republishes the same source-commit tag. Resume preserves the owned `.env`, performs no release lookup, and verifies the saved image's labels again before starting.
