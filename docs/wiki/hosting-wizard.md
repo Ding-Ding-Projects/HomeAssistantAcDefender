@@ -39,3 +39,11 @@ From `hosting-wizard`, run `npm ci`, `npm test`, `npm run build`, and `npm run d
 The first screen shows the artifact version and recorded build time in the computer's local timezone, including seconds. English, Cantonese and bilingual modes and light/dark appearance are stored locally. The window supports keyboard controls and a minimum 720 by 640 client area with scrolling at larger display scales.
 
 Automated process tests cover configuration injection, credential non-disclosure, cancellation, Windows ACL failure, and safe resume. These tests do not prove native Windows launch, real Docker installation, elevation, or LAN access from another device. Those require separate supported-host acceptance evidence.
+
+## Personal wording on this device
+
+Use **Load personal wording JSON** in the setup window, or drop one JSON file onto it. The file stays in this renderer's private local storage and is never sent to Docker, Home Assistant, IPC or a server. **Clear personal wording** removes the saved cache and restores shipped wording. Invalid files keep the last valid wording. Saved wording is validated again each time the application opens.
+
+The neutral schema is an object containing exactly `schemaVersion: 1` and an `entries` object of exact text keys and string replacements. Files are limited to 256 KiB and depth 8, keys to 160 Unicode codepoints and values to 1000. Duplicate, unsafe or extra keys are rejected. Selected setup titles, navigation and button text can change. Form values and labels, credentials, entity IDs, configuration, artifact provenance and URLs are excluded. No personal mappings ship with the application.
+
+The Windows release pipeline runs `node scripts/native-portable-proof.mjs <portable.exe> <output-directory>` after packaging. It launches a byte-identical copy of the exact executable in an otherwise-empty folder, uses an isolated profile, verifies the owning process tree and exact packaged renderer, then checks the initial controls and artifact provenance and captures the real client area. `receipt.json` reports success only after bounded cleanup. This proof performs no setup, Docker, credential or HVAC action; operational acceptance remains separate.

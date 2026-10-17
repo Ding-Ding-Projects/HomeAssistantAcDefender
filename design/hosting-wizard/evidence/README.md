@@ -13,3 +13,9 @@ The two `*-linux-receipt.json` files bind source, built renderer hash, metadata,
 Windows execution, native ACL effectiveness, executable-path compatibility, Compose process-tree cancellation, real pull/start/health completion, second-device LAN access, other workflow states and 125/150/200 percent display scales remain unverified. The broader per-surface gaps in `../acceptance.md` remain open. These captures and mocked process tests do not establish those outcomes.
 
 The inspected dark configuration screen exposed insufficient floating-label contrast. Explicit Material surface-variant colors corrected it; the same 24 tuples were rebuilt and recaptured. Earlier captures remain in Git history. All final bundled renderer, style, HTML, main-process, preload, engine, provenance and Compose files are SHA-256 bound in the receipts.
+
+## Personal wording follow-up
+
+`wording-interaction.json` and `wording-cleared-window.png` bind the later personal-wording feature to source `87dde0f`. The real Linux Electron file input accepted a synthetic neutral test file, preserved the last valid wording after an invalid replacement, kept artifact provenance unchanged, persisted the validated cache, and removed it on Clear. No network requests or renderer exceptions occurred. The screenshot was captured only after Clear, so it contains no imported wording or file metadata. The earlier 24 captures remain evidence for their explicitly recorded earlier source, not for this added toolbar.
+
+Windows initial-window proof is implemented in `hosting-wizard/scripts/native-portable-proof.mjs`; its status remains pending until the release runner executes it successfully. Local tests cover invalid metadata, unrelated process ancestry/listeners, wrong renderer targets, bounded timeout and honest refusal on non-Windows hosts. They do not substitute for native execution.
