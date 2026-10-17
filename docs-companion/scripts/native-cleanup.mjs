@@ -1,3 +1,4 @@
+import {identityOperations} from './native-identity.mjs';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {join, win32} from 'node:path';
@@ -31,10 +32,14 @@ export async function finishOwnedCleanup({browser, stopAndVerify, removeOwnedFil
 
 async function powershell(script, variables, timeout = 12000) {
   const binary = join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
-  const {stdout} = await execute(binary, ['-NoLogo', '-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(script, 'utf16le').toString('base64')], {
+  const guarded = `$ErrorActionPreference='Stop'\ntry {\n${script}\n} catch {\n@{nativeFailure=$true;exceptionType=$_.Exception.GetType().FullName;errorId=$_.FullyQualifiedErrorId;hresult=$_.Exception.HResult} | ConvertTo-Json -Compress\n}`;
+  const {stdout} = await execute(binary, ['-NoLogo', '-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(guarded, 'utf16le').toString('base64')], {
     env: {...process.env, ...variables}, windowsHide: true, timeout, maxBuffer: 1024 * 1024
   });
-  return stdout.trim();
+  const text=stdout.trim();
+  let diagnostic;try{diagnostic=JSON.parse(text);}catch{}
+  if(diagnostic?.nativeFailure){const error=new Error('WindowsOperationFailed');error.nativeDiagnostic=sanitizeWindowsDiagnostic(diagnostic);throw error;}
+  return text;
 }
 
 export async function inspectOwnedListener({port, launcherPid, launchedAt, profile}) {
@@ -65,7 +70,7 @@ for($i=0;$i -lt 64;$i++){
 
 
 export function safeCleanupDiagnostic(error, stage) {
-  return error?.cleanupDiagnostic || {stage, code:error?.killed ? 'PROCESS_COMMAND_TIMEOUT' :/^[A-Z][A-Z0-9_]{1,40}$/.test(error?.code || '') ? error.code : 'CleanupOperationFailed'};
+  return error?.cleanupDiagnostic || {stage, ...sanitizeWindowsDiagnostic(error?.nativeDiagnostic), code:error?.killed ? 'PROCESS_COMMAND_TIMEOUT' :/^[A-Z][A-Z0-9_]{1,40}$/.test(error?.code || '') ? error.code : 'CleanupOperationFailed'};
 }
 
 export async function cleanupStage(stage, operation, timeout = 10000) {
@@ -85,6 +90,7 @@ export function verifyCleanupResponse(result) {
     const error = new Error('OwnedCleanupIncomplete');
     error.cleanupDiagnostic = {
       stage: /^[a-z-]{1,60}$/.test(result?.stage || '') ? result.stage : 'process-cleanup',
+      ...sanitizeWindowsDiagnostic(result),
       code: /^[A-Za-z]{1,60}$/.test(result?.code || '') ? result.code : 'OwnedCleanupIncomplete',
       killExitCodes: Array.isArray(result?.killResults) ? result.killResults.slice(0,128).map(item=>Number.isInteger(item.exitCode)?item.exitCode:null) : [],
       remainingOwnedPids: Array.isArray(result?.remainingOwnedPids) ? result.remainingOwnedPids.filter(Number.isInteger).slice(0,128) : [],
@@ -97,13 +103,13 @@ export function verifyCleanupResponse(result) {
 
 export async function captureOwnedDescendants({identities, launchedAt}) {
   const raw = await powershell(`$ErrorActionPreference='Stop'
-$known=@(ConvertFrom-Json $env:DOCS_PROOF_IDENTITIES);$all=@(Get-CimInstance Win32_Process);$owned=@{}
+${identityOperations}
+$known=@(Read-OwnedIdentities $env:DOCS_PROOF_IDENTITIES);$all=@(Get-CimInstance Win32_Process);$owned=@{}
+$started=Get-CreationUtc $env:DOCS_PROOF_STARTED
 foreach($identity in $known){
- $entry=$all | Where-Object { $_.ProcessId -eq [int]$identity.pid } | Select-Object -First 1
+ $entry=Find-OwnedProcess $all ([int]$identity.pid)
  if($null -eq $entry){continue}
- if($entry.ExecutablePath -ne $identity.executable){throw 'identity changed'}
- if($identity.created -and $entry.CreationDate.ToUniversalTime().ToString('o') -ne $identity.created){throw 'creation changed'}
- if($entry.CreationDate.ToUniversalTime() -lt [DateTime]::Parse($env:DOCS_PROOF_STARTED).ToUniversalTime().AddSeconds(-2)){throw 'predates launch'}
+ Assert-OwnedIdentity $entry $identity $started
  $owned[[int]$entry.ProcessId]=$entry
 }
 for($depth=0;$depth -lt 64;$depth++){
@@ -133,16 +139,19 @@ ConvertTo-Json -InputObject $result -Depth 4 -Compress`, {
 
 export async function stopOwnedProcesses({identities, launchedAt, profile}) {
   const raw = await powershell(`$ErrorActionPreference='Stop'
-$stage='identity-verification';$killResults=@();$remaining=@();$profileProcesses=@()
+${identityOperations}
+$stage='identity-decoding';$killResults=@();$remaining=@();$profileProcesses=@()
 try {
- $identities=@(ConvertFrom-Json $env:DOCS_PROOF_IDENTITIES)
+ $identities=@(Read-OwnedIdentities $env:DOCS_PROOF_IDENTITIES)
+ $started=Get-CreationUtc $env:DOCS_PROOF_STARTED
  foreach($identity in $identities){
-  $stage='identity-verification'
-  $entry=Get-CimInstance Win32_Process -Filter ("ProcessId="+[int]$identity.pid) -ErrorAction Stop
+  $stage='identity-snapshot'
+  $snapshot=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+  $stage='identity-selection'
+  $entry=Find-OwnedProcess $snapshot ([int]$identity.pid)
   if($null -eq $entry){continue}
-  if($entry.ExecutablePath -ne $identity.executable){throw 'ProcessIdentityChanged'}
-  if($identity.created -and $entry.CreationDate.ToUniversalTime().ToString('o') -ne $identity.created){throw 'ProcessCreationChanged'}
-  if($entry.CreationDate.ToUniversalTime() -lt [DateTime]::Parse($env:DOCS_PROOF_STARTED).ToUniversalTime().AddSeconds(-2)){throw 'ProcessPredatesLaunch'}
+  $stage='identity-verification'
+  Assert-OwnedIdentity $entry $identity $started
   $stage='taskkill'
   $start=New-Object System.Diagnostics.ProcessStartInfo
   $start.FileName="$env:SystemRoot\\System32\\taskkill.exe"
@@ -174,9 +183,17 @@ try {
 } catch {
  $code='WindowsOperationFailed'
  if($_.Exception.Message -cmatch '^[A-Za-z]{1,60}$'){$code=$_.Exception.Message}
- @{complete=$false;goneVerified=$false;stage=$stage;code=$code;killResults=$killResults;remainingOwnedPids=@($remaining | Select-Object -ExpandProperty ProcessId);remainingProfileProcessCount=$profileProcesses.Count} | ConvertTo-Json -Depth 5 -Compress
+ @{complete=$false;goneVerified=$false;stage=$stage;code=$code;exceptionType=$_.Exception.GetType().FullName;errorId=$_.FullyQualifiedErrorId;hresult=$_.Exception.HResult;killResults=$killResults;remainingOwnedPids=@($remaining | Select-Object -ExpandProperty ProcessId);remainingProfileProcessCount=$profileProcesses.Count} | ConvertTo-Json -Depth 5 -Compress
 }`, {
     DOCS_PROOF_IDENTITIES: JSON.stringify(identities), DOCS_PROOF_STARTED: new Date(launchedAt).toISOString(), DOCS_PROOF_PROFILE: profile
   }, 23000);
   return verifyCleanupResponse(JSON.parse(raw));
+}
+
+export function sanitizeWindowsDiagnostic(value) {
+  const result={};
+  if(/^[A-Za-z0-9_.]{1,160}$/.test(value?.exceptionType || ''))result.exceptionType=value.exceptionType;
+  if(/^[A-Za-z0-9_.,-]{1,160}$/.test(value?.errorId || ''))result.errorId=value.errorId;
+  if(Number.isInteger(value?.hresult))result.hresult=value.hresult;
+  return result;
 }

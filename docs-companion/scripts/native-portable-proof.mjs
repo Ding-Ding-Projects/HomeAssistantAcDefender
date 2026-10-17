@@ -128,7 +128,7 @@ try {
       const known=identities.length ? identities : [{pid:child.pid, executable:isolatedArtifact}];
       identities=await cleanupStage('descendant-snapshot',()=>captureOwnedDescendants({identities:known,launchedAt}),15000);
       receipt.ownedProcessCount=identities.length;
-    } catch(error){failure ||= error;receipt.cleanupDiagnostic=safeCleanupDiagnostic(error,'descendant-snapshot');}
+    } catch(error){failure ||= error;receipt.snapshotDiagnostic=safeCleanupDiagnostic(error,'descendant-snapshot');}
   }
   try {
     receipt.cleanup = await finishOwnedCleanup({
