@@ -15,7 +15,7 @@ const articles=[];
 async function walk(dir){const out=[];for(const entry of await readdir(dir,{withFileTypes:true})){const file=resolve(dir,entry.name);out.push(...(entry.isDirectory()?await walk(file):[file]));}return out;}
 for(const file of (await walk(target)).filter(x=>x.endsWith('.html'))){
  const $=load(await readFile(file,'utf8'));
- $('script,iframe,object,embed,form,button,input,select,dialog,[role=dialog]').remove();
+ $('script,iframe,object,embed,form,button,input,select,dialog,[role=dialog],.language-desk').remove();
  $('*').each((_i,el)=>{for(const attr of Object.keys(el.attribs || {}))if(attr.startsWith('on'))$(el).removeAttr(attr);});
  $('[href],[src]').each((_i,el)=>{for(const attr of ['href','src']){let value=$(el).attr(attr);if(!value)continue;
  if(value.startsWith('/HomeAssistantAcDefender/'))value=value.slice('/HomeAssistantAcDefender'.length);
@@ -24,12 +24,12 @@ for(const file of (await walk(target)).filter(x=>x.endsWith('.html'))){
  if(/^(https?:|mailto:|javascript:|\/\/)/i.test(value)){ if(attr==='href'){$(el).removeAttr('href').attr('title','External reference unavailable offline').attr('aria-disabled','true');}else $(el).removeAttr(attr); }
  else $(el).attr(attr,value);
  }});
- $('head').append('<style>@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}body{overflow-wrap:anywhere}pre{max-width:100%;overflow:auto}img{max-width:100%}</style>');
+ $('head').append('<style>@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}body{overflow-wrap:anywhere}pre{max-width:100%;overflow:auto}img{max-width:100%}.masthead-note{white-space:normal!important;min-width:0;overflow-wrap:anywhere}</style>');
  await writeFile(file,$.html());
  if(relative(target,file).startsWith('wiki/') && !relative(target,file).includes('/images/')) articles.push({path:'site/'+relative(target,file),title:$('h1').first().text() || $('title').text(),text:$('main').text() || $('body').text()});
 }
 for(const name of wiki)if(!articles.some(x=>x.path===`site/wiki/${name.slice(0,-3)}.html`))throw Error('Missing rendered article: '+name);
-const metadata={version:process.env.DOCS_VERSION || pkg.version,source:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),builtAt:new Date().toISOString(),articleCount:articles.length};
+const metadata={version:pkg.version,source:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),builtAt:new Date().toISOString(),articleCount:articles.length};
 await writeFile('app/catalog.json',JSON.stringify({metadata,articles}));
 for(const name of ['index.html','style.css'])await cp('src/'+name,'app/'+name);
 console.log(`Bundled ${articles.length} rendered articles and complete site assets.`);
