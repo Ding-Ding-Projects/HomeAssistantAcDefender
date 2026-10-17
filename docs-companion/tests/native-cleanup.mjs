@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {finishOwnedCleanup} from '../scripts/native-cleanup.mjs';
+import {finishOwnedCleanup, verifyCleanupResponse, cleanupStage} from '../scripts/native-cleanup.mjs';
 const never = () => new Promise(() => {});
 
 test('never-resolving CDP and transport close cannot block mandatory owned cleanup', async () => {
@@ -34,4 +34,32 @@ test('cleanup completion waits for actual process-exit verification', async () =
   release();
   assert.equal((await cleanup).complete,true);
   assert.equal(removed,true);
+});
+
+
+test('taskkill not-found race is tolerated only after positive process-exit verification', () => {
+  const raced = {complete:true,goneVerified:true,stage:'process-exit-verification',killResults:[{pid:123,exitCode:128,timedOut:false}]};
+  assert.equal(verifyCleanupResponse(raced),raced);
+  assert.throws(()=>verifyCleanupResponse({...raced,goneVerified:false}));
+  assert.throws(()=>verifyCleanupResponse({...raced,complete:false,code:'OwnedProcessStillRunning'}),error=>{
+    assert.deepEqual(error.cleanupDiagnostic,{stage:'process-exit-verification',code:'OwnedProcessStillRunning',killExitCodes:[128],remainingOwnedPids:[],remainingProfileProcessCount:null});
+    return true;
+  });
+});
+
+test('file-lock diagnostics identify the stage without exposing exception paths', async () => {
+  await assert.rejects(cleanupStage('profile-removal',async()=>{
+    const error=new Error('sensitive local path or secret text');error.code='EBUSY';throw error;
+  }),error=>{
+    assert.deepEqual(error.cleanupDiagnostic,{stage:'profile-removal',code:'EBUSY'});
+    assert(!JSON.stringify(error.cleanupDiagnostic).includes('sensitive'));
+    return true;
+  });
+});
+
+test('never-resolving cleanup stage produces a bounded typed diagnostic', async () => {
+  await assert.rejects(cleanupStage('process-exit-verification',never,10),error=>{
+    assert.deepEqual(error.cleanupDiagnostic,{stage:'process-exit-verification',code:'CLEANUP_TIMEOUT'});
+    return true;
+  });
 });
