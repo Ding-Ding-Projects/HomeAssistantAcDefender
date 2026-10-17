@@ -1,0 +1,75 @@
+@page "/local-tools"
+@attribute [Authorize]
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<PageTitle>Local tools · AC Defender</PageTitle>
+<div id="local-tools" class="local-tools" data-language="@_language">
+    <MudText Typo="Typo.h4">@T("Local file tools", "本機檔案工具")</MudText>
+    <label>@T("Language", "語言")
+        <select @bind="_language"><option value="en">English</option><option value="yue">廣東話</option><option value="both">English / 廣東話</option></select>
+    </label>
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">@T("Files stay in your browser. One file at a time, up to 8 MiB; conversion stops after 10 seconds. No file upload or network conversion. Unsupported adapters remain visible below.", "檔案留喺你嘅瀏覽器。每次處理一個，最多 8 MiB；轉換限時 10 秒。唔會上載檔案或經網絡轉換，未支援嘅工具會喺下面列明。")</MudAlert>
+    <MudPaper Class="local-tools-panel" Elevation="0">
+        <h2>@T("1. Choose a source", "1. 揀來源檔案")</h2>
+        <label for="local-source">@T("Local file", "本機檔案")</label>
+        <input id="local-source" type="file" />
+        <label for="local-encoding">@T("Source text encoding", "來源文字編碼")</label>
+        <select id="local-encoding" data-encoding><option value="utf-8">UTF-8</option><option value="utf-16le">UTF-16 LE</option><option value="utf-16be">UTF-16 BE</option><option value="windows-1252">Windows-1252</option></select>
+        <p>@T("Text adapters output UTF-8. For binary output, choose the correct filename extension after download. Originals are never overwritten.", "文字工具輸出 UTF-8。二進制輸出下載後，請自行選擇正確副檔名。原檔案唔會被覆寫。")</p>
+        <p data-status role="status" aria-live="polite">@T("Choose one file to begin.", "揀一個檔案開始啦。")</p>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@T("Cancel operation", "取消工作")</MudButton>
+        <a data-download hidden class="local-tools-download">@T("Download validated result", "下載已驗證結果")</a>
+        <details><summary>@T("Plain-text preview (first 2,000 characters)", "純文字預覽（首 2,000 字）")</summary><pre data-preview></pre></details>
+    </MudPaper>
+    <h2>@T("2. Choose a conversion", "2. 揀轉換工具")</h2>
+    <p>@T("Each Convert button confirms the stated changes. Raster images must be static PNG, JPEG or WebP, at most 4096 pixels per axis and 8 million pixels. Native browser capability is checked before enabling its adapter; malformed input fails without output.", "按轉換即確認所列更改。點陣圖須為靜態 PNG、JPEG 或 WebP，每邊最多 4096 像素、總共最多 800 萬像素。工具會先檢查瀏覽器支援；無效檔案會停止處理，唔會產生輸出。")</p>
+    <div class="local-tools-categories">
+        @foreach (var category in LocalToolAdapter.Categories)
+        {
+            var search = _searches[category];
+            var matches = LocalToolAdapter.Catalog.Where(a => a.Category == category && RegexSearchMatcher.Matches(search.Query, search.Mode, search.Flags, a.Name, a.Cantonese, a.Detail, a.CantoneseDetail)).ToArray();
+            <MudPaper Class="local-tools-panel" Elevation="0" @key="category">
+                <h3>@CategoryName(category)</h3>
+                <label>@T("Search this category", "搜尋呢個分類")<input @bind="search.Query" @bind:event="oninput" maxlength="512" type="search" /></label>
+                <RegexSearchBuilder Id="@($"tool-{Array.IndexOf(LocalToolAdapter.Categories, category)}")" @bind-Value="search.Query" @bind-Mode="search.Mode" @bind-Flags="search.Flags" />
+                @if (matches.Length == 0) { <p role="status">@T("No matching adapters. Check the search or regex.", "冇符合嘅工具，請檢查搜尋字或正規表達式。")</p> }
+                @foreach (var adapter in matches)
+                {
+                    <div class="local-tool-adapter">
+                        <strong>@T(adapter.Name, adapter.Cantonese)</strong>
+                        <p>@T(adapter.Detail, adapter.CantoneseDetail)</p>
+                        @if (Available(adapter))
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => Convert(adapter.Id))">@T("Convert", "轉換") · @adapter.Name</MudButton>
+                        }
+                        else
+                        {
+                            <MudButton Disabled="true" Variant="Variant.Outlined">@T("Unavailable", "未提供")</MudButton>
+                            @if (adapter.Requirement != "unavailable") { <p>@T("Required isolated worker / native browser adapter is unavailable or not yet checked.", "所需嘅隔離工作執行緒／瀏覽器工具未提供，或者未完成檢查。")</p> }
+                        }
+                    </div>
+                }
+            </MudPaper>
+        }
+    </div>
+    <MudPaper Class="local-tools-panel" Elevation="0"><h2>@T("Session results", "今次工作結果")</h2><p>@T("Last ten successful operations; no file content or names are stored in history. Leaving this page clears download data.", "顯示最近十次成功工作；紀錄唔儲存檔案內容或檔名。離開呢頁會清除下載資料。")</p><ol data-history></ol></MudPaper>
+</div>
+
+@code {
+    private string _language = "both";
+    private BrowserCapabilities _capabilities = new();
+    private readonly Dictionary<string, SearchState> _searches = LocalToolAdapter.Categories.ToDictionary(c => c, _ => new SearchState());
+    private sealed class SearchState { public string Query { get; set; } = ""; public string Mode { get; set; } = "plain"; public string Flags { get; set; } = "im"; }
+    public sealed class BrowserCapabilities { public bool Worker { get; set; } public bool Images { get; set; } public bool Png { get; set; } public bool Jpeg { get; set; } public bool Webp { get; set; } public bool Gzip { get; set; } }
+    private string T(string en, string zh) => _language == "en" ? en : _language == "yue" ? zh : en == zh ? en : $"{en} / {zh}";
+    private string CategoryName(string value) => T(value, value switch { "Documents/PDF" => "文件／PDF", "Images" => "圖片", "Audio" => "音訊", "Video" => "影片", "Archives" => "壓縮檔", "Structured Data/Spreadsheets" => "結構資料／試算表", "Code/Text" => "程式碼／文字", _ => "二進制編碼" });
+    private bool Available(LocalToolAdapter a) => _capabilities.Worker && a.Requirement switch { "unavailable" => false, "images" => a.Id switch { "png" => _capabilities.Png, "jpeg" => _capabilities.Jpeg, "webp" => _capabilities.Webp, _ => false }, "gzip" => _capabilities.Gzip, _ => true };
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) { await JS.InvokeVoidAsync("localTools.init", "local-tools"); _capabilities = await JS.InvokeAsync<BrowserCapabilities>("localTools.capabilities"); StateHasChanged(); }
+    }
+    private Task Convert(string adapter) => JS.InvokeVoidAsync("localTools.convert", "local-tools", adapter).AsTask();
+    private Task Cancel() => JS.InvokeVoidAsync("localTools.cancel", "local-tools").AsTask();
+    public async ValueTask DisposeAsync() { try { await JS.InvokeVoidAsync("localTools.dispose", "local-tools"); } catch (JSDisconnectedException) { } }
+}

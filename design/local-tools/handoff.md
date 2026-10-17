@@ -1,0 +1,17 @@
+# Local browser tools design handoff
+
+Base: `117f42d`. Framework: Blazor Server with MudBlazor 9.5, native browser file selection and local JavaScript workers. Destinations: authenticated `/local-tools` and a reusable settings logo panel.
+
+The workspace starts with a plain privacy/limits explanation, source selection and source status. Eight category sections expose their own search and adjacent anchored regex expression controls. Available adapter buttons explain output and loss before an explicit Convert action. Disabled adapters explain missing bundled dependencies. Preview, progress, cancel, download and session result history follow the source. File bytes, names and previews stay in browser DOM and never enter Blazor parameters, logging or server interop.
+
+States: converter empty, selected, detecting, ready, unavailable, converting, cancelled, failed, completed; regex literal, expression, invalid, timed out, no matches; logo shipped, custom loading, invalid, editing, saved, persistence failure and reset. Failures retain prior valid logo and never expose partial output. File input is single-file; persistent bulk queue is explicitly outside this delivered subset.
+
+Logo presets are locally generated project-relevant marks. PNG/JPEG/WebP inputs are signature checked and restricted to 4 MiB, 4096 pixels per axis and 8 million decoded pixels. Animated PNG/WebP and SVG are refused. Fit/fill, numeric focal coordinates and transparent/color background change the actual 128px derived raster. Previews at 24, 40 and 96px show safe area. Browser storage holds only validated derived raster and editor settings. Shell integration uses `data-local-logo` targets or the existing `.ops-brand__mark` presentation element.
+
+Security boundaries: converters have 8 MiB input/output limits, 10 second worker deadline, plain-text errors, output validation, no network or uploaded script execution. Only browser-native available implementations are enabled. Gzip decompression aborts at the output limit. The shared RegexSearchBuilder uses the existing .NET engine with a 100ms match timeout and 512-character pattern limit, over shipped catalog metadata only. Raster decoding occurs in a worker with canvas pixel limits. HTML extraction, PDF, office, audio/video and general archives remain unavailable without isolated offline adapters. Source files remain unchanged; downloads use object URLs revoked on replace/dispose.
+
+Accessibility: semantic headings/labels, keyboard-native file and select controls, real MudBlazor containers and buttons, live status region, visible focus, no motion, wrapping narrow layout. Per-panel English/Cantonese/Both selector localizes workflow instructions. Adapter format identifiers remain literal. Minimum viewport 320 CSS pixels. Verify light/dark, EN/Cantonese/Both, 100/125/150/200 percent scaling at 320 and 1280px; no broad matrix claim until captured from a running build.
+
+Asset provenance: no third-party images or remote assets. Shipped alternate marks use local Unicode symbols; custom images stay local and must not enter repository evidence. No climate services, commands or data are referenced.
+
+Integration owner loads `local-tools.js` and `local-tools.css`, mounts LogoPreferences in Settings, and adds navigation. Remaining global-contract gaps: persistent unlimited batch queue, PDF operations, appearance schedules/export/import/history/command palette integration, full per-format runtimes, independent design review and complete runtime capture matrix. These are not implied by this subset.
