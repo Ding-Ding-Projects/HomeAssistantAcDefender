@@ -32,6 +32,15 @@ export function selectTarget(targets,expectedUrl) {
 export async function bounded(task,milliseconds,code='proofTimeout') {
   let timer;try{return await Promise.race([task,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(code)),milliseconds);})]);}finally{clearTimeout(timer);}
 }
+export async function gracefulClose(browser,milliseconds=3000) {
+  try{await bounded((async()=>{const session=await browser.newBrowserCDPSession();await session.send('Browser.close');})(),milliseconds,'gracefulCloseTimeout');return {acknowledged:true};}
+  catch{return {acknowledged:false};}
+}
+export async function finalizeReceipt(receipt,uiVerified,cleanup) {
+  receipt.status='failed';receipt.cleanup.complete=false;
+  try{await cleanup();receipt.cleanup.complete=true;if(uiVerified&&!receipt.failure)receipt.status='passed';}
+  catch{receipt.failure='ownedCleanupIncomplete';}
+}
 const inspectScript=`$ErrorActionPreference='Stop'
 $portNumber=[int]$env:SETUP_PROOF_PORT
 $rootId=[int]$env:SETUP_PROOF_ROOT_PID
@@ -72,7 +81,7 @@ async function unusedPort(){const server=net.createServer();await new Promise((r
 export async function provePortable(executableArg,outputArg){
   const output=path.resolve(outputArg);await fs.mkdir(output,{recursive:true});
   const receipt={schemaVersion:1,status:'failed',route:'windows-ci-portable-electron',checks:{},cleanup:{complete:false},limitations:['Initial native window only. Docker installation, deployment, credentials, elevation, LAN access and operational cancellation are not exercised.']};
-  let root,launcher,browser,identity,launchedAt,launchedExe,port;let failure='proofFailed';
+  let root,launcher,browser,identity,launchedAt,launchedExe,port;let uiVerified=false;let failure='proofFailed';
   const hardStop=setTimeout(()=>{process.stderr.write('Native portable proof exceeded its outer deadline.\n');process.exit(1);},115000);
   try{
     if(process.platform!=='win32')throw new Error('windowsRequired');
@@ -106,19 +115,19 @@ export async function provePortable(executableArg,outputArg){
       if(observed.title!=='Check this computer'||Object.values(observed.controls).some(value=>value!==true)||!observed.provenance.includes(expected.version)||!observed.provenance.includes(observed.formattedTime)||observed.overflow||!observed.geometry?.width||exceptions.length)throw new Error('initialUiVerificationFailed');
       receipt.checks.initialControlsVisible=true;receipt.checks.provenanceMatchesArtifact=true;receipt.checks.initialStateIsolated=true;receipt.checks.noHorizontalOverflow=true;receipt.checks.noSetupActions=true;receipt.observed=observed;
       const screenshot=await page.screenshot({type:'png',timeout:5000});await fs.writeFile(path.join(output,'initial-window.png'),screenshot,{flag:'wx'});receipt.screenshot={file:'initial-window.png',sha256:hash(screenshot),bytes:screenshot.length};
-      const session=await browser.newBrowserCDPSession();await session.send('Browser.close').catch(()=>{});receipt.status='passed';
+      receipt.gracefulClose=await gracefulClose(browser);uiVerified=true;
     })()]),85000);
   }catch(error){failure=/^[A-Za-z][A-Za-z0-9]{1,80}$/.test(error?.message||'')?error.message:'nativeProofOperationFailed';receipt.failure=failure;receipt.status='failed';}
   finally{
-    try{
+    await finalizeReceipt(receipt,uiVerified,async()=>{
       if(launcher?.pid){
         const identities=[];if(identity)identities.push({pid:identity.pid,executable:identity.executable,created:identity.created});
         if(launcher.exitCode===null&&launcher.signalCode===null)identities.push({pid:launcher.pid,executable:launchedExe});
-        if(identities.length)await powershell(cleanupScript,{SETUP_PROOF_IDENTITIES:JSON.stringify(identities),SETUP_PROOF_STARTED:new Date(launchedAt).toISOString()},12000);
+        if(identities.length){const result=await powershell(cleanupScript,{SETUP_PROOF_IDENTITIES:JSON.stringify(identities),SETUP_PROOF_STARTED:new Date(launchedAt).toISOString()},12000);if(result!=='closed')throw new Error('ownedCleanupUnconfirmed');}
       }
       if(browser)await bounded(browser.close().catch(()=>{}),3000,'disconnectTimeout');
-      if(root)await fs.rm(root,{recursive:true,force:true,maxRetries:3,retryDelay:150});receipt.cleanup.complete=true;
-    }catch{receipt.status='failed';receipt.failure='ownedCleanupIncomplete';}
+      if(root)await fs.rm(root,{recursive:true,force:true,maxRetries:3,retryDelay:150});
+    });
     clearTimeout(hardStop);await fs.writeFile(path.join(output,'receipt.json'),JSON.stringify(receipt,null,2),{flag:'wx'});
   }
   if(receipt.status!=='passed')throw new Error(receipt.failure||failure);return receipt;
