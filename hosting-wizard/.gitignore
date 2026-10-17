@@ -1,0 +1,6 @@
+node_modules/
+dist/
+renderer/
+resources/build.json
+resources/compose.yml
+resources/icon.ico

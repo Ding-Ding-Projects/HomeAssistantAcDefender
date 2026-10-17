@@ -1,0 +1,2 @@
+const {contextBridge,ipcRenderer}=require('electron');
+contextBridge.exposeInMainWorld('setup',Object.freeze({snapshot:()=>ipcRenderer.invoke('setup:snapshot'),checks:()=>ipcRenderer.invoke('setup:checks'),destination:()=>ipcRenderer.invoke('setup:destination'),configure:values=>ipcRenderer.invoke('setup:configure',values),invalidate:()=>ipcRenderer.invoke('setup:invalidate'),start:()=>ipcRenderer.invoke('setup:start'),cancel:()=>ipcRenderer.invoke('setup:cancel'),open:url=>ipcRenderer.invoke('setup:open',url)}));
